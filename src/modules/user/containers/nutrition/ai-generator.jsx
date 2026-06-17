@@ -15,6 +15,7 @@ import { ChevronLeftIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import useMealPlan from "@/hooks/app/use-meal-plan";
+import { useNutritionAiPantry } from "@/hooks/app/use-nutrition-ai.js";
 import { AiAccessStatusText } from "@/components/ai-access";
 import {
   AI_USAGE_FEATURES,
@@ -23,6 +24,10 @@ import {
   isAiAccessLimitError,
   useAiAccessStatus,
 } from "@/hooks/app/use-ai-access";
+import {
+  NUTRITION_PRICE_REGIONS,
+  NUTRITION_PRICE_SEASONS,
+} from "./nutrition-price-context.js";
 
 const MEAL_COUNTS = [
   { id: 3, label: "3 mahal", description: "Nonushta, Tushlik, Kechki ovqat" },
@@ -36,14 +41,46 @@ const BUDGET_PERIODS = [
   { id: "monthly", label: "Oylik" },
 ];
 
+const normalizePantryItemsForAiPlan = (items = []) =>
+  items
+    .slice(0, 20)
+    .map((item) => {
+      const name = String(item?.name || item?.ingredient?.name || "").trim();
+
+      if (!name) {
+        return null;
+      }
+
+      const quantity = Number(item?.quantity);
+      const grams = Number(item?.grams);
+      const ingredientId = Number(item?.ingredientId);
+
+      return {
+        id: item?.id ? String(item.id) : null,
+        ingredientId:
+          Number.isFinite(ingredientId) && ingredientId > 0
+            ? Math.trunc(ingredientId)
+            : null,
+        name,
+        quantity: Number.isFinite(quantity) && quantity >= 0 ? quantity : null,
+        unit: item?.unit ? String(item.unit).trim() || null : null,
+        grams: Number.isFinite(grams) && grams >= 0 ? grams : null,
+      };
+    })
+    .filter(Boolean);
+
 const AIGenerator = ({ onClose, onGenerated }) => {
   const { generateAiPlan, isGeneratingAi } = useMealPlan();
+  const { pantryItems = [], isLoading: isPantryLoading } =
+    useNutritionAiPantry({ enabled: true });
   const { wallet, costs } = useAiAccessStatus();
   const [step, setStep] = useState(1);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedMealCount, setSelectedMealCount] = useState(4);
   const [budgetAmount, setBudgetAmount] = useState("");
   const [selectedBudgetPeriod, setSelectedBudgetPeriod] = useState("weekly");
+  const [selectedRegionKey, setSelectedRegionKey] = useState("");
+  const [selectedSeason, setSelectedSeason] = useState("all");
   const planFeature = AI_USAGE_FEATURES.mealPlan7Day;
   const accessStatus = getAiAccessStatus({
     wallet,
@@ -59,6 +96,10 @@ const AIGenerator = ({ onClose, onGenerated }) => {
   const selectedGoalData = useMemo(
     () => find(MEAL_PLAN_GOALS, { id: selectedGoal }) ?? null,
     [selectedGoal],
+  );
+  const aiPlanPantryItems = useMemo(
+    () => normalizePantryItemsForAiPlan(pantryItems),
+    [pantryItems],
   );
 
   const handleAiGenerate = async () => {
@@ -77,6 +118,9 @@ const AIGenerator = ({ onClose, onGenerated }) => {
               budgetPeriod: selectedBudgetPeriod,
             }
           : {}),
+        ...(selectedRegionKey ? { regionKey: selectedRegionKey } : {}),
+        ...(selectedSeason !== "all" ? { season: selectedSeason } : {}),
+        ...(aiPlanPantryItems.length ? { pantryItems: aiPlanPantryItems } : {}),
       });
 
       if (nextState?.draftPlan && onGenerated) {
@@ -91,7 +135,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
     } catch (error) {
       toast.error(
         isAiAccessLimitError(error)
-          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
+          ? "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring."
           : "AI rejani yaratib bo'lmadi",
       );
     }
@@ -111,7 +155,7 @@ const AIGenerator = ({ onClose, onGenerated }) => {
           </Button>
         ) : null}
         <div className="w-full px-10 text-center">
-          <DrawerTitle>AI Smart Plan</DrawerTitle>
+          <DrawerTitle>AI aqlli reja</DrawerTitle>
           <DrawerDescription>
             {step === 1
               ? "Maqsadingizni tanlang"
@@ -187,6 +231,18 @@ const AIGenerator = ({ onClose, onGenerated }) => {
               className="mb-3 justify-center"
             />
 
+            <div className="rounded-lg border border-border bg-background p-3 text-sm">
+              <p className="font-semibold text-foreground">
+                {isPantryLoading
+                  ? "Ombor konteksti yuklanmoqda..."
+                  : `Ombor konteksti: ${aiPlanPantryItems.length} ta mahsulot`}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                AI reja mos kelgan joylarda ombordagi mahsulotlarni birinchi
+                navbatda ishlatadi.
+              </p>
+            </div>
+
             {map(MEAL_COUNTS, (count) => {
               const isActive = selectedMealCount === count.id;
 
@@ -255,6 +311,44 @@ const AIGenerator = ({ onClose, onGenerated }) => {
                     {period.label}
                   </Button>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-background p-3">
+              <p className="mb-2 text-xs font-bold text-muted-foreground">
+                Narx konteksti
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="text-[11px] font-bold text-muted-foreground">
+                  Hudud
+                  <select
+                    aria-label="Narx hududi"
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground"
+                    value={selectedRegionKey}
+                    onChange={(event) => setSelectedRegionKey(event.target.value)}
+                  >
+                    {map(NUTRITION_PRICE_REGIONS, (region) => (
+                      <option key={region.value || "all"} value={region.value}>
+                        {region.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-[11px] font-bold text-muted-foreground">
+                  Mavsum
+                  <select
+                    aria-label="Narx mavsumi"
+                    className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground"
+                    value={selectedSeason}
+                    onChange={(event) => setSelectedSeason(event.target.value)}
+                  >
+                    {map(NUTRITION_PRICE_SEASONS, (season) => (
+                      <option key={season.value} value={season.value}>
+                        {season.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
             </div>
           </div>

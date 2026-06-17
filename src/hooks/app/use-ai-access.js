@@ -97,7 +97,7 @@ export const getAiAccessStatus = ({ access, wallet } = {}) => {
     : normalized.status === "trial_not_started"
       ? "7 kun trial"
       : normalized.status === "trial_expired"
-        ? "Premium kerak"
+        ? "Limit tugadi"
         : `Bugun ${remaining ?? 0}/${dailyLimit ?? 3} qoldi`;
 
   return {

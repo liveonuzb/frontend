@@ -60,7 +60,7 @@ export default function AnimatedWaterWidget({
     return (
       <Card
         className={cn(
-          "relative overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
+          "relative overflow-hidden py-4",
           isNavigable
             ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
             : null,
@@ -92,7 +92,7 @@ export default function AnimatedWaterWidget({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
+                    className="rounded-full text-muted-foreground hover:bg-transparent hover:text-muted-foreground dark:hover:bg-transparent"
                     aria-label="Stakan hajmini tanlash"
                     onClick={(event) => event.stopPropagation()}
                   >
@@ -104,7 +104,7 @@ export default function AnimatedWaterWidget({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
+                    className="rounded-full text-muted-foreground hover:bg-transparent hover:text-muted-foreground dark:hover:bg-transparent"
                     aria-label={`${title} sahifasini ochish`}
                     onClick={handleNavigate}
                   >
@@ -175,7 +175,7 @@ export default function AnimatedWaterWidget({
   return (
     <div
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-2xl group transition-all water-widget",
+        "relative flex flex-col overflow-hidden rounded-2xl water-widget",
         "gap-3 p-4",
         isNavigable
           ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring"
@@ -206,16 +206,16 @@ export default function AnimatedWaterWidget({
               <button type="button"
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Stakan hajmini tanlash"
-                className="cursor-pointer size-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 font-medium text-xs text-white"
+                className="cursor-pointer size-8 rounded-full bg-white/10 flex items-center justify-center border border-white/10 font-medium text-xs text-white"
               >
-                <GlassWaterIcon className="size-4 hover:text-blue-300" />
+                <GlassWaterIcon className="size-4" />
               </button>
             </QuickCupDrawer>
             {isNavigable ? (
               <button
                 type="button"
                 aria-label={`${title} sahifasini ochish`}
-                className="flex size-8 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                className="flex size-8 items-center justify-center rounded-full text-slate-300"
                 onClick={handleNavigate}
               >
                 <ChevronRightIcon className="size-5" />
@@ -351,7 +351,7 @@ export default function AnimatedWaterWidget({
               onAdd?.();
             }}
             className={cn(
-              "add rounded-full active:scale-95 transition-transform shadow-[0_4px_15px_rgba(106,155,244,0.4)] shrink-0 group/btn cursor-pointer",
+              "add rounded-full shadow-[0_4px_15px_rgba(106,155,244,0.4)] shrink-0 cursor-pointer",
               "size-14",
             )}
           >

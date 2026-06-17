@@ -78,27 +78,24 @@ const WorkoutPlanSessionSummaryPage = () => {
   });
   const summary =
     get(location, "state.summary") || readStoredSummary(planId, dayIndex);
-  const nextWorkoutDayIndex = React.useMemo(() => {
-    const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  const schedule = isArray(get(plan, "schedule")) ? get(plan, "schedule") : [];
+  const nextWorkoutDayIndex = findIndex(
+    schedule,
+    (day, index) =>
+      index > dayIndex &&
+      isArray(get(day, "exercises")) &&
+      get(day, "exercises.length") > 0,
+  );
 
-    return findIndex(
-      schedule,
-      (day, index) =>
-        index > dayIndex &&
-        isArray(get(day, "exercises")) &&
-        get(day, "exercises.length") > 0,
-    );
-  }, [dayIndex, plan]);
-
-  const handleBackToDay = React.useCallback(() => {
+  const handleBackToDay = () => {
     clearStoredSummary(planId, dayIndex);
     navigate(`/user/workout/plans/${planId}/days/${dayIndex}`, { replace: true });
-  }, [dayIndex, navigate, planId]);
+  };
 
-  const handleBackToPlan = React.useCallback(() => {
+  const handleBackToPlan = () => {
     clearStoredSummary(planId, dayIndex);
     navigate(`/user/workout/plans/${planId}`, { replace: true });
-  }, [dayIndex, navigate, planId]);
+  };
 
   if (!summary) {
     return (

@@ -3,8 +3,14 @@ import { useNavigate } from "react-router";
 import { LazyMotion, domAnimation, useReducedMotion } from "framer-motion";
 import { applyTheme, resolveTheme } from "@/lib/user-preferences";
 import { trackLaunchEvent } from "@/lib/analytics.js";
+import { getAppModeTheme } from "@/lib/app-mode-theme.js";
 import { getPostAuthRoute } from "@/modules/auth/lib/auth-utils.js";
-import { useAppModeStore, useAuthStore, useLanguageStore } from "@/store";
+import {
+  APP_MODES,
+  useAppModeStore,
+  useAuthStore,
+  useLanguageStore,
+} from "@/store";
 import {
   LANDING_CANONICAL_URL,
   LANDING_OG_IMAGE,
@@ -17,7 +23,6 @@ import {
 } from "@/modules/landing/pages/landing/content.js";
 import {
   FAQSection,
-  FinalCTA,
   Footer,
   Header,
   HeroSection,
@@ -52,14 +57,17 @@ const useLandingTheme = () => {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
-    const storedTheme = resolveTheme(window.localStorage.getItem("theme") || "light");
+    const storedTheme = resolveTheme(
+      window.localStorage.getItem("theme") || "light",
+    );
     document.documentElement.classList.toggle("dark", storedTheme === "dark");
 
     const handleThemeChange = (event) => {
       setTheme(resolveTheme(event.detail));
     };
     window.addEventListener("app-theme-change", handleThemeChange);
-    return () => window.removeEventListener("app-theme-change", handleThemeChange);
+    return () =>
+      window.removeEventListener("app-theme-change", handleThemeChange);
   }, []);
 
   const toggleTheme = () => {
@@ -84,6 +92,8 @@ const LandingPage = () => {
     : "ru";
   const { copy, meta } = useLandingContent(language);
   const { theme, toggleTheme } = useLandingTheme();
+  const activeMode = mode || APP_MODES.FOCUS;
+  const modeTheme = useMemo(() => getAppModeTheme(activeMode), [activeMode]);
   const structuredData = useMemo(
     () => createLandingSchemas(copy, language),
     [copy, language],
@@ -153,6 +163,8 @@ const LandingPage = () => {
     <LazyMotion features={domAnimation}>
       <Header
         copy={copy}
+        mode={activeMode}
+        modeTheme={modeTheme}
         language={language}
         onLanguageChange={setLandingLanguage}
         onStart={startOnboarding}
@@ -162,6 +174,7 @@ const LandingPage = () => {
       />
       <HeroSection
         copy={copy}
+        modeTheme={modeTheme}
         onStart={() => startOnboarding("hero_cta_clicked")}
         onExample={showPlanExample}
       />
@@ -176,13 +189,7 @@ const LandingPage = () => {
           trackLandingEvent("faq_opened", { question })
         }
       />
-      <FinalCTA
-        copy={copy.final}
-        productPreview={copy.productPreview}
-        onStart={() => startOnboarding("final_cta_clicked")}
-        onExample={showPlanExample}
-      />
-      <Footer copy={copy.footer} />
+      <Footer copy={copy.footer} modeTheme={modeTheme} />
       <StickyMobileCTA
         copy={copy.nav}
         onStart={() => startOnboarding("sticky_mobile_cta_clicked")}

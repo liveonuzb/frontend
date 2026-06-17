@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildMealPayloadFromDraft,
   getDraftNutritionPreview,
+  getDraftImageUrl,
+  isDraftReviewNeeded,
 } from "./meal-draft-review-utils.js";
 import {
   addMealIngredient,
+  getIngredientNutritionPreview,
+  normalizeMealNutrition,
   removeMealIngredient,
   updateMealIngredient,
 } from "./meal-ingredients.js";
@@ -168,5 +172,75 @@ describe("meal draft review helpers", () => {
       fat: 9.6,
       fiber: 0,
     });
+  });
+
+  it("accepts kcal aliases when normalizing ingredient nutrition math", () => {
+    expect(
+      normalizeMealNutrition({
+        kcal: "120",
+        protein: "4.5",
+        carbs: "bad",
+        fat: "-2",
+        fiber: null,
+      }),
+    ).toEqual({
+      calories: 120,
+      protein: 4.5,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+    });
+
+    expect(
+      getIngredientNutritionPreview({
+        name: "Yogurt",
+        baseGrams: 100,
+        grams: 50,
+        nutrition: {
+          kcal: 120,
+          protein: 10,
+          carbs: 12,
+          fat: 2,
+          fiber: 1,
+        },
+      }),
+    ).toEqual({
+      calories: 60,
+      protein: 5,
+      carbs: 6,
+      fat: 1,
+      fiber: 0.5,
+    });
+  });
+
+  it("normalizes draft payload labels and flags low confidence items", () => {
+    expect(
+      isDraftReviewNeeded({
+        confidence: 0.49,
+        ingredients: [],
+      }),
+    ).toBe(true);
+
+    expect(
+      buildMealPayloadFromDraft(
+        {
+          title: "   ",
+          grams: "-4",
+          nutrition: { kcal: "180" },
+        },
+        { source: "   " },
+      ),
+    ).toMatchObject({
+      name: "Ovqat",
+      source: "ai",
+      grams: 20,
+      cal: 180,
+    });
+
+    expect(
+      getDraftImageUrl({
+        imageUrl: "  https://cdn.example.com/meal.jpg  ",
+      }),
+    ).toBe("https://cdn.example.com/meal.jpg");
   });
 });

@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "@/components/ui/button.jsx";
 import {
   CameraIcon,
   ChefHatIcon,
@@ -28,7 +27,8 @@ const METHOD_ACTIONS = [
     label: "Kamera",
     description: "Rasm yoki barcode",
     icon: CameraIcon,
-    iconClassName: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    className: "bg-emerald-500/10",
+    iconClassName: "border-emerald-400/45 text-emerald-500",
     handler: "onOpenCamera",
     feature: AI_USAGE_FEATURES.foodPhotoScan,
   },
@@ -37,7 +37,8 @@ const METHOD_ACTIONS = [
     label: "Matn",
     description: "Ovqatni yozish",
     icon: KeyboardIcon,
-    iconClassName: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+    className: "bg-orange-500/10",
+    iconClassName: "border-orange-400/45 text-orange-500",
     handler: "onOpenText",
     feature: AI_USAGE_FEATURES.textMealLog,
     gateRootByAccess: true,
@@ -47,7 +48,8 @@ const METHOD_ACTIONS = [
     label: "Audio",
     description: "Ovozdan draft",
     icon: MicIcon,
-    iconClassName: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    className: "bg-violet-500/10",
+    iconClassName: "border-violet-400/45 text-violet-500",
     handler: "onOpenAudio",
     feature: AI_USAGE_FEATURES.voiceMealLog,
     gateRootByAccess: true,
@@ -57,7 +59,8 @@ const METHOD_ACTIONS = [
     label: "Katalog",
     description: "Aniq qidirish",
     icon: SearchIcon,
-    iconClassName: "bg-primary/10 text-primary",
+    className: "bg-sky-500/10",
+    iconClassName: "border-sky-400/45 text-sky-500",
     handler: "onOpenCatalog",
   },
 ];
@@ -87,52 +90,56 @@ const MethodButton = ({ action, costs, disabled, handlers, wallet }) => {
     disabled || Boolean(action.gateRootByAccess && accessStatus?.isDisabled);
 
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
       {...accessDisabledProps}
       disabled={isDisabled}
       aria-label={action.label}
-      className="h-auto w-full justify-start rounded-2xl border-border/70 p-3 text-left"
+      className={cn(
+        "flex aspect-[1.55] min-h-[104px] w-full flex-col items-center justify-center gap-3 rounded-[1.5rem] p-3 text-center transition-transform active:scale-[0.98]",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        action.className,
+      )}
       onClick={handler}
     >
       <span
         className={cn(
-          "mr-3 grid size-10 shrink-0 place-items-center rounded-full",
+          "grid size-12 place-items-center rounded-full border bg-background/45",
           action.iconClassName,
         )}
       >
-        <Icon className="size-4" />
+        <Icon className="size-5" strokeWidth={2.2} />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-black">{action.label}</span>
-        <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
-          {action.description}
-        </span>
+      <span className="text-lg font-semibold leading-tight tracking-normal text-foreground">
+        {action.label}
       </span>
-    </Button>
+    </button>
   );
 };
 
 const SavedMealsButton = ({ disabled, onOpenSavedMeals }) => (
-  <Button
+  <button
     type="button"
-    variant="outline"
     disabled={disabled}
     aria-label="Saqlangan taomlar"
-    className="h-auto w-full justify-start rounded-2xl border-border/70 p-3 text-left"
+    className={cn(
+      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-background/60 active:bg-background/80",
+      "disabled:cursor-not-allowed disabled:opacity-60",
+    )}
     onClick={onOpenSavedMeals}
   >
-    <span className="mr-3 grid size-10 shrink-0 place-items-center rounded-full bg-orange-500/10 text-orange-700 dark:text-orange-300">
-      <ChefHatIcon className="size-4" />
+    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-background text-orange-500">
+      <ChefHatIcon className="size-5" strokeWidth={2.1} />
     </span>
-    <span className="min-w-0 flex-1">
-      <span className="block text-sm font-black">Saqlangan taomlar</span>
-      <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
+    <span className="min-w-0">
+      <span className="block text-base font-semibold leading-tight text-foreground">
+        Saqlangan taomlar
+      </span>
+      <span className="mt-0.5 block truncate text-xs font-medium leading-tight text-muted-foreground">
         Oldindan saqlangan ovqatlardan qo'shish
       </span>
     </span>
-  </Button>
+  </button>
 );
 
 export default function SmartAddSheet({
@@ -164,7 +171,10 @@ export default function SmartAddSheet({
       </DrawerHeader>
       <NutritionDrawerBody className="flex flex-col pb-6 pt-0">
         <section>
-          <div data-testid="method-action-list" className="space-y-2">
+          <div
+            data-testid="method-action-list"
+            className="grid grid-cols-2 gap-2.5"
+          >
             {map(METHOD_ACTIONS, (action) => (
               <MethodButton
                 key={action.key}
@@ -176,7 +186,10 @@ export default function SmartAddSheet({
               />
             ))}
           </div>
-          <div className="mt-2">
+          <div
+            data-testid="saved-meals-action-list"
+            className="mt-4 overflow-hidden rounded-[1.5rem] bg-muted/45"
+          >
             <SavedMealsButton
               disabled={disabled}
               onOpenSavedMeals={onOpenSavedMeals}

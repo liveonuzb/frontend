@@ -1,11 +1,13 @@
-import filter from "lodash/filter";
-import isArray from "lodash/isArray";
-import isFinite from "lodash/isFinite";
-import map from "lodash/map";
-import reduce from "lodash/reduce";
-import round from "lodash/round";
-import lodashToNumber from "lodash/toNumber";
-import trim from "lodash/trim";
+import {
+  filter,
+  isArray,
+  isFinite,
+  map,
+  reduce,
+  round,
+  toNumber as lodashToNumber,
+  trim,
+} from "lodash";
 
 export const toNumber = (value, fallback = 0) => {
   const normalized = lodashToNumber(value);
@@ -13,7 +15,10 @@ export const toNumber = (value, fallback = 0) => {
 };
 
 export const normalizeMealNutrition = (nutrition = {}) => ({
-  calories: Math.max(0, toNumber(nutrition?.calories ?? nutrition?.cal, 0)),
+  calories: Math.max(
+    0,
+    toNumber(nutrition?.calories ?? nutrition?.cal ?? nutrition?.kcal, 0),
+  ),
   protein: Math.max(0, toNumber(nutrition?.protein, 0)),
   carbs: Math.max(0, toNumber(nutrition?.carbs, 0)),
   fat: Math.max(0, toNumber(nutrition?.fat, 0)),
@@ -108,6 +113,30 @@ export const getMealIngredientsGrams = (ingredients = []) =>
     0,
   );
 
+const normalizeMatchedFoodPayload = (matchedFood = null) => {
+  if (!matchedFood || typeof matchedFood !== "object") {
+    return null;
+  }
+
+  const id = toNumber(matchedFood.id, null);
+  const servingSize = toNumber(matchedFood.servingSize, null);
+  const payload = {
+    ...(id == null ? {} : { id }),
+    name: trim(String(matchedFood.name || "")) || null,
+    ...(servingSize == null ? {} : { servingSize: Math.max(0, servingSize) }),
+    servingUnit: trim(String(matchedFood.servingUnit || "")) || null,
+    imageUrl: trim(String(matchedFood.imageUrl || "")) || null,
+  };
+
+  return id == null &&
+    payload.name == null &&
+    servingSize == null &&
+    payload.servingUnit == null &&
+    payload.imageUrl == null
+    ? null
+    : payload;
+};
+
 export const buildMealIngredientsPayload = (ingredients = []) =>
   map(normalizeMealIngredients(ingredients), (ingredient) => ({
     id: ingredient.id,
@@ -117,7 +146,9 @@ export const buildMealIngredientsPayload = (ingredients = []) =>
     estimatedQuantity: ingredient.estimatedQuantity,
     estimatedUnit: ingredient.estimatedUnit,
     nutritionSource: ingredient.nutritionSource || "ai",
+    matchStatus: ingredient.matchStatus,
     reviewNeeded: ingredient.reviewNeeded,
+    matchedFood: normalizeMatchedFoodPayload(ingredient.matchedFood),
     nutrition: getIngredientNutritionPreview(ingredient),
   }));
 

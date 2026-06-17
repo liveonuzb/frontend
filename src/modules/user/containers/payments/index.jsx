@@ -2,6 +2,7 @@ import React from "react";
 import compact from "lodash/compact";
 import filter from "lodash/filter";
 import find from "lodash/find";
+import get from "lodash/get";
 import join from "lodash/join";
 import map from "lodash/map";
 import toLower from "lodash/toLower";
@@ -47,6 +48,7 @@ import {
   DataGridTable,
 } from "@/components/reui/data-grid";
 import { cn } from "@/lib/utils";
+import { userSurfaceClassName } from "@/modules/user/lib/card-styles";
 
 const SOURCE_FILTER_OPTIONS = ["all", "subscription"];
 const METHOD_FILTER_OPTIONS = [
@@ -654,7 +656,7 @@ const Index = () => {
           tableLayout={{ width: "auto" }}
         >
           <div className="w-full space-y-2.5">
-            <DataGridContainer className="rounded-[28px] border-border/60 bg-card/70 shadow-sm">
+            <DataGridContainer className={cn(userSurfaceClassName, "bg-card/70")}>
               <ScrollArea className="w-full">
                 <DataGridTable />
                 <ScrollBar orientation="horizontal" />

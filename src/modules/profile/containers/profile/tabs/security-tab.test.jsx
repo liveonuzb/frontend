@@ -34,6 +34,14 @@ vi.mock("sonner", () => ({
   },
 }));
 
+vi.mock("@/modules/profile/hooks/use-profile-overlay", () => ({
+  useProfileOverlay: () => ({
+    activeProfileDrawer: null,
+    closeProfileDrawer: vi.fn(),
+    openProfileDrawer: vi.fn(),
+  }),
+}));
+
 const t = (key) => key;
 
 describe("ActiveSessionsSection", () => {

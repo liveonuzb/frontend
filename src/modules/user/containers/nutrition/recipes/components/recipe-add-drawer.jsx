@@ -11,6 +11,7 @@ import find from "lodash/find";
 import get from "lodash/get";
 import map from "lodash/map";
 import range from "lodash/range";
+import size from "lodash/size";
 import toNumber from "lodash/toNumber";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -38,9 +39,25 @@ import {
   MEAL_TYPE_OPTIONS,
 } from "@/modules/user/lib/meal-config.js";
 import { cn } from "@/lib/utils.js";
-import { getRecipeActionId } from "../recipe-ui-utils.js";
+import {
+  formatNumber,
+  getRecipeActionId,
+  getRecipeNutrition,
+} from "../recipe-ui-utils.js";
 
 const getTodayDateKey = () => new Date().toISOString().slice(0, 10);
+
+const getCurrentTimeKey = () => new Date().toTimeString().slice(0, 5);
+
+const buildAddedAt = (date, time) => {
+  if (!date || !time) {
+    return undefined;
+  }
+
+  const addedAt = new Date(`${date}T${time}:00`);
+
+  return Number.isNaN(addedAt.getTime()) ? undefined : addedAt.toISOString();
+};
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -195,6 +212,46 @@ const ServingsStepper = ({ value, onChange }) => (
   </div>
 );
 
+const NutritionPreview = ({ recipe, servings }) => {
+  const nutrition = getRecipeNutrition(recipe, servings);
+  const ingredientCount = size(recipe.ingredients || []);
+
+  return (
+    <div className="rounded-2xl border border-border bg-muted/30 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-foreground">
+          Saqlashdan oldingi nutrition
+        </p>
+        <Badge variant="secondary">{ingredientCount} ingredient snapshot</Badge>
+      </div>
+      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-sm">
+        <div>
+          <p className="font-semibold text-foreground">{nutrition.calories}</p>
+          <p className="text-xs text-muted-foreground">Kkal</p>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">
+            {formatNumber(nutrition.protein)}g
+          </p>
+          <p className="text-xs text-muted-foreground">Protein</p>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">
+            {formatNumber(nutrition.carbs)}g
+          </p>
+          <p className="text-xs text-muted-foreground">Uglevod</p>
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">
+            {formatNumber(nutrition.fat)}g
+          </p>
+          <p className="text-xs text-muted-foreground">Yog'</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const RecipeAddDrawer = ({
   open,
   recipe,
@@ -209,6 +266,7 @@ const RecipeAddDrawer = ({
   });
   const [mode, setMode] = React.useState("log");
   const [date, setDate] = React.useState(getTodayDateKey);
+  const [time, setTime] = React.useState(getCurrentTimeKey);
   const [mealType, setMealType] = React.useState(getDefaultMealType);
   const [planMealType, setPlanMealType] = React.useState(getDefaultMealType);
   const [servings, setServings] = React.useState(1);
@@ -218,48 +276,83 @@ const RecipeAddDrawer = ({
   const [duplicatePayload, setDuplicatePayload] = React.useState(null);
 
   const defaultPlan = activePlan || plans[0] || null;
+  const defaultPlanId = defaultPlan?.id || "";
+  const defaultDayKey = getFirstPlanDayKey(defaultPlan);
+  const resolvedPlanId = planId || defaultPlanId;
   const selectedPlan =
-    find(plans, (plan) => plan.id === planId) || defaultPlan || null;
+    find(plans, (plan) => plan.id === resolvedPlanId) || defaultPlan || null;
+  const dayOptions = buildPlanDayOptions(selectedPlan);
+  const resolvedDayKey = dayKey || getFirstPlanDayKey(selectedPlan);
   const planOptions = map(plans, (plan) => ({
     value: plan.id,
     label: plan.name || "Mening rejam",
   }));
-  const dayOptions = buildPlanDayOptions(selectedPlan);
   const recipeActionId = recipe ? getRecipeActionId(recipe) : "";
-  const defaultPlanId = defaultPlan?.id || "";
-  const defaultDayKey = getFirstPlanDayKey(defaultPlan);
   const mealTypeLabel = MEAL_LABELS[mealType] || mealType;
   const planMealTypeLabel = MEAL_LABELS[planMealType] || planMealType;
   const dayLabel =
-    find(dayOptions, (option) => option.value === dayKey)?.label || "1-kun";
+    find(dayOptions, (option) => option.value === resolvedDayKey)?.label ||
+    "1-kun";
   const planLabel =
-    find(planOptions, (option) => option.value === planId)?.label ||
+    find(planOptions, (option) => option.value === resolvedPlanId)?.label ||
     selectedPlan?.name ||
     "Reja tanlang";
+  const selectedPlanStatus = String(selectedPlan?.status || "").toLowerCase();
+  const planConflictMessage =
+    selectedPlanStatus === "archived"
+      ? "Arxivlangan rejaga retsept qo'shib bo'lmaydi."
+      : selectedPlanStatus === "paused"
+        ? "Pauzadagi rejaga retsept qo'shib bo'lmaydi."
+        : "";
 
   React.useEffect(() => {
     if (!open || !recipeActionId) {
-      return;
+      return undefined;
     }
 
-    setMode("log");
-    setDate(getTodayDateKey());
-    setMealType(getDefaultMealType());
-    setPlanMealType(getDefaultMealType());
-    setServings(Math.max(0.25, toNumber(initialServings) || 1));
-    setPlanId(defaultPlanId);
-    setDayKey(defaultDayKey);
-    setDuplicatePayload(null);
+    let isCurrent = true;
+
+    queueMicrotask(() => {
+      if (!isCurrent) {
+        return;
+      }
+
+      setMode("log");
+      setDate(getTodayDateKey());
+      setTime(getCurrentTimeKey());
+      setMealType(getDefaultMealType());
+      setPlanMealType(getDefaultMealType());
+      setServings(Math.max(0.25, toNumber(initialServings) || 1));
+      setPlanId(defaultPlanId);
+      setDayKey(defaultDayKey);
+      setDuplicatePayload(null);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [defaultDayKey, defaultPlanId, initialServings, open, recipeActionId]);
 
   React.useEffect(() => {
     if (!selectedPlan || !dayOptions.length) {
-      return;
+      return undefined;
     }
 
     if (!find(dayOptions, (option) => option.value === dayKey)) {
-      setDayKey(dayOptions[0].value);
+      let isCurrent = true;
+
+      queueMicrotask(() => {
+        if (isCurrent) {
+          setDayKey(dayOptions[0].value);
+        }
+      });
+
+      return () => {
+        isCurrent = false;
+      };
     }
+
+    return undefined;
   }, [dayKey, dayOptions, selectedPlan]);
 
   if (!recipe) {
@@ -276,50 +369,56 @@ const RecipeAddDrawer = ({
       date,
       mealType,
       servings,
+      addedAt: buildAddedAt(date, time),
       ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
     };
 
     try {
       await addToMealLog(recipeActionId, payload);
-      toast.success("Retsept meal log ga qo'shildi");
+      toast.success("Retsept ovqat jurnaliga qo'shildi");
       closeDrawer();
     } catch (error) {
       const errorPayload = getErrorPayload(error);
 
       if (errorPayload.requiresConfirmation) {
         setDuplicatePayload(payload);
-        toast.error("Bu retsept ushbu meal slotga avval qo'shilgan");
+        toast.error("Bu retsept ushbu ovqat vaqtiga avval qo'shilgan");
         return;
       }
 
-      toast.error("Retseptni meal log ga qo'shib bo'lmadi");
+      toast.error("Retseptni ovqat jurnaliga qo'shib bo'lmadi");
     }
   };
 
   const handlePlanSubmit = async () => {
-    if (!planId) {
-      toast.error("Meal plan tanlang");
+    if (!resolvedPlanId) {
+      toast.error("Reja tanlang");
+      return;
+    }
+
+    if (planConflictMessage) {
+      toast.error(planConflictMessage);
       return;
     }
 
     try {
       await addToMealPlan(recipeActionId, {
-        planId,
-        dayKey,
+        planId: resolvedPlanId,
+        dayKey: resolvedDayKey,
         mealType: planMealType,
         servings,
       });
-      toast.success("Retsept meal plan ga qo'shildi");
+      toast.success("Retsept rejaga qo'shildi");
       closeDrawer();
     } catch {
-      toast.error("Retseptni meal plan ga qo'shib bo'lmadi");
+      toast.error("Retseptni rejaga qo'shib bo'lmadi");
     }
   };
 
   const activePicker =
     picker === "meal"
       ? {
-          title: "Meal turini tanlang",
+          title: "Ovqat turini tanlang",
           description: "Retsept qaysi ovqat vaqtiga qo'shiladi?",
           options: MEAL_TYPE_OPTIONS,
           value: mealType,
@@ -327,18 +426,18 @@ const RecipeAddDrawer = ({
         }
       : picker === "planMeal"
         ? {
-            title: "Meal turini tanlang",
-            description: "Plan ichidagi slotni tanlang.",
+            title: "Ovqat turini tanlang",
+            description: "Rejadagi ovqat vaqtini tanlang.",
             options: MEAL_TYPE_OPTIONS,
             value: planMealType,
             onSelect: setPlanMealType,
           }
         : picker === "plan"
           ? {
-              title: "Meal plan tanlang",
+              title: "Reja tanlang",
               description: "Retsept qo'shiladigan rejani tanlang.",
               options: planOptions,
-              value: planId,
+              value: resolvedPlanId,
               onSelect: setPlanId,
             }
           : picker === "day"
@@ -346,7 +445,7 @@ const RecipeAddDrawer = ({
                 title: "Kunni tanlang",
                 description: "Retsept qaysi kunga qo'shiladi?",
                 options: dayOptions,
-                value: dayKey,
+                value: resolvedDayKey,
                 onSelect: setDayKey,
               }
             : null;
@@ -365,10 +464,10 @@ const RecipeAddDrawer = ({
             <Tabs value={mode} onValueChange={setMode}>
               <TabsList className="grid h-10 w-full grid-cols-2">
                 <TabsTrigger value="log" onClick={() => setMode("log")}>
-                  Meal log
+                  Ovqat jurnali
                 </TabsTrigger>
                 <TabsTrigger value="plan" onClick={() => setMode("plan")}>
-                  Meal plan
+                  Reja
                 </TabsTrigger>
               </TabsList>
 
@@ -388,42 +487,61 @@ const RecipeAddDrawer = ({
                     />
                   </div>
                 </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+                  Vaqt
+                  <Input
+                    type="time"
+                    aria-label="Ovqat vaqti"
+                    value={time}
+                    onChange={(event) => {
+                      setTime(event.target.value);
+                      setDuplicatePayload(null);
+                    }}
+                  />
+                </label>
                 <SelectionButton
-                  label="Meal"
+                  label="Ovqat vaqti"
                   valueLabel={mealTypeLabel}
                   onClick={() => setPicker("meal")}
                 />
                 <ServingsStepper value={servings} onChange={setServings} />
+                <NutritionPreview recipe={recipe} servings={servings} />
                 {duplicatePayload ? (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    Bu retsept shu sana va meal turida bor. Baribir qo'shish
-                    uchun pastdagi tasdiqlash tugmasini bosing.
+                    Bu retsept shu sana va ovqat vaqtida bor. Baribir qo'shish
+                    uchun tasdiqlash tugmasini bosing.
                   </div>
                 ) : null}
               </TabsContent>
 
               <TabsContent className="mt-4 flex flex-col gap-3" value="plan">
                 <SelectionButton
-                  label="Plan"
+                  label="Reja"
                   valueLabel={planLabel}
                   disabled={isLoading || !planOptions.length}
                   onClick={() => setPicker("plan")}
                 />
                 <SelectionButton
-                  label="Kun"
-                  valueLabel={dayLabel}
-                  disabled={!planId || !dayOptions.length}
-                  onClick={() => setPicker("day")}
-                />
+              label="Kun"
+              valueLabel={dayLabel}
+                  disabled={!resolvedPlanId || !dayOptions.length}
+              onClick={() => setPicker("day")}
+            />
                 <SelectionButton
-                  label="Meal"
+                  label="Ovqat vaqti"
                   valueLabel={planMealTypeLabel}
                   onClick={() => setPicker("planMeal")}
                 />
                 <ServingsStepper value={servings} onChange={setServings} />
+                <NutritionPreview recipe={recipe} servings={servings} />
+                {planConflictMessage ? (
+                  <Badge variant="outline" className="justify-center">
+                    {planConflictMessage}
+                  </Badge>
+                ) : null}
                 {!isLoading && !planOptions.length ? (
                   <Badge variant="outline" className="justify-center">
-                    Avval meal plan yarating
+                    Avval reja yarating
                   </Badge>
                 ) : null}
               </TabsContent>
@@ -444,7 +562,11 @@ const RecipeAddDrawer = ({
             ) : (
               <Button
                 type="button"
-                disabled={isSubmitting || (mode === "plan" && !planId)}
+                disabled={
+                  isSubmitting ||
+                  (mode === "plan" &&
+                    (!resolvedPlanId || Boolean(planConflictMessage)))
+                }
                 onClick={() =>
                   mode === "log" ? handleLogSubmit(false) : handlePlanSubmit()
                 }

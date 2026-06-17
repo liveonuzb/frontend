@@ -7,6 +7,7 @@ import { TrendingUpIcon, TrendingDownIcon, MinusIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetQuery } from "@/hooks/api";
 import { getApiResponseData } from "@/lib/api-response";
+import { getUserSurfaceClassName } from "@/modules/user/lib/card-styles";
 
 const METRIC_LABELS = {
   weight: { label: "Vazn", unit: "kg" },
@@ -44,7 +45,7 @@ export default function MeasurementTrendsSection({ days = 90 }) {
         <Skeleton className="h-6 w-40 rounded-lg" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {map([0, 1, 2, 3, 4, 5], (i) => (
-            <Skeleton key={i} className="h-24 rounded-[18px]" />
+            <Skeleton key={i} className="h-24 rounded-2xl" />
           ))}
         </div>
       </div>
@@ -58,7 +59,7 @@ export default function MeasurementTrendsSection({ days = 90 }) {
   if (activeTrends.length === 0) return null;
 
   return (
-    <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
+    <section className={getUserSurfaceClassName("p-5 sm:p-6")}>
       <div className="space-y-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
@@ -84,7 +85,9 @@ export default function MeasurementTrendsSection({ days = 90 }) {
             return (
               <div
                 key={key}
-                className="rounded-[18px] border border-border/60 p-3"
+                className={getUserSurfaceClassName(
+                  "border border-border/50 bg-muted/30 p-3",
+                )}
               >
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   {meta.label}

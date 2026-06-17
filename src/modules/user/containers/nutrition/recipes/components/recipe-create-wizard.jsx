@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useNutritionRecipeBuilderActions } from "@/hooks/app/use-nutrition-recipes.js";
 import { cn } from "@/lib/utils.js";
 import NutritionLayout from "../../ui/nutrition-layout.jsx";
 import RecipeBasicInfoStep from "./recipe-basic-info-step.jsx";
@@ -18,11 +19,15 @@ import RecipeReviewStep from "./recipe-review-step.jsx";
 import NutritionSummary from "./nutrition-summary.jsx";
 import RecipeImage from "./recipe-image.jsx";
 import {
+  buildRecipeCreatePayload,
+  getIngredientNutritionIssues,
+} from "../recipe-builder-payload.js";
+import {
   DEFAULT_WIZARD_INGREDIENTS,
   DEFAULT_WIZARD_STEPS,
-  getIngredientsNutrition,
   toRecipeFromBuilder,
-} from "../recipe-mock-data.js";
+} from "../recipe-runtime-data.js";
+import { getIngredientsNutrition } from "../recipe-ui-utils.js";
 
 const steps = [
   "Asosiy ma'lumotlar",
@@ -148,10 +153,14 @@ const LivePreview = ({ basicInfo, imageUrl, nutrition }) => (
 
 const RecipeCreateWizard = ({ onCancel, onComplete }) => {
   const navigate = useNavigate();
+  const { createMyRecipe, requestPublication, isUpdating } =
+    useNutritionRecipeBuilderActions();
   const [activeStep, setActiveStep] = React.useState(0);
   const [basicInfo, setBasicInfo] = React.useState(initialBasicInfo);
   const [errors, setErrors] = React.useState({});
   const [ingredients, setIngredients] = React.useState(DEFAULT_WIZARD_INGREDIENTS);
+  const [showIngredientIssues, setShowIngredientIssues] =
+    React.useState(false);
   const [instructionSteps, setInstructionSteps] = React.useState(DEFAULT_WIZARD_STEPS);
   const [visibility, setVisibility] = React.useState("public");
   const [publishStatus, setPublishStatus] = React.useState("Qoralama");
@@ -159,6 +168,10 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
   const objectUrlRef = React.useRef("");
   const nutrition = React.useMemo(
     () => getIngredientsNutrition(ingredients),
+    [ingredients],
+  );
+  const ingredientIssues = React.useMemo(
+    () => getIngredientNutritionIssues(ingredients),
     [ingredients],
   );
 
@@ -253,6 +266,9 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
         sodium: 23,
         isRequired: true,
         note: "",
+        nutritionSource: "manual",
+        matchStatus: "manual",
+        reviewNeeded: false,
       },
     ]);
   }, []);
@@ -322,19 +338,88 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
     [basicInfo, imageUrl, ingredients, instructionSteps, visibility],
   );
 
+  const buildPayload = React.useCallback(
+    (recipeStatus) =>
+      buildRecipeCreatePayload({
+        basicInfo,
+        ingredients,
+        steps: instructionSteps,
+        imageUrl,
+        visibility,
+        recipeStatus,
+      }),
+    [basicInfo, imageUrl, ingredients, instructionSteps, visibility],
+  );
+
+  const ensureWizardIsSubmittable = React.useCallback(() => {
+    const nextErrors = validateBasicInfo(basicInfo);
+    setErrors(nextErrors);
+
+    if (size(Object.keys(nextErrors))) {
+      setActiveStep(0);
+      return false;
+    }
+
+    if (ingredientIssues.length) {
+      setShowIngredientIssues(true);
+      setActiveStep(1);
+      return false;
+    }
+
+    return true;
+  }, [basicInfo, ingredientIssues]);
+
+  const submitRecipe = React.useCallback(
+    async ({ submitForReview }) => {
+      if (!ensureWizardIsSubmittable()) {
+        return;
+      }
+
+      const shouldRequestReview = submitForReview && visibility === "public";
+      const recipeStatus = shouldRequestReview ? "review_requested" : "draft";
+      const localRecipe = buildRecipe(shouldRequestReview);
+
+      try {
+        const response = await createMyRecipe(buildPayload(recipeStatus));
+        const savedRecipe = response?.recipe || response || localRecipe;
+        const recipeId =
+          savedRecipe?.catalogFoodId || savedRecipe?.foodId || savedRecipe?.id;
+
+        if (shouldRequestReview && recipeId) {
+          await requestPublication(recipeId);
+        }
+
+        setPublishStatus(
+          shouldRequestReview ? "Admin ko'rib chiqishida" : "Qoralama",
+        );
+        toast.success(
+          shouldRequestReview
+            ? "Retsept admin ko'rib chiqishiga yuborildi"
+            : "Retsept qoralama sifatida saqlandi",
+        );
+        onComplete?.(savedRecipe);
+      } catch {
+        toast.error("Retseptni saqlab bo'lmadi");
+      }
+    },
+    [
+      buildPayload,
+      buildRecipe,
+      createMyRecipe,
+      ensureWizardIsSubmittable,
+      onComplete,
+      requestPublication,
+      visibility,
+    ],
+  );
+
   const handleDraftSave = React.useCallback(() => {
-    const recipe = buildRecipe(false);
-    setPublishStatus("Qoralama");
-    toast.success("Retsept qoralama sifatida saqlandi");
-    onComplete?.(recipe);
-  }, [buildRecipe, onComplete]);
+    void submitRecipe({ submitForReview: false });
+  }, [submitRecipe]);
 
   const handlePublish = React.useCallback(() => {
-    const recipe = buildRecipe(true);
-    setPublishStatus("Nashr etilgan");
-    toast.success("Retsept nashr etildi");
-    onComplete?.(recipe);
-  }, [buildRecipe, onComplete]);
+    void submitRecipe({ submitForReview: true });
+  }, [submitRecipe]);
 
   const handleAddToMealPlan = React.useCallback(() => {
     toast.success("Retsept ovqatlanish rejasiga qo'shildi");
@@ -349,8 +434,13 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
       }
     }
 
+    if (activeStep === 1 && ingredientIssues.length) {
+      setShowIngredientIssues(true);
+      return;
+    }
+
     setActiveStep((current) => Math.min(steps.length - 1, current + 1));
-  }, [activeStep, basicInfo]);
+  }, [activeStep, basicInfo, ingredientIssues]);
 
   const handleBack = React.useCallback(() => {
     setActiveStep((current) => Math.max(0, current - 1));
@@ -371,7 +461,7 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
         ? "Keyingisi"
         : activeStep === 2
           ? "Keyingi: Ko'rib chiqish"
-          : "Nashr etish";
+          : "Admin ko'rib chiqishiga yuborish";
 
   const content =
     activeStep === 0 ? (
@@ -389,6 +479,7 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
     ) : activeStep === 1 ? (
       <RecipeIngredientsStep
         ingredients={ingredients}
+        issues={showIngredientIssues ? ingredientIssues : []}
         onIngredientChange={handleIngredientChange}
         onIngredientAdd={handleIngredientAdd}
         onIngredientDelete={handleIngredientDelete}
@@ -407,6 +498,7 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
         onDraftSave={handleDraftSave}
         onPublish={handlePublish}
         onAddToMealPlan={handleAddToMealPlan}
+        isSubmitting={isUpdating}
       />
     ) : (
       <RecipeReviewStep
@@ -420,6 +512,7 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
         onDraftSave={handleDraftSave}
         onPublish={handlePublish}
         onAddToMealPlan={handleAddToMealPlan}
+        isSubmitting={isUpdating}
       />
     );
 
@@ -459,12 +552,18 @@ const RecipeCreateWizard = ({ onCancel, onComplete }) => {
             </Button>
             <div className="flex flex-col gap-2 sm:flex-row">
               {activeStep > 0 ? (
-                <Button type="button" variant="outline" onClick={handleDraftSave}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isUpdating}
+                  onClick={handleDraftSave}
+                >
                   Saqlash
                 </Button>
               ) : null}
               <Button
                 type="button"
+                disabled={isUpdating}
                 onClick={activeStep === steps.length - 1 ? handlePublish : handleNext}
               >
                 {nextLabel}

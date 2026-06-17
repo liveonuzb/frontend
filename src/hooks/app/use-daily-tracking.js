@@ -20,14 +20,29 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import { trackCampaignConversion } from "@/lib/analytics.js";
-import { FOODS_QUICK_ADD_QUERY_KEY } from "@/hooks/app/use-food-catalog";
-import { getNutritionDashboardQueryKey } from "@/hooks/app/use-nutrition-dashboard";
-import { SAVED_MEALS_QUERY_KEY } from "@/hooks/app/use-saved-meals";
+import {
+  NUTRITION_DAYS_API_ROOT,
+  NUTRITION_HISTORY_API_ROOT,
+  NUTRITION_MEALS_API_ROOT,
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
+import {
+  getNutritionDayQueryKey,
+  getNutritionHistoryQueryKey,
+  invalidateNutritionDashboard,
+  invalidateNutritionMealMutationQueries,
+} from "@/hooks/app/nutrition-query-keys";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import {
   buildMealIngredientsPayload,
   getMealIngredientTotals,
 } from "@/modules/user/containers/nutrition/meal-ingredients.js";
+import {
+  trackNutritionMealDeleted,
+  trackNutritionMealEdited,
+  trackNutritionMealLogged,
+} from "@/modules/user/containers/nutrition/scan-review-analytics.js";
 import {
   createEmptyDayData,
   normalizeDateKey,
@@ -37,6 +52,14 @@ import {
 
 const WORKOUT_OVERVIEW_QUERY_KEY = ["user", "workout", "overview"];
 const WORKOUT_PLAN_QUERY_KEY = ["user", "workout", "plans"];
+const nutritionMealsPath = (path) =>
+  nutritionApiPath(NUTRITION_MEALS_API_ROOT, path);
+const nutritionDaysPath = (path) =>
+  nutritionApiPath(NUTRITION_DAYS_API_ROOT, path);
+const nutritionHistoryPath = (path = "") =>
+  nutritionApiPath(NUTRITION_HISTORY_API_ROOT, path);
+const nutritionTrackingPath = (path) =>
+  nutritionApiPath(NUTRITION_TRACKING_API_ROOT, path);
 
 let duplicateMealConfirmHandler = null;
 
@@ -57,10 +80,7 @@ export { createEmptyDayData, normalizeDateKey, normalizeDayData };
 const getTrackingPayload = (source, fallback = {}) =>
   get(source, "data.data", get(source, "data", fallback));
 
-export const getDailyTrackingQueryKey = (date) => [
-  "daily-tracking",
-  normalizeDateKey(date),
-];
+export const getDailyTrackingQueryKey = getNutritionDayQueryKey;
 
 const setTrackingCache = (queryClient, dayData) => {
   const normalized = normalizeDayData(dayData);
@@ -131,15 +151,65 @@ const buildMealPatchPayload = (mealType, patch = {}) => {
 const normalizeMealDuplicateName = (value) =>
   toLower(trim(String(value || "")));
 
-const isDuplicateMeal = (currentMeals = [], nextMeal = {}) =>
-  some(currentMeals, (meal) => {
-    if (nextMeal.savedMealId && meal.savedMealId === nextMeal.savedMealId) {
-      return true;
-    }
+const getCatalogFoodDuplicateId = (meal = {}) => {
+  const direct = trim(String(meal.catalogFoodId ?? meal.foodId ?? ""));
 
-    return (normalizeMealDuplicateName(meal.name) ===
-      normalizeMealDuplicateName(nextMeal.name) && toNumber(meal.grams ?? 0) === toNumber(nextMeal.grams ?? 0));
-  });
+  if (direct) {
+    return direct;
+  }
+
+  const barcode = trim(String(meal.barcode || ""));
+  const catalogBarcodeMatch = barcode.match(/^food:(.+)$/);
+
+  return catalogBarcodeMatch?.[1] || null;
+};
+
+const normalizeMealDuplicateGrams = (meal = {}) => {
+  const grams = toNumber(
+    meal.grams ?? meal.defaultAmount ?? meal.servingSize,
+    null,
+  );
+
+  if (!Number.isFinite(grams)) {
+    return null;
+  }
+
+  return Math.round(grams * 100) / 100;
+};
+
+export const buildMealDuplicateKey = (meal = {}, mealType = "unknown") => {
+  const normalizedMealType = trim(String(mealType || "unknown"));
+
+  if (meal.savedMealId) {
+    return `saved:${normalizedMealType}:${meal.savedMealId}`;
+  }
+
+  const grams = normalizeMealDuplicateGrams(meal);
+
+  if (grams == null) {
+    return null;
+  }
+
+  const catalogFoodId = getCatalogFoodDuplicateId(meal);
+
+  if (catalogFoodId) {
+    return `catalog:${normalizedMealType}:${catalogFoodId}:${grams}`;
+  }
+
+  const name = normalizeMealDuplicateName(meal.name);
+
+  return name ? `name:${normalizedMealType}:${name}:${grams}` : null;
+};
+
+const isDuplicateMeal = (currentMeals = [], nextMeal = {}, mealType) => {
+  const nextKey = buildMealDuplicateKey(nextMeal, mealType);
+
+  return Boolean(nextKey) &&
+    some(
+      currentMeals,
+      (meal) => buildMealDuplicateKey(meal, mealType) === nextKey,
+    );
+};
 
 const confirmDuplicateMeal = async (context) => {
   if (duplicateMealConfirmHandler) {
@@ -156,7 +226,7 @@ const confirmDuplicateMeal = async (context) => {
 export const useDailyTrackingDay = (date, options = {}) => {
   const dateKey = normalizeDateKey(date);
   const { data, ...query } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
+    url: nutritionDaysPath(dateKey),
     queryProps: {
       queryKey: getDailyTrackingQueryKey(dateKey),
       enabled: options.enabled ?? true,
@@ -185,16 +255,28 @@ export const useDailyTrackingHistory = (params = {}) => {
         params.mealType && params.mealType !== "all"
           ? params.mealType
           : undefined,
+      source:
+        params.source && params.source !== "all" ? params.source : undefined,
       q: trim(params.q) || undefined,
+      page: params.page || undefined,
+      limit: params.limit || undefined,
     }),
-    [params.endDate, params.mealType, params.q, params.startDate],
+    [
+      params.endDate,
+      params.limit,
+      params.mealType,
+      params.page,
+      params.q,
+      params.source,
+      params.startDate,
+    ],
   );
 
   const { data, ...query } = useGetQuery({
-    url: "/daily-tracking/history",
+    url: nutritionHistoryPath(),
     params: queryParams,
     queryProps: {
-      queryKey: ["daily-tracking", "history", queryParams],
+      queryKey: getNutritionHistoryQueryKey(queryParams),
       enabled: params.enabled ?? true,
     },
   });
@@ -231,9 +313,7 @@ export const useDailyTrackingActions = () => {
     (response) => {
       const dayData = getTrackingPayload(response);
       const normalized = setTrackingCache(queryClient, dayData);
-      void queryClient.invalidateQueries({
-        queryKey: getNutritionDashboardQueryKey(normalized.date),
-      });
+      void invalidateNutritionDashboard(queryClient, normalized.date);
       return normalized;
     },
     [queryClient],
@@ -258,7 +338,7 @@ export const useDailyTrackingActions = () => {
     async (date = getTodayKey(), amountMl = 250) => {
       const dateKey = normalizeDateKey(date);
       const response = await postMutation.mutateAsync({
-        url: `/daily-tracking/${dateKey}/water`,
+        url: nutritionTrackingPath(`${dateKey}/water`),
         attributes: { amountMl },
       });
       const dayData = syncResponse(response);
@@ -280,7 +360,7 @@ export const useDailyTrackingActions = () => {
       }
 
       const response = await deleteMutation.mutateAsync({
-        url: `/daily-tracking/${dateKey}/water/${entry.id}`,
+        url: nutritionTrackingPath(`${dateKey}/water/${entry.id}`),
       });
       return syncResponse(response);
     },
@@ -320,12 +400,12 @@ export const useDailyTrackingActions = () => {
       const entriesToRemove = slice(dayData.waterLog, safeCount).reverse();
       for (const entry of entriesToRemove) {
         await deleteMutation.mutateAsync({
-          url: `/daily-tracking/${dateKey}/water/${entry.id}`,
+          url: nutritionTrackingPath(`${dateKey}/water/${entry.id}`),
         });
       }
 
       const refreshed = await putMutation.mutateAsync({
-        url: `/daily-tracking/${dateKey}`,
+        url: nutritionDaysPath(dateKey),
         attributes: {
           steps: dayData.steps,
           workoutMinutes: dayData.workoutMinutes,
@@ -357,7 +437,11 @@ export const useDailyTrackingActions = () => {
       });
 
       if (
-        isDuplicateMeal(previousDayData.meals?.[mealType] || [], optimisticMeal)
+        isDuplicateMeal(
+          previousDayData.meals?.[mealType] || [],
+          optimisticMeal,
+          mealType,
+        )
       ) {
         const shouldContinue = await confirmDuplicateMeal({
           dateKey,
@@ -380,24 +464,30 @@ export const useDailyTrackingActions = () => {
 
       try {
         const response = await postMutation.mutateAsync({
-          url: `/daily-tracking/${dateKey}/meals`,
-          attributes: buildMealPayload(mealType, food),
+          url: nutritionMealsPath(),
+          attributes: {
+            date: dateKey,
+            ...buildMealPayload(mealType, food),
+          },
         });
         const dayData = syncResponse(response);
-        const invalidations = [
-          queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
-          syncGamificationState(),
-        ];
-        if (food?.savedMealId) {
-          invalidations.push(
-            queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
-          );
-        }
-        await Promise.all(invalidations);
+        await Promise.all([
+          invalidateNutritionMealMutationQueries(queryClient, {
+            date: dateKey,
+            touchesSavedMeals: Boolean(food?.savedMealId),
+          }),
+        ]);
         void trackCampaignConversion("meal_log", {
           date: dateKey,
           mealType,
           source: food?.source ?? null,
+        });
+        void trackNutritionMealLogged({
+          date: dateKey,
+          mealType,
+          source: food?.source ?? null,
+          savedMealId: food?.savedMealId ?? null,
+          hasIngredientSnapshot: Boolean(food?.ingredients?.length),
         });
         return dayData;
       } catch (error) {
@@ -406,7 +496,7 @@ export const useDailyTrackingActions = () => {
         throw error;
       }
     },
-    [postMutation, queryClient, syncGamificationState, syncResponse],
+    [postMutation, queryClient, syncResponse],
   );
 
   const addMealsBatch = React.useCallback(
@@ -419,29 +509,34 @@ export const useDailyTrackingActions = () => {
       }
 
       const response = await postMutation.mutateAsync({
-        url: `/daily-tracking/${dateKey}/meals/batch`,
-        attributes: { items: payloadItems },
+        url: nutritionMealsPath("batch"),
+        attributes: { date: dateKey, items: payloadItems },
       });
       const dayData = syncResponse(response);
-      const invalidations = [
-        queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY }),
-        syncGamificationState(),
-      ];
-
-      if (some(payloadItems, (item) => item.savedMealId)) {
-        invalidations.push(
-          queryClient.invalidateQueries({ queryKey: SAVED_MEALS_QUERY_KEY }),
-        );
-      }
-
-      await Promise.all(invalidations);
+      await Promise.all([
+        invalidateNutritionMealMutationQueries(queryClient, {
+          date: dateKey,
+          touchesSavedMeals: some(payloadItems, (item) => item.savedMealId),
+        }),
+      ]);
       void trackCampaignConversion("meal_log", {
         date: dateKey,
         mealCount: payloadItems.length,
       });
+      void trackNutritionMealLogged({
+        date: dateKey,
+        mealType:
+          payloadItems.length === 1 ? payloadItems[0].mealType : "batch",
+        source: "batch",
+        itemCount: payloadItems.length,
+        hasSavedMeal: some(payloadItems, (item) => Boolean(item.savedMealId)),
+        hasIngredientSnapshot: some(payloadItems, (item) =>
+          Boolean(item.ingredients?.length),
+        ),
+      });
       return dayData;
     },
-    [postMutation, queryClient, syncGamificationState, syncResponse],
+    [postMutation, queryClient, syncResponse],
   );
 
   const copyMeals = React.useCallback(
@@ -452,21 +547,22 @@ export const useDailyTrackingActions = () => {
       }
 
       const response = await postMutation.mutateAsync({
-        url: "/daily-tracking/copy",
-        attributes: {},
-        config: {
-          params: {
-            from: normalizeDateKey(from),
-            to: targetDateKey,
-            ...(mealType ? { mealType } : {}),
-          },
+        url: nutritionMealsPath("copy"),
+        attributes: {
+          from: normalizeDateKey(from),
+          to: targetDateKey,
+          ...(mealType ? { mealType } : {}),
         },
       });
       const dayData = syncResponse(response);
-      await syncGamificationState();
+      await Promise.all([
+        invalidateNutritionMealMutationQueries(queryClient, {
+          date: targetDateKey,
+        }),
+      ]);
       return dayData;
     },
-    [postMutation, queryClient, syncGamificationState, syncResponse],
+    [postMutation, queryClient, syncResponse],
   );
 
   const removeMeal = React.useCallback(
@@ -493,10 +589,17 @@ export const useDailyTrackingActions = () => {
 
       try {
         const response = await deleteMutation.mutateAsync({
-          url: `/daily-tracking/${dateKey}/meals/${foodId}`,
+          url: nutritionMealsPath(foodId),
+          config: { params: { date: dateKey } },
         });
         const dayData = syncResponse(response);
-        await queryClient.invalidateQueries({ queryKey: FOODS_QUICK_ADD_QUERY_KEY });
+        await invalidateNutritionMealMutationQueries(queryClient, {
+          date: dateKey,
+        });
+        void trackNutritionMealDeleted({
+          date: dateKey,
+          mealType,
+        });
         return dayData;
       } catch (error) {
         queryClient.setQueryData(queryKey, previousQueryData);
@@ -513,11 +616,27 @@ export const useDailyTrackingActions = () => {
         return getCachedDayData(queryClient, date);
       }
 
+      const dateKey = normalizeDateKey(date);
       const response = await patchMutation.mutateAsync({
-        url: `/daily-tracking/${normalizeDateKey(date)}/meals/${foodId}`,
-        attributes: buildMealPatchPayload(mealType, patch),
+        url: nutritionMealsPath(foodId),
+        attributes: {
+          date: dateKey,
+          ...buildMealPatchPayload(mealType, patch),
+        },
       });
-      return syncResponse(response);
+      const dayData = syncResponse(response);
+      await invalidateNutritionMealMutationQueries(queryClient, {
+        date: dateKey,
+        touchesSavedMeals: patch?.savedMealId !== undefined,
+      });
+      void trackNutritionMealEdited({
+        date: dateKey,
+        mealType,
+        hasSavedMeal: patch?.savedMealId !== undefined,
+        hasIngredientSnapshot: patch?.ingredients !== undefined,
+        changedFields: Object.keys(patch || {}),
+      });
+      return dayData;
     },
     [patchMutation, queryClient, syncResponse],
   );
@@ -547,7 +666,7 @@ export const useDailyTrackingActions = () => {
   const updateSummary = React.useCallback(
     async (date = getTodayKey(), patch) => {
       const response = await putMutation.mutateAsync({
-        url: `/daily-tracking/${normalizeDateKey(date)}`,
+        url: nutritionDaysPath(normalizeDateKey(date)),
         attributes: patch,
       });
       const dayData = syncResponse(response);

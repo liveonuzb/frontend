@@ -1,23 +1,35 @@
 import React from "react";
-import get from "lodash/get";
-import isArray from "lodash/isArray";
-import toNumber from "lodash/toNumber";
+import {
+  filter,
+  get,
+  isArray,
+  isFinite,
+  isNil,
+  isPlainObject,
+  map,
+  toLower,
+  toNumber,
+  trim,
+} from "lodash";
 import { useGetQuery } from "@/hooks/api";
 import { normalizeDateKey } from "@/modules/user/lib/nutrition-normalizers";
+import {
+  NUTRITION_DASHBOARD_QUERY_KEY,
+  getNutritionDashboardQueryKey,
+} from "@/hooks/app/nutrition-query-keys";
 
-export const NUTRITION_DASHBOARD_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "dashboard",
-];
-
-export const getNutritionDashboardQueryKey = (date) => [
-  ...NUTRITION_DASHBOARD_QUERY_KEY,
-  normalizeDateKey(date),
-];
+export { NUTRITION_DASHBOARD_QUERY_KEY, getNutritionDashboardQueryKey };
 
 const defaultDashboard = {
   date: normalizeDateKey(),
+  timezone: "Asia/Tashkent",
+  goals: {
+    calories: 2200,
+    protein: 150,
+    carbs: 250,
+    fat: 70,
+    waterMl: 2500,
+  },
   calories: {
     current: 0,
     target: 2200,
@@ -53,14 +65,21 @@ const defaultDashboard = {
     bestDays: 0,
   },
   quickActions: [],
+  blockers: {
+    items: [],
+  },
 };
 
 const resolvePayload = (response, fallback = defaultDashboard) =>
   get(response, "data.data", get(response, "data", fallback));
 
 const toFiniteNumber = (value, fallback = 0) => {
+  if (isNil(value) || (typeof value === "string" && trim(value) === "")) {
+    return fallback;
+  }
+
   const numeric = toNumber(value);
-  return Number.isFinite(numeric) ? numeric : fallback;
+  return isFinite(numeric) ? Math.max(0, Math.round(numeric)) : fallback;
 };
 
 const normalizeProgress = (value = {}, fallback = {}) => ({
@@ -74,11 +93,91 @@ const normalizeMealTypeSummary = (value = {}) => ({
   calories: toFiniteNumber(value.calories, 0),
 });
 
+const normalizeFeedbackItem = (item) => {
+  if (!isPlainObject(item) || isNil(item.id)) {
+    return null;
+  }
+
+  return {
+    ...item,
+    id: String(item.id),
+    metric: String(item.metric ?? ""),
+    severity: item.severity === "warning" ? "warning" : "info",
+    actual: toFiniteNumber(item.actual, 0),
+    ...(isNil(item.target) ? {} : { target: toFiniteNumber(item.target, 0) }),
+  };
+};
+
+const normalizeQuickAction = (item) => {
+  if (!isPlainObject(item) || isNil(item.id)) {
+    return null;
+  }
+
+  const enabledValue =
+    typeof item.enabled === "string" ? toLower(trim(item.enabled)) : item.enabled;
+  const enabled =
+    enabledValue === false || enabledValue === "false" || enabledValue === "0"
+      ? false
+      : true;
+
+  return {
+    id: String(item.id),
+    label: String(item.label ?? item.id),
+    target: String(item.target ?? ""),
+    enabled,
+  };
+};
+
+const normalizeGoals = (value = {}) => ({
+  calories: toFiniteNumber(
+    value.calories,
+    defaultDashboard.goals.calories,
+  ),
+  protein: toFiniteNumber(value.protein, defaultDashboard.goals.protein),
+  carbs: toFiniteNumber(value.carbs, defaultDashboard.goals.carbs),
+  fat: toFiniteNumber(value.fat, defaultDashboard.goals.fat),
+  waterMl: toFiniteNumber(value.waterMl, defaultDashboard.goals.waterMl),
+});
+
+const normalizeBlockerItem = (item) => {
+  if (!isPlainObject(item) || isNil(item.id)) {
+    return null;
+  }
+
+  const action = isPlainObject(item.action)
+    ? {
+        id: String(item.action.id ?? ""),
+        label: String(item.action.label ?? ""),
+        target: String(item.action.target ?? ""),
+      }
+    : undefined;
+
+  return {
+    id: String(item.id),
+    type: String(item.type ?? ""),
+    severity: item.severity === "warning" ? "warning" : "info",
+    title: String(item.title ?? ""),
+    message: String(item.message ?? ""),
+    ...(action ? { action } : {}),
+  };
+};
+
 export const normalizeNutritionDashboard = (payload = {}) => {
-  const source = payload && typeof payload === "object" ? payload : {};
+  const source = isPlainObject(payload) ? payload : {};
+  const feedbackItems = isArray(get(source, "feedback.items"))
+    ? filter(map(source.feedback.items, normalizeFeedbackItem), Boolean)
+    : [];
+  const quickActions = isArray(source.quickActions)
+    ? filter(map(source.quickActions, normalizeQuickAction), Boolean)
+    : [];
+  const blockers = isArray(get(source, "blockers.items"))
+    ? filter(map(source.blockers.items, normalizeBlockerItem), Boolean)
+    : [];
 
   return {
     date: normalizeDateKey(source.date ?? defaultDashboard.date),
+    timezone: String(source.timezone ?? defaultDashboard.timezone),
+    goals: normalizeGoals(source.goals),
     calories: {
       ...normalizeProgress(source.calories, defaultDashboard.calories),
       remaining: toFiniteNumber(
@@ -124,22 +223,25 @@ export const normalizeNutritionDashboard = (payload = {}) => {
         snack: normalizeMealTypeSummary(source.meals?.byType?.snack),
       },
     },
-    activePlan: source.activePlan ?? null,
+    activePlan: isPlainObject(source.activePlan) ? source.activePlan : null,
     feedback: {
-      items: isArray(source.feedback?.items) ? source.feedback.items : [],
+      items: feedbackItems,
     },
     streak: {
       currentDays: toFiniteNumber(source.streak?.currentDays, 0),
       bestDays: toFiniteNumber(source.streak?.bestDays, 0),
     },
-    quickActions: isArray(source.quickActions) ? source.quickActions : [],
+    quickActions,
+    blockers: {
+      items: blockers,
+    },
   };
 };
 
 export const useNutritionDashboard = (date, options = {}) => {
   const dateKey = normalizeDateKey(date);
   const { data, ...query } = useGetQuery({
-    url: "/user/nutrition/dashboard",
+    url: "/user/nutrition/overview",
     params: {
       date: dateKey,
     },

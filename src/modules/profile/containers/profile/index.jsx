@@ -1,17 +1,20 @@
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import get from "lodash/get";
-import map from "lodash/map";
-import split from "lodash/split";
-import join from "lodash/join";
-import find from "lodash/find";
-import toUpper from "lodash/toUpper";
-import filter from "lodash/filter";
-import lodashValues from "lodash/values";
-import includes from "lodash/includes";
-import isArray from "lodash/isArray";
-import keys from "lodash/keys";
-import trim from "lodash/trim";
+import {
+  filter,
+  find,
+  get,
+  includes,
+  isArray,
+  join,
+  keys,
+  map,
+  split,
+  take,
+  toUpper,
+  trim,
+  values as lodashValues,
+} from "lodash";
 import {
   CheckIcon,
   ChevronRightIcon,
@@ -41,7 +44,6 @@ import {
 import ModeDrawer from "@/components/mode-drawer";
 import ThemeDrawer from "@/components/theme-drawer";
 import { useTheme } from "@/components/theme-toggle";
-import OnboardingHealthReportCard from "@/components/onboarding-health-report-card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -53,14 +55,17 @@ import {
   normalizeProfileOverlayTab,
   isProfileNestedDrawerTab,
 } from "@/modules/profile/lib/profile-tab-registry";
-import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
-import { getUserOnboardingReportPath } from "@/lib/app-paths";
 import useAppLanguages from "@/hooks/app/use-app-languages";
 import { useLanguageStore } from "@/store";
 import { ROLE_CONFIG } from "@/components/role-switcher";
 import useProfileSettings, {
   getRequestErrorMessage,
 } from "@/hooks/app/use-profile-settings";
+import {
+  getUserCardClassName,
+  getUserInteractiveCardClassName,
+  userCardScopeClassName,
+} from "@/modules/user/lib/card-styles";
 import AccountDangerZone from "./account-danger-zone";
 import { NotificationSettingsDrawer } from "./tabs/notifications-tab";
 import { getProfileTabs } from "./profile-tabs";
@@ -75,7 +80,7 @@ const FALLBACK_LANGUAGES = [
 const SETTINGS_GROUPS = [
   ["general", "health", "notifications"],
   ["privacy", "security"],
-  ["premium", "referral"],
+  ["friends", "referral"],
 ];
 const EMPTY_PROFILE_SETTINGS = {};
 
@@ -89,9 +94,9 @@ const getProfileIdentity = (user) => {
 
   const initials = toUpper(
     join(
-      map(split(displayName, " "), (part) => get(part, "[0]", "")),
+      take(map(split(displayName, " "), (part) => get(part, "[0]", "")), 2),
       "",
-    ).slice(0, 2),
+    ),
   );
 
   return { displayName, initials };
@@ -173,7 +178,20 @@ const getTabConfig = (tabId, user, t) => {
 };
 
 const InlineNotificationsItem = ({ tab, value }) => {
-  const [open, setOpen] = React.useState(false);
+  const { activeProfileDrawer, openProfileDrawer, closeProfileDrawer } =
+    useProfileOverlay();
+  const open = activeProfileDrawer === "notifications";
+  const handleOpenChange = React.useCallback(
+    (nextOpen) => {
+      if (nextOpen) {
+        openProfileDrawer("notifications", PROFILE_OVERVIEW_TAB);
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
 
   return (
     <>
@@ -181,10 +199,13 @@ const InlineNotificationsItem = ({ tab, value }) => {
         icon={tab.icon}
         label={tab.label}
         value={value}
-        onClick={() => setOpen(true)}
+        onClick={() => openProfileDrawer("notifications", PROFILE_OVERVIEW_TAB)}
       />
       {open ? (
-        <NotificationSettingsDrawer open={open} onOpenChange={setOpen} />
+        <NotificationSettingsDrawer
+          open={open}
+          onOpenChange={handleOpenChange}
+        />
       ) : null}
     </>
   );
@@ -194,10 +215,8 @@ const getOverviewValue = (tabId, user, completion, t) => {
   switch (tabId) {
     case "general":
       return getLanguageLabel(user?.settings?.language);
-    case "premium":
-      return user?.premium?.status === "active"
-        ? t("profile.premium.status.active")
-        : t("profile.premium.status.free");
+    case "friends":
+      return t("profile.friends.value", "Do'stlar");
     case "referral":
       return `${completion}%`;
     default:
@@ -216,25 +235,38 @@ const SettingsDivider = () => (
 );
 
 const InlineModeItem = ({ wrap = true }) => {
-  const [modeOpen, setModeOpen] = React.useState(false);
-  const [themeOpen, setThemeOpen] = React.useState(false);
+  const { activeProfileDrawer, openProfileDrawer, closeProfileDrawer } =
+    useProfileOverlay();
+  const modeOpen = activeProfileDrawer === "mode";
+  const themeOpen = activeProfileDrawer === "theme";
   const mode = useAppModeStore((state) => state.mode);
   const { theme } = useTheme();
   const Icon = theme === "dark" ? MoonIcon : SunIcon;
+  const handleDrawerOpenChange = React.useCallback(
+    (drawerId) => (nextOpen) => {
+      if (nextOpen) {
+        openProfileDrawer(drawerId, PROFILE_OVERVIEW_TAB);
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
   const rows = (
     <>
       <SettingsItem
         icon={PaletteIcon}
         label={"Mode"}
         value={MODE_LABELS[mode] ?? "Madagascar"}
-        onClick={() => setModeOpen(true)}
+        onClick={() => openProfileDrawer("mode", PROFILE_OVERVIEW_TAB)}
       />
       <SettingsDivider />
       <SettingsItem
         icon={Icon}
         label="Theme"
         value={theme === "dark" ? "Qorong'u" : "Yorug'"}
-        onClick={() => setThemeOpen(true)}
+        onClick={() => openProfileDrawer("theme", PROFILE_OVERVIEW_TAB)}
       />
     </>
   );
@@ -242,14 +274,20 @@ const InlineModeItem = ({ wrap = true }) => {
   return (
     <>
       {wrap ? (
-        <Card className="overflow-hidden">
+        <Card className={getUserCardClassName("gap-0 overflow-hidden py-0")}>
           <CardContent className="p-0">{rows}</CardContent>
         </Card>
       ) : (
         rows
       )}
-      <ModeDrawer open={modeOpen} onOpenChange={setModeOpen} />
-      <ThemeDrawer open={themeOpen} onOpenChange={setThemeOpen} />
+      <ModeDrawer
+        open={modeOpen}
+        onOpenChange={handleDrawerOpenChange("mode")}
+      />
+      <ThemeDrawer
+        open={themeOpen}
+        onOpenChange={handleDrawerOpenChange("theme")}
+      />
     </>
   );
 };
@@ -263,7 +301,20 @@ const InlineLangItem = ({
 }) => {
   const { t } = useTranslation();
   const { saveGeneralSettings } = useProfileSettings();
-  const [open, setOpen] = React.useState(false);
+  const { activeProfileDrawer, openProfileDrawer, closeProfileDrawer } =
+    useProfileOverlay();
+  const open = activeProfileDrawer === "language";
+  const handleOpenChange = React.useCallback(
+    (nextOpen) => {
+      if (nextOpen) {
+        openProfileDrawer("language", PROFILE_OVERVIEW_TAB);
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
 
   const handleLanguageSelect = React.useCallback(
     async (languageCode) => {
@@ -271,12 +322,12 @@ const InlineLangItem = ({
         setCurrentLanguage(languageCode);
         await saveGeneralSettings({ language: languageCode });
         toast.success(t("profile.language.success"));
-        setOpen(false);
+        closeProfileDrawer();
       } catch (error) {
         toast.error(getRequestErrorMessage(error, t("profile.language.error")));
       }
     },
-    [saveGeneralSettings, setCurrentLanguage, t],
+    [closeProfileDrawer, saveGeneralSettings, setCurrentLanguage, t],
   );
   return (
     <>
@@ -288,11 +339,16 @@ const InlineLangItem = ({
             ? `${resolvedLang.flag} ${resolvedLang.name}`
             : toUpper(currentLang)
         }
-        onClick={() => setOpen(true)}
+        onClick={() => openProfileDrawer("language", PROFILE_OVERVIEW_TAB)}
       />
       {open ? (
-        <Drawer open={open} onOpenChange={setOpen} direction="bottom">
-          <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+        <Drawer open={open} onOpenChange={handleOpenChange} direction="bottom">
+          <DrawerContent
+            className={cn(
+              "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+              userCardScopeClassName,
+            )}
+          >
             <DrawerHeader className="text-left">
               <DrawerTitle>{t("profile.language.drawerTitle")}</DrawerTitle>
               <DrawerDescription>
@@ -312,8 +368,10 @@ const InlineLangItem = ({
                   >
                     <div
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-2xl border p-4",
-                        isSelected && "border-primary bg-primary/5",
+                        getUserInteractiveCardClassName(
+                          "flex items-center justify-between gap-3 p-4",
+                        ),
+                        isSelected && "border border-primary bg-primary/5",
                       )}
                     >
                       <div className="flex min-w-0 items-center gap-3">
@@ -351,7 +409,7 @@ const SettingsGroupCard = ({
   user,
   t,
 }) => (
-  <Card className="overflow-hidden">
+  <Card className={getUserCardClassName("gap-0 overflow-hidden py-0")}>
     <CardContent className="p-0">
       {map(items, (tabId, index) => {
         const tab = getTabConfig(tabId, user, t);
@@ -394,7 +452,7 @@ const ProfileOverviewSettingsCard = ({
   const notificationsTab = find(tabs, (item) => item.id === "notifications");
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={getUserCardClassName("gap-0 overflow-hidden py-0")}>
       <CardContent className="p-0">
         <InlineModeItem wrap={false} />
         {generalTab ? (
@@ -423,6 +481,50 @@ const ProfileOverviewSettingsCard = ({
   );
 };
 
+const ProfilePrivacyBillingCard = ({ completion, onTabChange, user }) => {
+  const { t } = useTranslation();
+  const rows = React.useMemo(
+    () =>
+      filter(
+        map(["privacy", "security"], (tabId) => {
+          const tab = getTabConfig(tabId, user, t);
+          if (!tab) return null;
+
+          return {
+            icon: get(tab, "icon"),
+            id: tabId,
+            label: get(tab, "label"),
+            onClick: () => onTabChange(tabId),
+            value: getOverviewValue(tabId, user, completion, t),
+          };
+        }),
+        Boolean,
+      ),
+    [completion, onTabChange, t, user],
+  );
+
+  return (
+    <Card
+      data-testid="profile-privacy-billing-card"
+      className={getUserCardClassName("gap-0 overflow-hidden py-0")}
+    >
+      <CardContent className="p-0">
+        {map(rows, (row, index) => (
+          <React.Fragment key={row.id}>
+            {index > 0 ? <SettingsDivider /> : null}
+            <SettingsItem
+              icon={row.icon}
+              label={row.label}
+              value={row.value}
+              onClick={row.onClick}
+            />
+          </React.Fragment>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
 const ProfileSectionDrawer = ({ open, tabId, tabs, onOpenChange }) => {
   const tab = React.useMemo(
     () => find(tabs, (item) => item.id === tabId) ?? null,
@@ -440,7 +542,10 @@ const ProfileSectionDrawer = ({ open, tabId, tabs, onOpenChange }) => {
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
       <DrawerContent
         data-profile-section-drawer={tabId}
-        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
       >
         <DrawerHeader className="border-b border-border/50 px-5 pb-3 pt-4 text-left">
           <div className="min-w-0">
@@ -513,11 +618,6 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
     },
     [closeProfile, navigate, setActiveRole],
   );
-  const openHealthReport = React.useCallback(() => {
-    closeProfile?.();
-    navigate(getUserOnboardingReportPath());
-  }, [closeProfile, navigate]);
-
   return (
     <div className="space-y-3">
       <ProfileVitalsCard
@@ -526,14 +626,9 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         initials={initials}
         completion={completion}
         onEditProfile={() => onTabChange("profile")}
-        onOpenPremium={() => onTabChange("premium")}
-        onOpenGoals={() => {
-          closeProfile?.();
-          navigate(getStandaloneProfileTabPath("health") ?? "/user/health");
-        }}
       />
       {availableRoles.length > 1 ? (
-        <Card className={"gap-0"}>
+        <Card className={getUserCardClassName("gap-0 py-0")}>
           <CardHeader className={"py-3"}>
             <CardTitle>{t("common.navUser.accounts")}</CardTitle>
           </CardHeader>
@@ -601,31 +696,22 @@ const EmbeddedSettingsOverview = ({ user, completion, onTabChange }) => {
         settings={settings}
         t={t}
       />
-      {map([["privacy", "security"], ["referral"]], (group, index) => (
-        <SettingsGroupCard
-          key={index}
-          items={group}
-          onTabChange={(tabId) => {
-            onTabChange(tabId);
-          }}
-          user={user}
-          t={t}
-          valueResolver={(tabId) =>
-            getOverviewValue(tabId, user, completion, t)
-          }
-        />
-      ))}
+      <ProfilePrivacyBillingCard
+        completion={completion}
+        onTabChange={onTabChange}
+        user={user}
+      />
+      <SettingsGroupCard
+        items={["friends", "referral"]}
+        onTabChange={(tabId) => {
+          onTabChange(tabId);
+        }}
+        user={user}
+        t={t}
+        valueResolver={(tabId) => getOverviewValue(tabId, user, completion, t)}
+      />
 
       <AccountDangerZone />
-
-      <OnboardingHealthReportCard
-        compact
-        title={t("profile.healthReport.title")}
-        description={t("profile.healthReport.description")}
-        badge={t("profile.healthReport.badge")}
-        actionLabel={t("profile.healthReport.action")}
-        onAction={openHealthReport}
-      />
     </div>
   );
 };
@@ -660,6 +746,11 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
 
   const handleTabChange = React.useCallback(
     (tabId) => {
+      if (tabId === "friends") {
+        navigate("/user/friends");
+        return;
+      }
+
       if (tabId === "referral") {
         navigate("/user/referrals");
         return;
@@ -668,13 +759,9 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
     },
     [navigate, onTabChange],
   );
-  const openHealthReport = React.useCallback(() => {
-    navigate(getUserOnboardingReportPath());
-  }, [navigate]);
-
   return (
     <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
-      <Card className="border-border/60 py-6 shadow-none">
+      <Card className={getUserCardClassName("py-0")}>
         <CardContent className="p-6">
           <GamificationBadges />
         </CardContent>
@@ -690,7 +777,7 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
         />
       ))}
       <InlineModeItem />
-      <Card className="border-border/60 py-6 shadow-none">
+      <Card className={getUserCardClassName("py-0")}>
         <CardContent className="space-y-4 p-6">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -712,14 +799,6 @@ const SettingsSidebar = ({ activeTab, completion, onTabChange, user }) => {
           </div>
         </CardContent>
       </Card>
-      <OnboardingHealthReportCard
-        compact
-        title={t("profile.healthReport.title")}
-        description={t("profile.healthReport.description")}
-        badge={t("profile.healthReport.badge")}
-        actionLabel={t("profile.healthReport.action")}
-        onAction={openHealthReport}
-      />
     </aside>
   );
 };

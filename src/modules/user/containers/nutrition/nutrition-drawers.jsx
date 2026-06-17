@@ -37,14 +37,47 @@ import { mealPlanDaysToKanban } from "@/hooks/app/use-meal-plan";
 
 import filter from "lodash/filter";
 import includes from "lodash/includes";
+import map from "lodash/map";
 import trim from "lodash/trim";
 
 const getDrawerControl = (open, onOpenChange) => ({ open, onOpenChange });
+
+const PLAN_BUDGET_PERIODS = [
+  { id: "daily", label: "Kunlik" },
+  { id: "weekly", label: "Haftalik" },
+  { id: "monthly", label: "Oylik" },
+];
+
+export const getPlanActionImpactCopy = (action) => {
+  if (action === "pause") {
+    return "Faol reja qoralama holatiga o'tadi va start date tozalanadi.";
+  }
+
+  if (action === "duplicate") {
+    return "Reja yangi qoralama sifatida nusxalanadi, hozirgi faol reja o'zgarmaydi.";
+  }
+
+  if (action === "archive") {
+    return "Arxivlangan reja bugungi reja va xaridlar oqimidan olib tashlanadi.";
+  }
+
+  return "";
+};
+
+const PlanActionLabel = ({ action, children }) => (
+  <span className="flex min-w-0 flex-col items-start gap-0.5 text-left">
+    <span>{children}</span>
+    <span className="text-xs font-medium leading-4 text-muted-foreground">
+      {getPlanActionImpactCopy(action)}
+    </span>
+  </span>
+);
 
 export default function NutritionDrawers({
   activeFilterCount,
   addMealAction,
   addMealsBatchAction,
+  actionDrawerInitialNested,
   builderInitialData,
   calorieRange,
   clearNutritionFilters,
@@ -98,6 +131,9 @@ export default function NutritionDrawers({
   pausePlan,
   planInsightsMap,
   planMetaDescription,
+  planMetaBudgetAmount,
+  planMetaBudgetPeriod,
+  planMetaBudgetCurrency,
   planMetaMode,
   planMetaName,
   planMetaShouldOpenBuilder,
@@ -109,6 +145,7 @@ export default function NutritionDrawers({
   setCalorieRange,
   setDuplicateMealPrompt,
   setFilterDateRange,
+  setActionDrawerInitialNested,
   setIsActionDrawerOpen,
   setIsAIOpen,
   setIsBuilderOpen,
@@ -123,6 +160,8 @@ export default function NutritionDrawers({
   setMealSearch,
   setMealTransferContext,
   setPlanMetaDescription,
+  setPlanMetaBudgetAmount,
+  setPlanMetaBudgetPeriod,
   setPlanMetaName,
   setSelectedPlanId,
   setSelectedScanId,
@@ -199,11 +238,21 @@ export default function NutritionDrawers({
         </NutritionDrawerContent>
       </Drawer>
       <ActionDrawer
-        {...getDrawerControl(isActionDrawerOpen, setIsActionDrawerOpen)}
+        {...getDrawerControl(isActionDrawerOpen, (nextOpen) => {
+          setIsActionDrawerOpen(nextOpen);
+          if (!nextOpen) setActionDrawerInitialNested(null);
+        })}
         dateKey={dateKey}
         mealType={selectedMealTypeForAdd}
-        onOpenSavedMeals={() => setIsSavedMealsOpen(true)}
-        onCloseAll={() => setIsActionDrawerOpen(false)}
+        initialNested={actionDrawerInitialNested}
+        onOpenSavedMeals={() => {
+          setActionDrawerInitialNested(null);
+          setIsSavedMealsOpen(true);
+        }}
+        onCloseAll={() => {
+          setActionDrawerInitialNested(null);
+          setIsActionDrawerOpen(false);
+        }}
         disabled={!isOnline}
       />
       <SavedMealsDrawer
@@ -300,12 +349,58 @@ export default function NutritionDrawers({
               autoFocus
             />
             {planMetaMode !== "edit" || planMetaShouldOpenBuilder ? (
-              <Textarea
-                value={planMetaDescription}
-                onChange={(event) => setPlanMetaDescription(event.target.value)}
-                placeholder="Qisqacha izoh yoki maqsadni yozing"
-                rows={4}
-              />
+              <>
+                <Textarea
+                  value={planMetaDescription}
+                  onChange={(event) =>
+                    setPlanMetaDescription(event.target.value)
+                  }
+                  placeholder="Qisqacha izoh yoki maqsadni yozing"
+                  rows={4}
+                />
+                <div className="rounded-xl border bg-muted/20 p-3">
+                  <label
+                    className="mb-2 block text-xs font-bold text-muted-foreground"
+                    htmlFor="nutrition-plan-budget"
+                  >
+                    Reja byudjeti
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="nutrition-plan-budget"
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={planMetaBudgetAmount}
+                      onChange={(event) =>
+                        setPlanMetaBudgetAmount(event.target.value)
+                      }
+                      placeholder="Masalan, 350000"
+                    />
+                    <span className="shrink-0 rounded-lg border bg-background px-3 py-2 text-xs font-black text-muted-foreground">
+                      {planMetaBudgetCurrency || "UZS"}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-1">
+                    {map(PLAN_BUDGET_PERIODS, (period) => (
+                      <Button
+                        key={period.id}
+                        type="button"
+                        size="sm"
+                        variant={
+                          planMetaBudgetPeriod === period.id
+                            ? "default"
+                            : "outline"
+                        }
+                        className="h-8 text-xs"
+                        onClick={() => setPlanMetaBudgetPeriod(period.id)}
+                      >
+                        {period.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
             ) : null}
           </DrawerBody>
           <DrawerFooter>
@@ -338,7 +433,7 @@ export default function NutritionDrawers({
             {currentPlan?.status === "active" && (
               <Button
                 variant="outline"
-                className="w-full h-16 rounded-2xl justify-start items-center px-4 hover:bg-amber-500/5 hover:border-amber-500/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
+                className="min-h-[76px] w-full rounded-2xl justify-start items-center px-4 py-3 hover:bg-amber-500/5 hover:border-amber-500/30 transition-all font-bold text-[15px] text-foreground border-border/50 group"
                 onClick={async () => {
                   try {
                     await pausePlan(currentPlan.id);
@@ -354,7 +449,9 @@ export default function NutritionDrawers({
                 <div className="size-10 rounded-full bg-amber-500/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                   <PauseIcon className="size-5 text-amber-500" />
                 </div>
-                Rejani to'xtatish
+                <PlanActionLabel action="pause">
+                  Rejani to'xtatish
+                </PlanActionLabel>
               </Button>
             )}
             <Button
@@ -379,26 +476,26 @@ export default function NutritionDrawers({
             </Button>
             <Button
               variant="outline"
-              className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
+              className="min-h-[76px] w-full rounded-2xl justify-start items-center px-4 py-3 transition-all font-bold text-[15px] border-border/50 group"
               disabled={isDuplicatingPlan}
               onClick={handleDuplicateCurrentPlan}
             >
               <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                 <CopyIcon className="size-5 text-primary" />
               </div>
-              Nusxalash
+              <PlanActionLabel action="duplicate">Nusxalash</PlanActionLabel>
             </Button>
             {currentPlan?.status !== "archived" ? (
               <Button
                 variant="outline"
-                className="w-full h-16 rounded-2xl justify-start items-center px-4 transition-all font-bold text-[15px] border-border/50 group"
+                className="min-h-[76px] w-full rounded-2xl justify-start items-center px-4 py-3 transition-all font-bold text-[15px] border-border/50 group"
                 disabled={isArchivingPlan}
                 onClick={handleArchiveCurrentPlan}
               >
                 <div className="size-10 rounded-full bg-muted flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
                   <ArchiveIcon className="size-5 text-foreground" />
                 </div>
-                Arxivlash
+                <PlanActionLabel action="archive">Arxivlash</PlanActionLabel>
               </Button>
             ) : null}
             <Button

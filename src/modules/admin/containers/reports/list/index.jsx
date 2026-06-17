@@ -206,7 +206,7 @@ const Index = () => {
           premium: "active",
         });
       } else if (id === "foods") {
-        await startExportJob("/admin/foods/export/jobs");
+        await startExportJob("/admin/nutrition/foods/export/jobs");
       } else if (id === "missing-translations") {
         downloadBlob(await exportMissingTranslationsReport());
       } else if (id === "content-quality") {

@@ -60,7 +60,7 @@ const configureQueryMocks = ({
   measurementsData,
 } = {}) => {
   vi.mocked(useGetQuery).mockImplementation(({ url }) => {
-    if (url === "/daily-tracking/reports/health") {
+    if (url === "/user/nutrition/tracking/reports/health") {
       return {
         data: {
           data:
@@ -93,7 +93,7 @@ const configureQueryMocks = ({
       };
     }
 
-    if (url === "/daily-tracking/water/analytics") {
+    if (url === "/user/nutrition/tracking/water/analytics") {
       return {
         data: {
           data:

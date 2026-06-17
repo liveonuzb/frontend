@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMealPlanPayloadForTest,
+  mealPlanDaysToKanbanForTest,
   normalizeMealPlanForTest,
+  normalizeMealPlanDaysForTest,
   normalizeMealPlanShoppingList,
   normalizeMealPlanTemplateDetailResponseForTest,
   normalizeMealPlanTemplateForTest,
@@ -214,5 +216,95 @@ describe("meal plan payload normalization", () => {
       ],
     });
     expect(payload).not.toHaveProperty("weeklyKanban");
+  });
+});
+
+describe("meal plan day normalization", () => {
+  it("canonicalizes sparse day keys and sorts days without trusting malformed keys", () => {
+    expect(
+      normalizeMealPlanDaysForTest([
+        { dayKey: " day-3 ", meals: [{ id: "day-3-breakfast" }] },
+        { dayNumber: "2.9", columns: [{ id: "day-2-lunch" }] },
+        { dayKey: "bad-key", dayNumber: "-7", meals: "bad" },
+        null,
+      ]),
+    ).toEqual([
+      { dayNumber: 1, dayKey: "day-1", meals: [] },
+      { dayNumber: 2, dayKey: "day-2", meals: [{ id: "day-2-lunch" }] },
+      {
+        dayNumber: 3,
+        dayKey: "day-3",
+        meals: [{ id: "day-3-breakfast" }],
+      },
+      { dayNumber: 4, dayKey: "day-4", meals: [] },
+    ]);
+
+    expect(
+      mealPlanDaysToKanbanForTest({
+        "day-2": [{ id: "day-2-dinner" }],
+        invalid: [{ id: "fallback-day" }],
+      }),
+    ).toEqual({
+      "day-1": [{ id: "fallback-day" }],
+      "day-2": [{ id: "day-2-dinner" }],
+    });
+  });
+});
+
+describe("meal plan shopping list normalization", () => {
+  it("filters malformed rows and clamps shopping list numeric fields", () => {
+    const list = normalizeMealPlanShoppingList({
+      durationDays: "7.9",
+      priceContext: { currency: "UZS" },
+      items: [
+        {
+          name: "Guruch",
+          grams: "-250",
+          pricePer100g: "bad",
+          estimatedCost: "-100",
+          sources: [null, { foodId: 1, foodName: "Osh" }],
+          isChecked: "true",
+        },
+        null,
+      ],
+      unmatchedFoods: [null, { foodId: 99, foodName: "Unknown recipe" }],
+      totals: {
+        estimatedCost: "-1",
+        knownItems: "2.8",
+        unknownItems: "bad",
+      },
+      budget: {
+        amount: "-300000",
+        period: "weekly",
+        targetCost: "bad",
+      },
+      familyBudget: {
+        groupId: "family-1",
+        memberCount: "-1",
+      },
+    });
+
+    expect(list.durationDays).toBe(7);
+    expect(list.items).toEqual([
+      expect.objectContaining({
+        name: "Guruch",
+        grams: 0,
+        pricePer100g: null,
+        estimatedCost: 0,
+        isChecked: true,
+        sources: [{ foodId: 1, foodName: "Osh" }],
+      }),
+    ]);
+    expect(list.unmatchedFoods).toEqual([
+      { foodId: 99, foodName: "Unknown recipe" },
+    ]);
+    expect(list.totals).toEqual({
+      estimatedCost: 0,
+      knownItems: 3,
+      unknownItems: 0,
+      currency: "UZS",
+    });
+    expect(list.budget).toBeNull();
+    expect(list.familyBudget).toBeNull();
   });
 });

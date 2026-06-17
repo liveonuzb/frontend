@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildNutritionScanReviewEventProperties } from "./scan-review-analytics.js";
+import {
+  buildNutritionMealEventProperties,
+  buildNutritionScanReviewEventProperties,
+} from "./scan-review-analytics.js";
 
 describe("Nutrition scan review analytics", () => {
   it("summarizes reviewed AI draft items without storing full food names", () => {
@@ -33,6 +36,29 @@ describe("Nutrition scan review analytics", () => {
       editedItemCount: 1,
       aiEstimatedIngredientCount: 1,
       averageConfidence: 73,
+    });
+  });
+
+  it("builds meal mutation analytics without food names", () => {
+    expect(
+      buildNutritionMealEventProperties({
+        date: "2026-06-04",
+        mealType: "lunch",
+        source: "camera",
+        itemCount: 2,
+        savedMealId: "saved-1",
+        hasIngredientSnapshot: true,
+        changedFields: ["name", "qty", "name"],
+        name: "Palov",
+      }),
+    ).toEqual({
+      date: "2026-06-04",
+      mealType: "lunch",
+      source: "camera",
+      itemCount: 2,
+      hasSavedMeal: true,
+      hasIngredientSnapshot: true,
+      changedFields: ["name", "qty"],
     });
   });
 });

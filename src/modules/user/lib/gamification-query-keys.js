@@ -4,6 +4,14 @@ export const GAMIFICATION_ACHIEVEMENTS_QUERY_KEY = [
   "gamification",
   "achievements",
 ];
+export const GAMIFICATION_ACHIEVEMENT_SUMMARY_QUERY_KEY = [
+  ...GAMIFICATION_ACHIEVEMENTS_QUERY_KEY,
+  "summary",
+];
+export const GAMIFICATION_ACHIEVEMENT_DETAIL_QUERY_KEY = [
+  ...GAMIFICATION_ACHIEVEMENTS_QUERY_KEY,
+  "detail",
+];
 export const GAMIFICATION_ACHIEVEMENT_CATEGORIES_QUERY_KEY = [
   "user",
   "gamification",
@@ -21,6 +29,12 @@ export const invalidateGamificationQueries = async (queryClient) =>
     queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY }),
     queryClient.invalidateQueries({
       queryKey: GAMIFICATION_ACHIEVEMENTS_QUERY_KEY,
+    }),
+    queryClient.invalidateQueries({
+      queryKey: GAMIFICATION_ACHIEVEMENT_SUMMARY_QUERY_KEY,
+    }),
+    queryClient.invalidateQueries({
+      queryKey: GAMIFICATION_ACHIEVEMENT_DETAIL_QUERY_KEY,
     }),
     queryClient.invalidateQueries({
       queryKey: GAMIFICATION_ACHIEVEMENT_CATEGORIES_QUERY_KEY,

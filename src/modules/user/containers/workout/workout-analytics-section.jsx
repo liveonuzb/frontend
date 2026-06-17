@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import map from "lodash/map";
 import { Badge } from "@/components/ui/badge";
 import { Clock3Icon, TrophyIcon } from "lucide-react";
+import { getUserSurfaceClassName } from "@/modules/user/lib/card-styles";
 
 const formatDuration = (minutes, t) => {
   if (!minutes) return t("user.workout.analytics.durationMinutes", { count: 0 });
@@ -38,7 +39,7 @@ export default function WorkoutAnalyticsSection({
   const { t } = useTranslation();
 
   return (
-    <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
+    <section className={getUserSurfaceClassName("p-5 sm:p-6")}>
       <div className="space-y-5">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
@@ -53,7 +54,11 @@ export default function WorkoutAnalyticsSection({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[22px] border border-border/60 p-4">
+          <div
+            className={getUserSurfaceClassName(
+              "border border-border/50 bg-muted/30 p-4",
+            )}
+          >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {t("user.workout.analytics.sevenDays")}
             </p>
@@ -62,7 +67,11 @@ export default function WorkoutAnalyticsSection({
               {t("user.workout.analytics.workoutDays")}
             </p>
           </div>
-          <div className="rounded-[22px] border border-border/60 p-4">
+          <div
+            className={getUserSurfaceClassName(
+              "border border-border/50 bg-muted/30 p-4",
+            )}
+          >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {t("user.workout.analytics.volume")}
             </p>
@@ -73,7 +82,11 @@ export default function WorkoutAnalyticsSection({
               {t("user.workout.analytics.totalTime")}
             </p>
           </div>
-          <div className="rounded-[22px] border border-border/60 p-4">
+          <div
+            className={getUserSurfaceClassName(
+              "border border-border/50 bg-muted/30 p-4",
+            )}
+          >
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               PR
             </p>
@@ -97,7 +110,9 @@ export default function WorkoutAnalyticsSection({
               {map(recentWorkoutDays, (day) => (
                 <div
                   key={day.date}
-                  className="flex items-center justify-between rounded-[18px] border border-border/60 px-4 py-3"
+                  className={getUserSurfaceClassName(
+                    "flex items-center justify-between border border-border/50 bg-card px-4 py-3",
+                  )}
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">
@@ -112,7 +127,11 @@ export default function WorkoutAnalyticsSection({
               ))}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+            <div
+              className={getUserSurfaceClassName(
+                "border border-dashed border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground",
+              )}
+            >
               {t("user.workout.analytics.noSessions")}
             </div>
           )}
@@ -131,7 +150,9 @@ export default function WorkoutAnalyticsSection({
               {map(topPersonalRecords, (record) => (
                 <div
                   key={`${record.exerciseName}-${record.date}`}
-                  className="rounded-[18px] border border-border/60 px-4 py-3"
+                  className={getUserSurfaceClassName(
+                    "border border-border/50 bg-card px-4 py-3",
+                  )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -153,7 +174,11 @@ export default function WorkoutAnalyticsSection({
               ))}
             </div>
           ) : (
-            <div className="rounded-[22px] border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+            <div
+              className={getUserSurfaceClassName(
+                "border border-dashed border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground",
+              )}
+            >
               {t("user.workout.analytics.noPr")}
             </div>
           )}

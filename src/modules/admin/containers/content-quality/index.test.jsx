@@ -2,31 +2,34 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Index, { getIssueActionPath } from "./index.jsx";
+import Index from "./index.jsx";
+import { getIssueActionPath } from "./content-quality-utils.js";
 
 const mockPost = vi.fn();
+const mockGet = vi.fn();
+const mockUseGetQuery = vi.fn(() => ({
+  data: {
+    data: {
+      summary: { totalIssues: 0 },
+      sections: [],
+      activeLanguages: [],
+    },
+  },
+  isLoading: false,
+  isFetching: false,
+  refetch: mockRefetch,
+}));
 const mockRefetch = vi.fn();
 const mockSetBreadcrumbs = vi.fn();
 
 vi.mock("@/hooks/api", () => ({
-  useGetQuery: vi.fn(() => ({
-    data: {
-      data: {
-        summary: { totalIssues: 0 },
-        sections: [],
-        activeLanguages: [],
-      },
-    },
-    isLoading: false,
-    isFetching: false,
-    refetch: mockRefetch,
-  })),
+  useGetQuery: (...args) => mockUseGetQuery(...args),
 }));
 
 vi.mock("@/hooks/api/use-api.js", () => ({
   default: () => ({
     request: {
-      get: vi.fn(),
+      get: mockGet,
       post: mockPost,
     },
   }),
@@ -47,6 +50,8 @@ vi.mock("sonner", () => ({
 
 beforeEach(() => {
   mockPost.mockReset();
+  mockGet.mockReset();
+  mockUseGetQuery.mockClear();
   mockRefetch.mockReset();
   mockSetBreadcrumbs.mockReset();
 });
@@ -68,6 +73,19 @@ describe("content quality issue actions", () => {
         issueId: "template-1",
       }),
     ).toBe("/admin/meal-plans/list");
+  });
+
+  it("prefers explicit backend action paths for exact filters and drawers", () => {
+    expect(
+      getIssueActionPath({
+        sectionKey: "nutrition",
+        groupKey: "foodsWithImpossibleCalories",
+        issueId: 7,
+        action: {
+          path: "/admin/foods/list/edit/7?qualityIssue=macro_warning",
+        },
+      }),
+    ).toBe("/admin/foods/list/edit/7?qualityIssue=macro_warning");
   });
 
   it("routes import preview quality groups back to their import surfaces", () => {
@@ -100,16 +118,26 @@ describe("content quality issue actions", () => {
 
     render(<Index />);
 
+    expect(mockUseGetQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/admin/nutrition/content-quality",
+      }),
+    );
+
     fireEvent.click(
       screen.getByRole("button", { name: /Recipe qayta hisoblash/i }),
     );
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith(
-        "/admin/content-quality/actions/recalculate-recipes",
+        "/admin/nutrition/content-quality/actions/recalculate-recipes",
         {},
       );
     });
+    expect(
+      screen.getByText(/3 ta recipe qayta hisoblandi/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 ta o'tkazildi/i)).toBeInTheDocument();
     expect(mockRefetch).toHaveBeenCalled();
   });
 });

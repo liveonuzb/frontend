@@ -44,6 +44,7 @@ vi.mock("@/hooks/app/use-ai-access", () => ({
 
 import {
   NUTRITION_AI_PANTRY_QUERY_KEY,
+  normalizePantryItem,
   normalizeNutritionAiCards,
   useNutritionAiPantry,
 } from "./use-nutrition-ai.js";
@@ -118,7 +119,7 @@ describe("useNutritionAiPantry", () => {
     const { result } = renderHook(() => useNutritionAiPantry());
 
     expect(mockUseGetQuery).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/pantry",
+      url: "/user/nutrition/ai/pantry",
       queryProps: {
         queryKey: NUTRITION_AI_PANTRY_QUERY_KEY,
         enabled: true,
@@ -135,16 +136,89 @@ describe("useNutritionAiPantry", () => {
     });
 
     expect(mockCreateMutateAsync).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/pantry/items",
+      url: "/user/nutrition/ai/pantry/items",
       attributes: { name: "Tuxum", quantity: 10 },
     });
     expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/pantry/items/pantry-1",
+      url: "/user/nutrition/ai/pantry/items/pantry-1",
       attributes: { notes: "Kam qoldi" },
     });
     expect(mockDeleteMutateAsync).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/pantry/items/pantry-1",
+      url: "/user/nutrition/ai/pantry/items/pantry-1",
     });
+  });
+
+  it("filters malformed pantry rows and normalizes fallback ingredient names", () => {
+    mockUseGetQuery.mockReturnValueOnce({
+      data: {
+        data: {
+          items: [
+            {
+              id: "pantry-ingredient-fallback",
+              name: " ",
+              ingredientId: "8.9",
+              ingredient: { id: 8, name: " Sabzi " },
+              quantity: "2.6",
+              unit: " dona ",
+              grams: "-40",
+              confidence: "1.4",
+              notes: "  qolgan  ",
+            },
+            null,
+            { id: "blank", name: "   " },
+          ],
+        },
+      },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => useNutritionAiPantry());
+
+    expect(result.current.pantryItems).toEqual([
+      expect.objectContaining({
+        id: "pantry-ingredient-fallback",
+        ingredientId: 8,
+        name: "Sabzi",
+        quantity: 2.6,
+        unit: "dona",
+        grams: 0,
+        confidence: 1,
+        notes: "qolgan",
+      }),
+    ]);
+  });
+
+  it("normalizes individual pantry item numeric, date, and text fields", () => {
+    expect(
+      normalizePantryItem({
+        id: 12,
+        ingredientId: "11.8",
+        name: " Guruch ",
+        quantity: "-4",
+        unit: " kg ",
+        grams: "bad",
+        source: " ",
+        confidence: "-0.5",
+        expiresAt: "not-a-date",
+        notes: " ",
+        ingredient: "bad",
+      }),
+    ).toEqual({
+      id: "12",
+      ingredientId: 11,
+      name: "Guruch",
+      quantity: 0,
+      unit: "kg",
+      grams: null,
+      source: "manual",
+      confidence: 0,
+      expiresAt: null,
+      notes: null,
+      ingredient: null,
+    });
+
+    expect(normalizePantryItem(null)).toBeNull();
+    expect(normalizePantryItem({ id: "blank", name: " " })).toBeNull();
   });
 
   it("keeps pantry scan review-only and invalidates AI quota", async () => {
@@ -157,7 +231,7 @@ describe("useNutritionAiPantry", () => {
     });
 
     expect(mockScanMutateAsync).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/pantry/scan",
+      url: "/user/nutrition/ai/pantry/scan",
       attributes: expect.any(FormData),
       config: {
         headers: {
@@ -171,6 +245,45 @@ describe("useNutritionAiPantry", () => {
         { name: "kartoshka", ingredientId: 11, confidence: 0.82 },
       ],
       reviewOnly: true,
+    });
+  });
+
+  it("normalizes pantry scan suggestions before returning review rows", async () => {
+    mockScanMutateAsync.mockResolvedValueOnce({
+      data: {
+        data: {
+          suggestions: [
+            {
+              name: " kartoshka ",
+              ingredientId: "11.8",
+              confidence: "1.2",
+              needsReview: "false",
+            },
+            null,
+            { name: " ", confidence: "bad" },
+          ],
+          reviewOnly: false,
+        },
+      },
+    });
+    const { result } = renderHook(() => useNutritionAiPantry());
+    const file = new File(["image"], "ombor.jpg", { type: "image/jpeg" });
+
+    let scanResult;
+    await act(async () => {
+      scanResult = await result.current.scanPantryImage(file);
+    });
+
+    expect(scanResult).toEqual({
+      suggestions: [
+        {
+          name: "kartoshka",
+          ingredientId: 11,
+          confidence: 1,
+          needsReview: false,
+        },
+      ],
+      reviewOnly: false,
     });
   });
 
@@ -188,7 +301,7 @@ describe("useNutritionAiPantry", () => {
     });
 
     expect(mockRecipeMutateAsync).toHaveBeenCalledWith({
-      url: "/user/nutrition-ai/recipe-assistant",
+      url: "/user/nutrition/ai/recipe-assistant",
       attributes: { foodId: 20 },
     });
     expect(recipe.cards).toEqual([

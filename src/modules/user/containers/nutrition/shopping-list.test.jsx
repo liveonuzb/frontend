@@ -25,11 +25,37 @@ vi.mock("@/hooks/app/use-meal-plan", () => ({
 
 import {
   ShoppingList,
+  buildShoppingListPdfFileName,
+} from "./shopping-list.jsx";
+import {
   buildShoppingList,
   getPlanShoppingDays,
-} from "./shopping-list.jsx";
+} from "./shopping-list-utils.js";
 
 describe("shopping-list duration plans", () => {
+  it("builds stable language-aware PDF filenames from the plan date range", () => {
+    expect(
+      buildShoppingListPdfFileName({
+        plan: {
+          name: "Balanslangan reja",
+          startDate: "2026-05-01T00:00:00.000Z",
+          durationDays: 7,
+        },
+        language: "uz",
+      }),
+    ).toBe("balanslangan-reja-uz-2026-05-01-2026-05-07.pdf");
+
+    expect(
+      buildShoppingListPdfFileName({
+        plan: {
+          name: "",
+          durationDays: 30,
+        },
+        language: "ru",
+      }),
+    ).toBe("haftalik-menyu-ru-day-1-day-30.pdf");
+  });
+
   it("returns an empty list before a plan is loaded", () => {
     expect(buildShoppingList(null)).toEqual([]);
   });
@@ -391,6 +417,106 @@ describe("ShoppingList backend generation", () => {
 
     expect(await screen.findByText("Guruch")).toBeInTheDocument();
     expect(screen.getByText("(1/1)")).toBeInTheDocument();
+    expect(mockGenerateShoppingList).not.toHaveBeenCalled();
+  });
+
+  it("switches between previous saved shopping lists and shows price coverage", async () => {
+    const latestList = {
+      id: "shopping-list-new",
+      planId: "plan-1",
+      priceContext: {
+        regionKey: "tashkent",
+        season: "winter",
+        currency: "UZS",
+      },
+      items: [
+        {
+          id: "item-rice",
+          ingredientId: 1,
+          name: "Guruch",
+          grams: 400,
+          unit: "g",
+          estimatedCost: 12800,
+          currency: "UZS",
+          priceSource: "regional",
+          isChecked: true,
+        },
+        {
+          id: "item-spice",
+          ingredientId: 2,
+          name: "Ziravor",
+          grams: 30,
+          unit: "g",
+          estimatedCost: null,
+          currency: "UZS",
+          priceSource: "unknown",
+          isChecked: false,
+        },
+      ],
+      totals: {
+        estimatedCost: 12800,
+        knownItems: 1,
+        unknownItems: 1,
+        currency: "UZS",
+      },
+    };
+    const previousList = {
+      id: "shopping-list-old",
+      planId: "plan-1",
+      priceContext: {
+        currency: "UZS",
+      },
+      items: [
+        {
+          id: "item-egg",
+          ingredientId: 3,
+          name: "Tuxum",
+          grams: 240,
+          unit: "g",
+          estimatedCost: 9000,
+          currency: "UZS",
+          priceSource: "base",
+          isChecked: false,
+        },
+      ],
+      totals: {
+        estimatedCost: 9000,
+        knownItems: 1,
+        unknownItems: 0,
+        currency: "UZS",
+      },
+    };
+
+    mockUseMealPlanShoppingLists.mockReturnValue({
+      shoppingLists: [latestList, previousList],
+      latestShoppingList: latestList,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+
+    render(
+      <ShoppingList
+        open
+        onOpenChange={vi.fn()}
+        plan={{ id: "plan-1", name: "Balanslangan reja", weeklyKanban: {} }}
+      />,
+    );
+
+    expect(await screen.findByText("Guruch")).toBeInTheDocument();
+    expect(screen.getByText("Toshkent / Qish")).toBeInTheDocument();
+    expect(screen.getByText("1 aniq, 1 noma'lum")).toBeInTheDocument();
+    expect(screen.getByText("Hududiy narx")).toBeInTheDocument();
+    expect(screen.getByText("Narx manbasi noma'lum")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Saqlangan xarid ro'yxati"), {
+      target: { value: "shopping-list-old" },
+    });
+
+    expect(screen.getByText("Tuxum")).toBeInTheDocument();
+    expect(screen.getByText("1 aniq, 0 noma'lum")).toBeInTheDocument();
+    expect(screen.getByText("Bazaviy narx")).toBeInTheDocument();
+    expect(screen.queryByText("Guruch")).not.toBeInTheDocument();
     expect(mockGenerateShoppingList).not.toHaveBeenCalled();
   });
 

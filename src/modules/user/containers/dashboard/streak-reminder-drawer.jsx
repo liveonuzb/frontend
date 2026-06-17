@@ -11,6 +11,10 @@ import {
   DrawerBody,
 } from "@/components/ui/drawer";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { useAuthStore } from "@/store";
 import {
   DASHBOARD_ME_QUERY_KEY,
@@ -67,7 +71,7 @@ export default function StreakReminderDrawer() {
 
   // Today's activity — shared cache slot.
   const { data: dayResponse } = useGetQuery({
-    url: `/daily-tracking/${today}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, today),
     queryProps: {
       queryKey: getDashboardDayQueryKey(today),
       enabled: Boolean(userId),

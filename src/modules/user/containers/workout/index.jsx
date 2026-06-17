@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useParams } from "react-router";
+import { Navigate, Route, useParams } from "react-router";
 import PageLoader from "@/components/page-loader";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import WorkoutShell from "./workout-shell";
 
 const ListPage = lazy(() => import("./list"));
@@ -38,7 +39,7 @@ const DeprecatedRunningDetailRedirect = () => {
 
 const Index = () => {
   return (
-    <Routes>
+    <ProfileAwareRoutes>
       <Route element={<WorkoutShell />}>
         <Route index element={<Navigate to="overview" replace />} />
         <Route
@@ -112,7 +113,7 @@ const Index = () => {
           element={withSuspense(<EditWorkoutLogPage />)}
         />
       </Route>
-    </Routes>
+    </ProfileAwareRoutes>
   );
 };
 

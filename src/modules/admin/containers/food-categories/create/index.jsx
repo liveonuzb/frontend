@@ -68,7 +68,7 @@ const CreateFoodCategory = () => {
 
     try {
       await createMutation.mutateAsync({
-        url: "/admin/food-categories",
+        url: "/admin/nutrition/food-categories",
         attributes: {
           name,
           color: getStoredColorValue(form),

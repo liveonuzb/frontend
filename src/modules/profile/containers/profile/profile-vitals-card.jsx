@@ -1,26 +1,39 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import {
   CreditCardIcon,
   CheckCircle2Icon,
   ChevronRightIcon,
   CrownIcon,
+  FlameIcon,
   HeartPulseIcon,
   HistoryIcon,
   PencilIcon,
   RulerIcon,
   ScaleIcon,
+  TargetIcon,
+  TrophyIcon,
+  TrendingDownIcon,
+  TrendingUpIcon,
   UserIcon,
   WalletCardsIcon,
 } from "lucide-react";
-import get from "lodash/get";
-import map from "lodash/map";
-import toNumber from "lodash/toNumber";
+import {
+  filter,
+  find,
+  get,
+  includes,
+  isArray,
+  map,
+  size,
+  toNumber,
+} from "lodash";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Drawer,
@@ -31,23 +44,91 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { usePutQuery } from "@/hooks/api";
+import { useGetQuery, usePutQuery } from "@/hooks/api";
 import { ME_QUERY_KEY } from "@/hooks/app/use-me";
-import { HEALTH_GOALS_QUERY_KEY } from "@/hooks/app/use-health-goals";
+import useHealthGoals, {
+  HEALTH_GOALS_QUERY_KEY,
+} from "@/hooks/app/use-health-goals";
 import {
   MEASUREMENTS_QUERY_KEY,
   MEASUREMENTS_TRENDS_QUERY_KEY,
 } from "@/hooks/app/use-measurements";
+import { getApiResponseData } from "@/lib/api-response";
+import { calculateGoals } from "@/lib/goal-calculator";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store";
+import { useAuthStore, useGamificationStore } from "@/store";
 import { WeightTicker } from "@/modules/user-onboarding/components/weight-ticker";
+import {
+  PROFILE_OVERVIEW_TAB,
+  useProfileOverlay,
+} from "@/modules/profile/hooks/use-profile-overlay";
+import { XpHistoryContent } from "@/modules/user/containers/xp-history";
+import {
+  getUserAccentCardClassName,
+  getUserCardClassName,
+  getUserInteractiveCardClassName,
+  getUserSurfaceClassName,
+  userCardScopeClassName,
+} from "@/modules/user/lib/card-styles";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Erkak", description: "Erkak profili" },
   { value: "female", label: "Ayol", description: "Ayol profili" },
 ];
 
+const GOAL_OPTIONS = [
+  {
+    value: "lose",
+    label: "Ozish",
+    description: "Kaloriya defitsiti va faolroq kunlik ritm.",
+    icon: TrendingDownIcon,
+    iconClass: "bg-orange-500/10 text-orange-500",
+  },
+  {
+    value: "maintain",
+    label: "Saqlash",
+    description: "Kaloriya, oqsil va tiklanish balansini ushlash.",
+    icon: ScaleIcon,
+    iconClass: "bg-sky-500/10 text-sky-500",
+  },
+  {
+    value: "gain",
+    label: "Massa",
+    description: "Kaloriya va oqsil targetlarini ko'tarish.",
+    icon: TrendingUpIcon,
+    iconClass: "bg-emerald-500/10 text-emerald-500",
+  },
+];
+
+const MACRO_FIELDS = [
+  { key: "calories", label: "Kaloriya", unit: "kcal" },
+  { key: "protein", label: "Oqsil", unit: "g" },
+  { key: "carbs", label: "Carbs", unit: "g" },
+  { key: "fat", label: "Fat", unit: "g" },
+];
+
+const PROFILE_VITAL_DRAWER_IDS = [
+  "xp",
+  "xp-history",
+  "gender",
+  "age",
+  "weight",
+  "height",
+  "goals",
+  "macros",
+];
+
 const XP_WITHDRAW_TARGET = 10000;
+const PROFILE_ACHIEVEMENTS_QUERY_KEY = [
+  "user",
+  "gamification",
+  "achievements",
+  "all",
+];
+const PROFILE_STAT_NUMBER_FORMATTER = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 
 const formatNumber = (value, fallback = "-") => {
   const numeric = toNumber(value);
@@ -66,8 +147,69 @@ const formatCompactNumber = (value) => {
   return Number.isFinite(numeric) ? numeric.toLocaleString("en-US") : "0";
 };
 
+const formatProfileStatNumber = (value) => {
+  const numeric = Math.max(0, toNumber(value) || 0);
+  return PROFILE_STAT_NUMBER_FORMATTER.format(numeric);
+};
+
+const getProfileXp = (user, fallbackXp) => {
+  const userXp = get(user, "xp");
+
+  if (userXp !== undefined && userXp !== null) {
+    return Math.max(0, toNumber(userXp) || 0);
+  }
+
+  return Math.max(0, toNumber(fallbackXp) || 0);
+};
+
+const getProfileStreak = (user, fallbackStreak) => {
+  const streak =
+    get(user, "streak") ??
+    get(user, "currentStreak") ??
+    get(user, "stats.currentStreak") ??
+    get(user, "gamification.streak") ??
+    fallbackStreak;
+
+  return Math.max(0, toNumber(streak) || 0);
+};
+
+const getProfileAchievementCount = (
+  user,
+  fallbackBadges = [],
+  serverAchievementCount = null,
+) => {
+  const directCount =
+    get(user, "achievementCount") ??
+    get(user, "achievementsCount") ??
+    get(user, "stats.achievementCount") ??
+    get(user, "stats.unlockedAchievements") ??
+    get(user, "gamification.achievementCount");
+
+  if (directCount !== undefined && directCount !== null) {
+    return Math.max(0, toNumber(directCount) || 0);
+  }
+
+  if (serverAchievementCount !== undefined && serverAchievementCount !== null) {
+    return Math.max(0, toNumber(serverAchievementCount) || 0);
+  }
+
+  const userBadges =
+    get(user, "earnedBadges") ??
+    get(user, "badges") ??
+    get(user, "achievements");
+
+  if (isArray(userBadges)) {
+    return size(userBadges);
+  }
+
+  return isArray(fallbackBadges) ? size(fallbackBadges) : 0;
+};
+
+const getUnlockedAchievementCount = (achievements) =>
+  isArray(achievements) ? size(filter(achievements, { unlocked: true })) : null;
+
 const getGenderLabel = (value) =>
-  GENDER_OPTIONS.find((item) => item.value === value)?.label ?? "Tanlanmagan";
+  find(GENDER_OPTIONS, (item) => item.value === value)?.label ?? "Tanlanmagan";
 
 const getGoalLabel = (value) => {
   switch (value) {
@@ -105,8 +247,36 @@ const setMeUserCache = (queryClient, nextUser) => {
   });
 };
 
+const buildRecommendedGoalPatch = (goal, onboarding = {}) => ({
+  goal,
+  ...calculateGoals({
+    gender: get(onboarding, "gender"),
+    age: get(onboarding, "age"),
+    heightValue: get(onboarding, "height.value"),
+    currentWeightValue: get(onboarding, "currentWeight.value"),
+    goal,
+    activityLevel: get(onboarding, "activityLevel"),
+    weeklyPace: get(onboarding, "weeklyPace"),
+  }),
+});
+
+const createMacroDraft = (targets = {}) => ({
+  calories: String(toNumber(get(targets, "calories")) || 0),
+  protein: String(toNumber(get(targets, "protein")) || 0),
+  carbs: String(toNumber(get(targets, "carbs")) || 0),
+  fat: String(toNumber(get(targets, "fat")) || 0),
+});
+
+const toMacroPayload = (draft, goal) => ({
+  goal,
+  calories: toNumber(draft.calories) || 0,
+  protein: toNumber(draft.protein) || 0,
+  carbs: toNumber(draft.carbs) || 0,
+  fat: toNumber(draft.fat) || 0,
+});
+
 const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
-  const navigate = useNavigate();
+  const { openProfileDrawer } = useProfileOverlay();
   const currentXp = Math.max(0, toNumber(xp) || 0);
   const progress = Math.min(
     100,
@@ -115,13 +285,17 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
   const remainingXp = Math.max(0, XP_WITHDRAW_TARGET - currentXp);
 
   const handleHistoryClick = () => {
-    onOpenChange(false);
-    navigate("/user/xp-history");
+    openProfileDrawer("xp-history", PROFILE_OVERVIEW_TAB);
   };
 
   return (
     <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <DrawerContent
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
+      >
         <DrawerHeader>
           <DrawerTitle>XP balans</DrawerTitle>
           <DrawerDescription>
@@ -130,7 +304,7 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
         </DrawerHeader>
 
         <DrawerBody className="space-y-4 px-5 pb-5">
-          <div className="overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-primary/15 via-card to-card p-5 shadow-sm">
+          <div className={getUserAccentCardClassName("p-5")}>
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-muted-foreground">
               <WalletCardsIcon className="size-4" />
               <span>Joriy balans</span>
@@ -178,7 +352,9 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
           <button
             type="button"
             onClick={handleHistoryClick}
-            className="flex w-full items-center gap-4 rounded-3xl border border-border/70 bg-card px-5 py-4 text-left transition-colors hover:bg-muted/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className={getUserInteractiveCardClassName(
+              "flex w-full items-center gap-4 px-5 py-4 text-left focus-visible:outline-none",
+            )}
           >
             <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <HistoryIcon className="size-5" />
@@ -197,6 +373,26 @@ const XpBalanceDrawer = ({ open, onOpenChange, xp }) => {
   );
 };
 
+const XpHistoryProfileDrawer = ({ open, onOpenChange }) => (
+  <Drawer direction="bottom" open={open} onOpenChange={onOpenChange}>
+    <DrawerContent
+      data-profile-overview-drawer="xp-history"
+      className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
+    >
+      <DrawerHeader className="border-b border-border/50 px-5 pb-3 pt-4 text-left">
+        <DrawerTitle>XP tarixi</DrawerTitle>
+        <DrawerDescription>
+          Barcha XP ishlagan va sarflagan loglaringiz.
+        </DrawerDescription>
+      </DrawerHeader>
+
+      <DrawerBody className="px-3 pb-5 pt-3">
+        <XpHistoryContent embedded />
+      </DrawerBody>
+    </DrawerContent>
+  </Drawer>
+);
+
 const GenderVitalDrawer = ({
   open,
   onOpenChange,
@@ -207,14 +403,28 @@ const GenderVitalDrawer = ({
   const [draft, setDraft] = React.useState(value || "male");
 
   React.useEffect(() => {
-    if (open) {
-      setDraft(value || "male");
-    }
+    if (!open) return undefined;
+
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (!isCancelled) {
+        setDraft(value || "male");
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [open, value]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <DrawerContent
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
+      >
         <DrawerHeader>
           <DrawerTitle>Jinsi</DrawerTitle>
           <DrawerDescription>Profil jinsini tanlang.</DrawerDescription>
@@ -228,8 +438,10 @@ const GenderVitalDrawer = ({
                 type="button"
                 onClick={() => setDraft(option.value)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left transition-colors hover:border-primary/50",
-                  active && "border-primary bg-primary/10",
+                  getUserInteractiveCardClassName(
+                    "flex w-full items-center gap-3 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-60",
+                  ),
+                  active && "border border-primary bg-primary/10",
                 )}
               >
                 <span
@@ -289,23 +501,37 @@ const NumericVitalDrawer = ({
   const [draft, setDraft] = React.useState(String(value || fallbackValue));
 
   React.useEffect(() => {
-    if (open) {
-      setDraft(String(value || fallbackValue));
-    }
+    if (!open) return undefined;
+
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (!isCancelled) {
+        setDraft(String(value || fallbackValue));
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [fallbackValue, open, value]);
 
   const displayValue = formatNumber(draft, String(fallbackValue));
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <DrawerContent
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
+      >
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
         <DrawerBody className="px-4 pb-4">
           <div
-            className="rounded-3xl border bg-card p-4"
+            className={getUserSurfaceClassName("p-4")}
             data-vaul-no-drag
           >
             <div className="mb-3 text-center">
@@ -352,29 +578,302 @@ const NumericVitalDrawer = ({
   );
 };
 
+const GoalSelectionDrawer = ({
+  open,
+  onOpenChange,
+  value,
+  onSelect,
+  isSaving,
+}) => (
+  <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <DrawerContent
+      className={cn(
+        "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+        userCardScopeClassName,
+      )}
+    >
+      <DrawerHeader>
+        <DrawerTitle>Maqsadni tanlang</DrawerTitle>
+        <DrawerDescription>
+          Tanlangan maqsad bo'yicha kaloriya va macro targetlar tayyorlanadi.
+        </DrawerDescription>
+      </DrawerHeader>
+      <DrawerBody className="space-y-2 px-4 pb-4">
+        {map(GOAL_OPTIONS, (option) => {
+          const active = value === option.value;
+          const Icon = option.icon;
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              disabled={isSaving}
+              onClick={() => onSelect(option.value)}
+              className={cn(
+                getUserInteractiveCardClassName(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-60",
+                ),
+                active && "border border-primary bg-primary/10",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-2xl",
+                  option.iconClass,
+                  active && "bg-primary text-primary-foreground",
+                )}
+              >
+                <Icon className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-bold leading-tight">
+                  {option.label}
+                </span>
+                <span className="mt-0.5 block text-sm text-muted-foreground">
+                  {option.description}
+                </span>
+              </span>
+              {active ? (
+                <CheckCircle2Icon className="size-5 shrink-0 text-primary" />
+              ) : null}
+            </button>
+          );
+        })}
+      </DrawerBody>
+      <DrawerFooter className="pt-0">
+        <p className="text-center text-xs text-muted-foreground">
+          {isSaving
+            ? "Maqsad saqlanmoqda..."
+            : "Tanlangandan so'ng keyingi oynada targetlarni tahrirlaysiz."}
+        </p>
+      </DrawerFooter>
+    </DrawerContent>
+  </Drawer>
+);
+
+const MacroTargetsDrawer = ({
+  open,
+  onOpenChange,
+  targets,
+  goal,
+  onSave,
+  isSaving,
+}) => {
+  const [draft, setDraft] = React.useState(() => createMacroDraft(targets));
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (!isCancelled) {
+        setDraft(createMacroDraft(targets));
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [open, targets]);
+
+  const handleDraftChange = React.useCallback((key, value) => {
+    setDraft((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }, []);
+
+  const handleSave = React.useCallback(() => {
+    onSave(toMacroPayload(draft, goal));
+  }, [draft, goal, onSave]);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
+      >
+        <DrawerHeader>
+          <DrawerTitle>Kaloriya va macro targetlar</DrawerTitle>
+          <DrawerDescription>
+            Kunlik kaloriya, oqsil, carbs va fat qiymatlarini tahrirlang.
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="space-y-3 px-4 pb-4">
+          <div className={getUserSurfaceClassName("p-4")}>
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <TargetIcon className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold">{getGoalLabel(goal)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Bu qiymatlar nutrition targetlarga saqlanadi.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {map(MACRO_FIELDS, (field) => {
+              const inputId = `profile-goal-${field.key}`;
+
+              return (
+                <label
+                  key={field.key}
+                  htmlFor={inputId}
+                  className={getUserSurfaceClassName(
+                    "grid gap-1.5 px-4 py-3",
+                  )}
+                >
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold">{field.label}</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                      {field.unit}
+                    </span>
+                  </span>
+                  <Input
+                    id={inputId}
+                    aria-label={field.label}
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={draft[field.key]}
+                    onChange={(event) =>
+                      handleDraftChange(field.key, event.target.value)
+                    }
+                    className="h-11 rounded-xl border-border/70 text-base font-bold tabular-nums"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </DrawerBody>
+        <DrawerFooter>
+          <Button
+            type="button"
+            className="h-11"
+            disabled={isSaving}
+            onClick={handleSave}
+          >
+            Saqlash
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
 export const ProfileVitalsCard = ({
   user,
   displayName,
   initials,
   completion = 0,
   onEditProfile,
-  onOpenPremium,
-  onOpenGoals,
 }) => {
   const queryClient = useQueryClient();
   const initializeUser = useAuthStore((state) => state.initializeUser);
+  const storeXp = useGamificationStore((state) => state.xp);
+  const storeStreak = useGamificationStore((state) => state.streak);
+  const earnedBadges = useGamificationStore((state) => state.earnedBadges);
   const onboardingMutation = usePutQuery();
   const heightMutation = usePutQuery();
-  const [activeDrawer, setActiveDrawer] = React.useState(null);
+  const { data: achievementsData } = useGetQuery({
+    url: "/user/gamification/achievements",
+    queryProps: {
+      queryKey: PROFILE_ACHIEVEMENTS_QUERY_KEY,
+      enabled: Boolean(user),
+    },
+  });
+  const {
+    goals: healthGoals,
+    saveGoals,
+    isSaving: isSavingHealthGoals,
+    hasServerGoals,
+  } = useHealthGoals();
+  const {
+    activeProfileDrawer,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
+  const routedActiveDrawer = includes(
+    PROFILE_VITAL_DRAWER_IDS,
+    activeProfileDrawer,
+  )
+    ? activeProfileDrawer
+    : null;
+  const [localActiveDrawer, setLocalActiveDrawer] = React.useState(null);
+  const activeDrawer = routedActiveDrawer ?? localActiveDrawer;
+  const [macroTargets, setMacroTargets] = React.useState(null);
+  const [isGoalsSaving, setIsGoalsSaving] = React.useState(false);
+  const setActiveDrawer = React.useCallback(
+    (drawerId) => {
+      if (includes(PROFILE_VITAL_DRAWER_IDS, drawerId)) {
+        openProfileDrawer(drawerId, PROFILE_OVERVIEW_TAB);
+        return;
+      }
 
-  const onboarding = user?.onboarding ?? {};
+      if (routedActiveDrawer) {
+        closeProfileDrawer();
+        return;
+      }
+
+      setLocalActiveDrawer(drawerId);
+    },
+    [closeProfileDrawer, openProfileDrawer, routedActiveDrawer],
+  );
+
+  const onboarding = React.useMemo(
+    () => user?.onboarding ?? {},
+    [user?.onboarding],
+  );
   const gender = get(onboarding, "gender");
   const age = toNumber(get(onboarding, "age")) || 0;
   const currentWeight = toNumber(get(onboarding, "currentWeight.value")) || 0;
   const height = toNumber(get(onboarding, "height.value")) || 0;
-  const goal = get(onboarding, "goal") ?? get(user, "healthGoals.goal");
-  const isPremiumActive = user?.premium?.status === "active";
-  const premiumLabel = isPremiumActive ? "Premium" : null;
+  const onboardingGoal = get(onboarding, "goal") ?? get(user, "healthGoals.goal");
+  const goal =
+    get(macroTargets, "goal") ??
+    (hasServerGoals ? get(healthGoals, "goal") : onboardingGoal) ??
+    get(healthGoals, "goal");
+  const macroDrawerTargets = macroTargets ?? healthGoals;
+  const macroDrawerKey = `${goal}-${get(macroDrawerTargets, "calories")}-${get(
+    macroDrawerTargets,
+    "protein",
+  )}-${get(macroDrawerTargets, "carbs")}-${get(macroDrawerTargets, "fat")}`;
+  const profileXp = getProfileXp(user, storeXp);
+  const achievementsPayload = getApiResponseData(achievementsData, null);
+  const serverAchievementCount = getUnlockedAchievementCount(
+    achievementsPayload,
+  );
+  const profileStats = [
+    {
+      key: "streak",
+      label: "Streak",
+      value: formatProfileStatNumber(getProfileStreak(user, storeStreak)),
+      icon: FlameIcon,
+      iconClass: "text-amber-500",
+    },
+    {
+      key: "xp",
+      label: "XP",
+      value: formatProfileStatNumber(profileXp),
+      icon: CrownIcon,
+      iconClass: "text-sky-500",
+      onClick: () => setActiveDrawer("xp"),
+    },
+    {
+      key: "achievement",
+      label: "Achievement",
+      value: formatProfileStatNumber(
+        getProfileAchievementCount(user, earnedBadges, serverAchievementCount),
+      ),
+      icon: TrophyIcon,
+      iconClass: "text-emerald-500",
+    },
+  ];
   const completionPercent = Math.max(
     0,
     Math.min(100, Math.round(toNumber(completion) || 0)),
@@ -446,6 +945,66 @@ export const ProfileVitalsCard = ({
     [heightMutation, invalidateVitals, syncLocalOnboarding],
   );
 
+  const handleGoalSelect = React.useCallback(
+    async (nextGoal) => {
+      const recommendedPatch = buildRecommendedGoalPatch(nextGoal, onboarding);
+
+      setIsGoalsSaving(true);
+
+      try {
+        const savedGoals = await saveGoals(recommendedPatch);
+        const nextTargets = {
+          ...healthGoals,
+          ...recommendedPatch,
+          ...(savedGoals ?? {}),
+        };
+
+        setMacroTargets(nextTargets);
+        syncLocalOnboarding({ goal: get(nextTargets, "goal") ?? nextGoal });
+        toast.success("Maqsad yangilandi");
+        setActiveDrawer("macros");
+      } catch {
+        toast.error("Maqsadni saqlab bo'lmadi");
+      } finally {
+        setIsGoalsSaving(false);
+      }
+    },
+    [healthGoals, onboarding, saveGoals, syncLocalOnboarding],
+  );
+
+  const handleMacroTargetsSave = React.useCallback(
+    async (patch) => {
+      const nextPatch = {
+        ...patch,
+        goal: patch.goal ?? goal,
+      };
+
+      setIsGoalsSaving(true);
+
+      try {
+        const savedGoals = await saveGoals(nextPatch);
+        const nextTargets = {
+          ...healthGoals,
+          ...(macroTargets ?? {}),
+          ...nextPatch,
+          ...(savedGoals ?? {}),
+        };
+
+        setMacroTargets(nextTargets);
+        syncLocalOnboarding({
+          goal: get(nextTargets, "goal") ?? nextPatch.goal,
+        });
+        toast.success("Nutrition targetlar yangilandi");
+        setActiveDrawer(null);
+      } catch {
+        toast.error("Targetlarni saqlab bo'lmadi");
+      } finally {
+        setIsGoalsSaving(false);
+      }
+    },
+    [goal, healthGoals, macroTargets, saveGoals, syncLocalOnboarding],
+  );
+
   const rows = [
     {
       key: "profile",
@@ -455,18 +1014,10 @@ export const ProfileVitalsCard = ({
       onClick: onEditProfile,
     },
     {
-      key: "premium",
-      label: "Premium",
-      value: isPremiumActive ? premiumLabel : "Qayta sotib olish",
-      icon: CrownIcon,
-      onClick: onOpenPremium,
-    },
-    {
       key: "goals",
       label: "Maqsad",
       value: getGoalLabel(goal),
       icon: HeartPulseIcon,
-      onClick: onOpenGoals,
     },
     {
       key: "gender",
@@ -498,32 +1049,24 @@ export const ProfileVitalsCard = ({
 
   return (
     <>
-      <section className="px-5 pb-2 pt-1 text-center">
+      <section className="px-5 pb-0 pt-0 text-center">
         <div
-          className="relative mx-auto mb-5 grid size-40 place-items-center rounded-full p-2"
+          className="relative mx-auto mb-3 grid size-28 place-items-center rounded-full p-1.5"
           style={{
             background: `conic-gradient(var(--primary) ${completionPercent}%, color-mix(in oklab, var(--primary) 14%, transparent) 0)`,
           }}
           aria-label={`Profil to'liqligi ${completionPercent}%`}
         >
-          <div className="grid size-full place-items-center rounded-full bg-background p-2 shadow-[inset_0_0_0_1px_var(--border)]">
-            <Avatar className="size-32 border-4 border-background shadow-sm">
+          <div className="grid size-full place-items-center rounded-full bg-background p-1 shadow-[inset_0_0_0_1px_var(--border)]">
+            <Avatar className="size-24 border-2 border-background shadow-sm">
               <AvatarImage src={user?.avatar} alt={displayName} />
-              <AvatarFallback className="text-4xl font-black">
+              <AvatarFallback className="text-3xl font-black">
                 {initials}
               </AvatarFallback>
             </Avatar>
           </div>
-          {premiumLabel ? (
-            <span className="absolute -bottom-2 left-1/2 inline-flex min-h-10 -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-black leading-tight text-white shadow-sm">
-              <CrownIcon className="size-3.5 shrink-0 text-white" />
-              <span className="max-w-28 whitespace-normal text-center">
-                {premiumLabel}
-              </span>
-            </span>
-          ) : null}
         </div>
-        <p className="truncate text-xl font-black tracking-tight">
+        <p className="truncate text-lg font-black tracking-tight">
           {displayName}
         </p>
         {user?.username ? (
@@ -535,19 +1078,58 @@ export const ProfileVitalsCard = ({
             {user.email || user.phone}
           </p>
         ) : null}
-        <div className="mt-3 flex flex-wrap justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveDrawer("xp")}
-            className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1 text-xs font-bold text-primary transition-colors hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <CrownIcon className="size-3.5" />
-            {formatCompactNumber(user?.xp)} XP
-          </button>
+        <div
+          data-testid="profile-stat-grid"
+          className="-mx-5 mt-3 grid grid-cols-3 gap-2"
+        >
+          {map(profileStats, (stat) => {
+            const Icon = stat.icon;
+            const ariaLabel = `${stat.label} ${stat.value}`;
+            const handleStatKeyDown = (event) => {
+              if (event.key !== "Enter" && event.key !== " ") {
+                return;
+              }
+
+              event.preventDefault();
+              stat.onClick?.();
+            };
+
+            return (
+              <Card
+                key={stat.key}
+                size="sm"
+                aria-label={ariaLabel}
+                role={stat.onClick ? "button" : undefined}
+                tabIndex={stat.onClick ? 0 : undefined}
+                onClick={stat.onClick}
+                onKeyDown={stat.onClick ? handleStatKeyDown : undefined}
+                className={cn(
+                  getUserCardClassName(
+                    "w-full min-w-0 gap-0 !py-0 text-center data-[size=sm]:!gap-0 data-[size=sm]:!pb-0 data-[size=sm]:!pt-0",
+                  ),
+                  stat.onClick
+                    ? "cursor-pointer transition-colors hover:bg-primary/10 focus-visible:outline-none"
+                    : "cursor-default",
+                )}
+              >
+                <CardContent className="flex min-h-16 min-w-0 flex-col items-center justify-center !px-1.5 py-2">
+                  <span className="flex min-w-0 items-center justify-center gap-1 text-[10px] font-black text-muted-foreground">
+                    <Icon
+                      className={cn("size-3.5 shrink-0", stat.iconClass)}
+                    />
+                    <span className="truncate">{stat.label}</span>
+                  </span>
+                  <span className="mt-1 block max-w-full truncate text-xl font-black leading-none tracking-normal text-foreground tabular-nums">
+                    {stat.value}
+                  </span>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
-      <div className="overflow-hidden rounded-3xl border border-border/70 bg-card shadow-none">
+      <div className={getUserSurfaceClassName("overflow-hidden")}>
         {map(rows, (row, index) => {
           const Icon = row.icon;
           return (
@@ -581,6 +1163,22 @@ export const ProfileVitalsCard = ({
         })}
       </div>
 
+      <GoalSelectionDrawer
+        open={activeDrawer === "goals"}
+        onOpenChange={(open) => setActiveDrawer(open ? "goals" : null)}
+        value={goal}
+        isSaving={isGoalsSaving || isSavingHealthGoals}
+        onSelect={handleGoalSelect}
+      />
+      <MacroTargetsDrawer
+        key={macroDrawerKey}
+        open={activeDrawer === "macros"}
+        onOpenChange={(open) => setActiveDrawer(open ? "macros" : null)}
+        targets={macroDrawerTargets}
+        goal={goal}
+        isSaving={isGoalsSaving || isSavingHealthGoals}
+        onSave={handleMacroTargetsSave}
+      />
       <GenderVitalDrawer
         open={activeDrawer === "gender"}
         onOpenChange={(open) => setActiveDrawer(open ? "gender" : null)}
@@ -657,7 +1255,11 @@ export const ProfileVitalsCard = ({
       <XpBalanceDrawer
         open={activeDrawer === "xp"}
         onOpenChange={(open) => setActiveDrawer(open ? "xp" : null)}
-        xp={user?.xp}
+        xp={profileXp}
+      />
+      <XpHistoryProfileDrawer
+        open={activeDrawer === "xp-history"}
+        onOpenChange={(open) => setActiveDrawer(open ? "xp-history" : null)}
       />
     </>
   );

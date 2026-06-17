@@ -4,14 +4,12 @@ import { useAuthStore, useBreadcrumbStore } from "@/store";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useWorkoutCalorieAdjustmentPreference from "@/hooks/app/use-workout-calorie-adjustment";
 import useMealPlan, {
-  mealPlanDaysToKanban,
   normalizeMealPlanDays,
   useMealPlanTemplates,
 } from "@/hooks/app/use-meal-plan";
 import useNutritionDashboard from "@/hooks/app/use-nutrition-dashboard";
 import {
   getTodayKey,
-  normalizeDayData,
   setMealDuplicateConfirmHandler,
   useDailyTrackingActions,
   useDailyTrackingDay,
@@ -20,53 +18,58 @@ import useFoodCatalog, {
   enrichTrackedMealItem,
   useFoodScan,
 } from "@/hooks/app/use-food-catalog";
-import { UndoIcon } from "lucide-react";
-import { toast } from "sonner";
 import PageTransition from "@/components/page-transition";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
 import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
 import useOnlineStatus from "@/hooks/utils/use-online-status.js";
 import { useLocation, useNavigate } from "react-router";
-import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
-import {
-  MEAL_CONFIG,
-  MEAL_LABEL_TO_TYPE,
-  MEAL_TYPES,
-} from "@/modules/user/lib/meal-config";
+import { MEAL_CONFIG } from "@/modules/user/lib/meal-config";
 import NutritionHomeView from "./views/home-view.jsx";
 import NutritionPlansView from "./views/plans-view.jsx";
 import NutritionReportView from "./views/report-view.jsx";
 import NutritionDrawers from "./nutrition-drawers.jsx";
-import {
-  buildMealPayloadFromDraft,
-  getDraftNutritionPreview,
-} from "./meal-draft-review-utils.js";
+import { buildMealPayloadFromDraft } from "./meal-draft-review-utils.js";
 import {
   getPlanDayStatus,
   resolvePlanColumnsForDate,
 } from "./nutrition-plan-days.js";
 import {
+  buildPlanMetaBudgetPayload,
+  getPlanBudgetFormDefaults,
+  getPlanRescaleExplanation,
+} from "./nutrition-plan-meta.js";
+import {
   getTemplateBlockingErrorMessage,
   getTemplateBlockingReasonSummary,
 } from "./template-blocking-reasons.js";
+import { useNutritionBreadcrumbs } from "./nutrition-breadcrumbs.js";
+import { useNutritionDateState } from "./nutrition-date-state.js";
+import {
+  CALORIE_FILTER_DEFAULT,
+  buildNutritionTotals,
+  buildPendingScanFoodsByType,
+  buildPlannedByType,
+  buildSortedMealSections,
+  filterMealSections,
+  getActiveMealType,
+  getActiveNutritionFilterCount,
+  getWaterConsumedMl,
+} from "./nutrition-meal-section-state.js";
+import { useNutritionDrawerState } from "./nutrition-drawer-state.js";
+import { useNutritionMealActions } from "./nutrition-meal-actions.js";
+import {
+  getPlanBuilderData,
+  getPlanSourceMeta,
+  getPlanStatusMeta,
+  useNutritionPlanSelection,
+} from "./nutrition-plan-selection.js";
 
 import filter from "lodash/filter";
 import find from "lodash/find";
-import forEach from "lodash/forEach";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
-import orderBy from "lodash/orderBy";
-import reduce from "lodash/reduce";
-import some from "lodash/some";
-import split from "lodash/split";
-import toLower from "lodash/toLower";
 import toNumber from "lodash/toNumber";
 import trim from "lodash/trim";
-import lodashValues from "lodash/values";
-import includes from "lodash/includes";
-import keys from "lodash/keys";
-import toPairs from "lodash/toPairs";
-import flatten from "lodash/flatten";
 
 const NutritionErrorFallback = () => (
   <div className="flex min-h-[55vh] items-center justify-center px-4">
@@ -89,122 +92,13 @@ const NutritionErrorFallback = () => (
   </div>
 );
 
-const CALORIE_FILTER_DEFAULT = [0, 1000];
-
-const WEEK_DAYS = [
-  "Dushanba",
-  "Seshanba",
-  "Chorshanba",
-  "Payshanba",
-  "Juma",
-  "Shanba",
-  "Yakshanba",
-];
-
-const getPlanInsights = (plan) => {
-  const dayColumns = isArray(plan?.days)
-    ? filter(map(plan.days, (day) => day?.meals), isArray)
-    : filter(lodashValues(plan?.weeklyKanban || {}), isArray);
-
-  const filledDays = filter(dayColumns, (columns) =>
-    some(
-      columns,
-      (column) => isArray(column?.items) && column.items.length > 0,
-    ),
-  ).length;
-
-  const totalItems = reduce(
-    dayColumns,
-    (sum, columns) => {
-      return (
-        sum +
-        reduce(
-          columns,
-          (columnSum, column) => {
-            return (
-              columnSum + (isArray(column?.items) ? column.items.length : 0)
-            );
-          },
-          0,
-        )
-      );
-    },
-    0,
-  );
-
-  return {
-    filledDays,
-    totalItems,
-    updatedLabel: plan?.updatedAt
-      ? new Date(plan.updatedAt).toLocaleDateString("uz-UZ")
-      : null,
-  };
-};
-
-const getPlanBuilderData = (plan) =>
-  mealPlanDaysToKanban(plan?.days || plan?.weeklyKanban || []);
-
-const getPlanStatusMeta = (status) => {
-  if (status === "active") {
-    return {
-      label: "Faol reja",
-      chipClassName: "text-green-600 dark:text-green-400",
-      badgeClassName: "bg-green-500/10 text-green-600 dark:text-green-400",
-    };
-  }
-
-  if (status === "archived") {
-    return {
-      label: "Arxivlangan reja",
-      chipClassName: "text-slate-600 dark:text-slate-400",
-      badgeClassName: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
-    };
-  }
-
-  return {
-    label: "Saqlangan reja",
-    chipClassName: "text-amber-600 dark:text-amber-400",
-    badgeClassName: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  };
-};
-
-const getPlanSourceMeta = (source) => {
-  if (source === "ai") {
-    return {
-      label: "AI reja",
-      badgeClassName:
-        "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300",
-    };
-  }
-
-  return {
-    label: "Manual reja",
-    badgeClassName:
-      "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  };
-};
-
-const normalizeSearchText = (value) => toLower(trim(String(value || "")));
-
-const getMealDateKey = (food, fallbackDateKey) => {
-  const value =
-    food?.addedAt || food?.createdAt || food?.date || fallbackDateKey;
-  const parsed = value instanceof Date ? value : new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return fallbackDateKey;
-  }
-
-  return parsed.toISOString().slice(0, 10);
-};
-
 const NutritionContent = ({ entryView = "home" }) => {
   const user = useAuthStore((state) => state.user);
   const isOnline = useOnlineStatus();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const { openProfile } = useProfileOverlay();
   const location = useLocation();
   const navigate = useNavigate();
+  useNutritionBreadcrumbs(entryView, setBreadcrumbs);
   const {
     goals,
     hasServerGoals,
@@ -240,34 +134,17 @@ const NutritionContent = ({ entryView = "home" }) => {
     isArchivingPlan,
   } = useMealPlan();
 
-  const [selectedPlanId, setSelectedPlanId] = React.useState(null);
-
-  React.useEffect(() => {
-    if (plans.length === 0) {
-      setSelectedPlanId(null);
-      return;
-    }
-
-    if (selectedPlanId && some(plans, (plan) => plan.id === selectedPlanId)) {
-      return;
-    }
-
-    setSelectedPlanId(activePlan?.id || draftPlan?.id || plans[0]?.id || null);
-  }, [activePlan?.id, draftPlan?.id, plans, selectedPlanId]);
-
-  const currentPlan = React.useMemo(() => {
-    if (!plans.length) {
-      return null;
-    }
-
-    return (
-      find(plans, (plan) => plan.id === selectedPlanId) ||
-      activePlan ||
-      draftPlan ||
-      plans[0] ||
-      null
-    );
-  }, [activePlan, draftPlan, plans, selectedPlanId]);
+  const {
+    currentPlan,
+    orderedPlans,
+    planInsightsMap,
+    selectedPlanId,
+    setSelectedPlanId,
+  } = useNutritionPlanSelection({
+    activePlan,
+    draftPlan,
+    plans,
+  });
   const isGoalLoadingState =
     user?.onboardingCompleted &&
     !hasServerGoals &&
@@ -296,30 +173,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     };
   }, [goalSource, isGoalLoadingState, user?.onboardingCompleted]);
 
-  const planInsightsMap = React.useMemo(() => {
-    return reduce(
-      plans,
-      (acc, plan) => {
-        acc[plan.id] = getPlanInsights(plan);
-        return acc;
-      },
-      {},
-    );
-  }, [plans]);
-  const orderedPlans = React.useMemo(() => {
-    const getStatusPriority = (plan) =>
-      plan.status === "active" ? 0 : plan.status === "draft" ? 1 : 2;
-
-    return orderBy(
-      plans,
-      [
-        getStatusPriority,
-        (plan) => new Date(plan.updatedAt || plan.createdAt || 0).getTime(),
-      ],
-      ["asc", "desc"],
-    );
-  }, [plans]);
-
   const saveKanban = async (newKanban) => {
     const nextDays = normalizeMealPlanDays(newKanban);
 
@@ -338,15 +191,60 @@ const NutritionContent = ({ entryView = "home" }) => {
     });
   };
 
-  const [date, setDate] = React.useState(new Date());
-  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
-  const [isBuilderOpen, setIsBuilderOpen] = React.useState(false);
-  const [builderInitialData, setBuilderInitialData] = React.useState(null);
-  const [isShoppingOpen, setIsShoppingOpen] = React.useState(false);
-  const [isAIOpen, setIsAIOpen] = React.useState(false);
-  const [isPlansDrawerOpen, setIsPlansDrawerOpen] = React.useState(false);
-  const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] =
-    React.useState(false);
+  const {
+    isCalendarOpen,
+    setIsCalendarOpen,
+    isBuilderOpen,
+    setIsBuilderOpen,
+    builderInitialData,
+    setBuilderInitialData,
+    isShoppingOpen,
+    setIsShoppingOpen,
+    isAIOpen,
+    setIsAIOpen,
+    isPlansDrawerOpen,
+    setIsPlansDrawerOpen,
+    isTemplateLibraryOpen,
+    setIsTemplateLibraryOpen,
+    isGoalWizardOpen,
+    setIsGoalWizardOpen,
+    isActionDrawerOpen,
+    setIsActionDrawerOpen,
+    actionDrawerInitialNested,
+    setActionDrawerInitialNested,
+    isCancelPlanOpen,
+    setIsCancelPlanOpen,
+    isPlanMetaOpen,
+    setIsPlanMetaOpen,
+    planMetaMode,
+    setPlanMetaMode,
+    planMetaShouldOpenBuilder,
+    setPlanMetaShouldOpenBuilder,
+    planMetaName,
+    setPlanMetaName,
+    planMetaDescription,
+    setPlanMetaDescription,
+    planMetaBudgetAmount,
+    setPlanMetaBudgetAmount,
+    planMetaBudgetPeriod,
+    setPlanMetaBudgetPeriod,
+    planMetaBudgetCurrency,
+    setPlanMetaBudgetCurrency,
+    isSavedMealsOpen,
+    setIsSavedMealsOpen,
+    mealTransferContext,
+    setMealTransferContext,
+    selectedMealTypeForAdd,
+    setSelectedMealTypeForAdd,
+    isFilterDrawerOpen,
+    setIsFilterDrawerOpen,
+    selectedScanId,
+    setSelectedScanId,
+    isSavingInlineScan,
+    setIsSavingInlineScan,
+    duplicateMealPrompt,
+    setDuplicateMealPrompt,
+  } = useNutritionDrawerState();
   const {
     templates: mealPlanTemplates,
     isLoading: isMealPlanTemplatesLoading,
@@ -354,17 +252,6 @@ const NutritionContent = ({ entryView = "home" }) => {
   } = useMealPlanTemplates({
     enabled: entryView === "plans",
   });
-  const [isGoalWizardOpen, setIsGoalWizardOpen] = React.useState(false);
-  const [isActionDrawerOpen, setIsActionDrawerOpen] = React.useState(false);
-  const [isCancelPlanOpen, setIsCancelPlanOpen] = React.useState(false);
-  const [isPlanMetaOpen, setIsPlanMetaOpen] = React.useState(false);
-  const [planMetaMode, setPlanMetaMode] = React.useState("create");
-  const [planMetaShouldOpenBuilder, setPlanMetaShouldOpenBuilder] =
-    React.useState(true);
-  const [planMetaName, setPlanMetaName] = React.useState("");
-  const [planMetaDescription, setPlanMetaDescription] = React.useState("");
-  const [isSavedMealsOpen, setIsSavedMealsOpen] = React.useState(false);
-  const [mealTransferContext, setMealTransferContext] = React.useState(null);
 
   React.useEffect(() => {
     const state = location.state;
@@ -413,8 +300,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     plans,
   ]);
   const planMetaOpenTimerRef = React.useRef(null);
-  const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] =
-    React.useState("breakfast");
   const [mealFilter, setMealFilter] = React.useState("all");
   const [sourceFilters, setSourceFilters] = React.useState([]);
   const [mealSearch, setMealSearch] = React.useState("");
@@ -425,27 +310,12 @@ const NutritionContent = ({ entryView = "home" }) => {
     start: "",
     end: "",
   });
-  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = React.useState(false);
   const [pendingScans, setPendingScans] = React.useState([]);
-  const [selectedScanId, setSelectedScanId] = React.useState(null);
-  const [isSavingInlineScan, setIsSavingInlineScan] = React.useState(false);
-  const [duplicateMealPrompt, setDuplicateMealPrompt] = React.useState(null);
-  const isPremiumActive = true;
-
-  const openPremiumForAi = React.useCallback(() => {
-    toast("AI generator premium tarifda ochiladi.");
-    openProfile("premium");
-  }, [openProfile]);
 
   const handleOpenAiGenerator = React.useCallback(() => {
-    if (!isPremiumActive) {
-      openPremiumForAi();
-      return;
-    }
-
     setIsPlansDrawerOpen(false);
     setIsAIOpen(true);
-  }, [isPremiumActive, openPremiumForAi]);
+  }, []);
 
   const handleOpenTemplateLibrary = React.useCallback(() => {
     setIsPlansDrawerOpen(false);
@@ -545,15 +415,25 @@ const NutritionContent = ({ entryView = "home" }) => {
   );
 
   const openPlanMetaCreateDrawer = React.useCallback(() => {
+    const budgetDefaults = getPlanBudgetFormDefaults();
+
     setPlanMetaMode("create");
     setPlanMetaShouldOpenBuilder(true);
     setPlanMetaName(`Qo'lda reja ${new Date().toLocaleDateString("uz-UZ")}`);
     setPlanMetaDescription("");
+    setPlanMetaBudgetAmount(budgetDefaults.amount);
+    setPlanMetaBudgetPeriod(budgetDefaults.period);
+    setPlanMetaBudgetCurrency(budgetDefaults.currency);
     setIsPlansDrawerOpen(false);
     schedulePlanMetaDrawerOpen(() => {
       setIsPlanMetaOpen(true);
     });
-  }, [schedulePlanMetaDrawerOpen]);
+  }, [
+    schedulePlanMetaDrawerOpen,
+    setPlanMetaBudgetAmount,
+    setPlanMetaBudgetCurrency,
+    setPlanMetaBudgetPeriod,
+  ]);
 
   const handleOpenBuilderManual = () => {
     setIsCancelPlanOpen(false);
@@ -636,21 +516,38 @@ const NutritionContent = ({ entryView = "home" }) => {
         return;
       }
 
+      const budgetDefaults = getPlanBudgetFormDefaults(currentPlan);
+
       setPlanMetaMode("edit");
       setPlanMetaShouldOpenBuilder(openBuilderAfter);
       setPlanMetaName(currentPlan.name || "Mening rejam");
       setPlanMetaDescription(currentPlan.description || "");
+      setPlanMetaBudgetAmount(budgetDefaults.amount);
+      setPlanMetaBudgetPeriod(budgetDefaults.period);
+      setPlanMetaBudgetCurrency(budgetDefaults.currency);
       setIsCancelPlanOpen(false);
       schedulePlanMetaDrawerOpen(() => {
         setIsPlanMetaOpen(true);
       });
     },
-    [currentPlan, schedulePlanMetaDrawerOpen],
+    [
+      currentPlan,
+      schedulePlanMetaDrawerOpen,
+      setPlanMetaBudgetAmount,
+      setPlanMetaBudgetCurrency,
+      setPlanMetaBudgetPeriod,
+    ],
   );
 
   const handleSubmitPlanMeta = React.useCallback(async () => {
     const safeName = trim(planMetaName);
     const safeDescription = trim(planMetaDescription) || null;
+    const budgetPayload = buildPlanMetaBudgetPayload({
+      amount: planMetaBudgetAmount,
+      period: planMetaBudgetPeriod,
+      currency: planMetaBudgetCurrency,
+      mode: planMetaMode,
+    });
 
     if (!safeName) {
       return;
@@ -668,6 +565,7 @@ const NutritionContent = ({ entryView = "home" }) => {
           description: safeDescription,
           days: currentPlan.days || [],
           source: currentPlan.source || "manual",
+          ...budgetPayload,
         });
         const updatedPlan =
           find(nextState?.plans, (plan) => plan.id === currentPlan.id) ||
@@ -696,6 +594,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         source: "manual",
         mealCount: currentPlan?.mealCount || 4,
         days: [],
+        ...budgetPayload,
       });
       const nextPlan =
         nextState?.draftPlan ||
@@ -725,6 +624,9 @@ const NutritionContent = ({ entryView = "home" }) => {
     }
   }, [
     currentPlan,
+    planMetaBudgetAmount,
+    planMetaBudgetCurrency,
+    planMetaBudgetPeriod,
     planMetaDescription,
     planMetaMode,
     planMetaName,
@@ -813,7 +715,9 @@ const NutritionContent = ({ entryView = "home" }) => {
           setSelectedPlanId(updatedPlan.id);
         }
 
-        toast.success("Reja joriy kaloriyaga moslandi");
+        toast.success("Reja joriy kaloriyaga moslandi", {
+          description: getPlanRescaleExplanation(updatedPlan) || undefined,
+        });
       } catch {
         toast.error("Rejani kaloriyaga moslab bo'lmadi");
       }
@@ -821,62 +725,23 @@ const NutritionContent = ({ entryView = "home" }) => {
     [currentPlan?.id, rescalePlanCalories],
   );
 
-  const dateKey = split(date.toISOString(), "T")[0];
   const todayKey = getTodayKey();
-  const todayDate = React.useMemo(
-    () => new Date(`${todayKey}T12:00:00`),
-    [todayKey],
-  );
-  const selectedDateLabel = React.useMemo(
-    () =>
-      date.toLocaleDateString("uz-UZ", {
-        day: "numeric",
-        month: "short",
-      }),
-    [date],
-  );
-  const isPastDate = dateKey < todayKey;
-  const dateQueryKey = React.useMemo(() => {
-    const value = new URLSearchParams(location.search).get("date");
-    return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : null;
-  }, [location.search]);
-
-  React.useEffect(() => {
-    if (!dateQueryKey || dateQueryKey === dateKey) {
-      return;
-    }
-
-    setDate(new Date(`${dateQueryKey}T12:00:00`));
-  }, [dateKey, dateQueryKey]);
-  const handleOverviewDateChange = React.useCallback(
-    (nextDate) => {
-      if (!nextDate) {
-        return;
-      }
-
-      const nextKey = split(nextDate.toISOString(), "T")[0];
-      setDate(nextDate);
-
-      if (location.pathname.startsWith("/user/nutrition/overview")) {
-        const params = new URLSearchParams(location.search);
-        params.set("date", nextKey);
-        navigate(`${location.pathname}?${params.toString()}`, {
-          replace: true,
-        });
-      }
-    },
-    [location.pathname, location.search, navigate],
-  );
-
-  const selectedDay = React.useMemo(
-    () => WEEK_DAYS[(date.getDay() + 6) % 7],
-    [date],
-  );
-  const yesterdayKey = React.useMemo(() => {
-    const yesterday = new Date(date);
-    yesterday.setDate(yesterday.getDate() - 1);
-    return split(yesterday.toISOString(), "T")[0];
-  }, [date]);
+  const {
+    date,
+    setDate,
+    dateKey,
+    selectedDateLabel,
+    isPastDate,
+    selectedDay,
+    yesterdayKey,
+    dateShortcuts,
+    handleDateShortcutChange,
+    handleOverviewDateChange,
+  } = useNutritionDateState({
+    location,
+    navigate,
+    todayKey,
+  });
   const { dayData, isLoading: isDayLoading } = useDailyTrackingDay(dateKey);
   const {
     dashboard: nutritionDashboard,
@@ -1040,29 +905,7 @@ const NutritionContent = ({ entryView = "home" }) => {
   );
 
   const pendingScanFoodsByType = React.useMemo(() => {
-    return reduce(
-      pendingScans,
-      (acc, scan) => {
-        const preview = scan.item ? getDraftNutritionPreview(scan.item) : {};
-        const food = {
-          id: scan.id,
-          status: scan.status,
-          source: "camera",
-          name: scan.item?.title || "",
-          cal: preview.calories || 0,
-          protein: preview.protein || 0,
-          carbs: preview.carbs || 0,
-          fat: preview.fat || 0,
-          image: scan.imageUrl || scan.imageDataUrl,
-          error: scan.error,
-          scanId: scan.id,
-        };
-        const mealType = scan.mealType || "breakfast";
-        acc[mealType] = [...(acc[mealType] || []), food];
-        return acc;
-      },
-      { breakfast: [], lunch: [], dinner: [], snack: [] },
-    );
+    return buildPendingScanFoodsByType(pendingScans);
   }, [pendingScans]);
 
   const selectedScan = React.useMemo(
@@ -1079,155 +922,61 @@ const NutritionContent = ({ entryView = "home" }) => {
     );
   }, [pendingScans, selectedScan]);
 
-  React.useEffect(() => {
-    const breadcrumbTitle =
-      entryView === "plans"
-        ? "Ovqatlanish rejalari"
-        : entryView === "report"
-          ? "Ovqatlanish hisobotlari"
-          : "Ovqatlanish";
-
-    setBreadcrumbs([
-      { url: "/user", title: "Bosh sahifa" },
-      { url: "/user/nutrition/overview", title: breadcrumbTitle },
-    ]);
-  }, [entryView, setBreadcrumbs]);
-
-  const allFoods = flatten(lodashValues(meals));
-  const totals = reduce(
-    allFoods,
-    (acc, f) => {
-      const qty = f.qty ?? 1;
-      return {
-        calories: acc.calories + (f.cal ?? 0) * qty,
-        protein: acc.protein + (f.protein ?? 0) * qty,
-        carbs: acc.carbs + (f.carbs ?? 0) * qty,
-        fat: acc.fat + (f.fat ?? 0) * qty,
-      };
-    },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  const roundedTotals = React.useMemo(
+    () => buildNutritionTotals(meals),
+    [meals],
   );
-  const roundedTotals = {
-    calories: Math.round(totals.calories),
-    protein: Math.round(totals.protein),
-    carbs: Math.round(totals.carbs),
-    fat: Math.round(totals.fat),
-  };
   const waterConsumedMl = React.useMemo(() => {
-    const cupSize = toNumber(goals.cupSize || 250);
-    const waterLog = isArray(dayData.waterLog) ? dayData.waterLog : [];
+    return getWaterConsumedMl({ dayData, goals });
+  }, [dayData, goals]);
 
-    if (waterLog.length > 0) {
-      return reduce(
-        waterLog,
-        (sum, entry) => sum + toNumber(entry?.amountMl || cupSize || 0),
-        0,
-      );
-    }
+  const {
+    handleAddWaterCup,
+    handleBulkRemoveFoods,
+    handleConfirmMealTransfer,
+    handleCopyFromYesterday,
+    handleCopyMealToToday,
+    handleLogPlanned,
+    handleMealImageUpload,
+    handleRemoveFood,
+    handleTogglePlanned,
+    handleTransferMeal,
+    handleUpdateMeal,
+  } = useNutritionMealActions({
+    addMealAction,
+    addWaterCup,
+    date,
+    dateKey,
+    mealTransferContext,
+    meals,
+    patchMeal,
+    refetchYesterday,
+    removeMealAction,
+    setMealTransferContext,
+    todayKey,
+  });
 
-    return toNumber(dayData.waterCups || 0) * cupSize;
-  }, [dayData.waterCups, dayData.waterLog, goals.cupSize]);
-
-  const handleRemoveFood = async (type, food) => {
-    try {
-      await removeMealAction(dateKey, type, food.id);
-      toast("Ovqat o'chirildi", {
-        action: {
-          label: "Qaytarish",
-          onClick: () => {
-            void addMealAction(dateKey, type, food).catch(() => {
-              toast.error("Ovqatni qaytarib bo'lmadi");
-            });
-          },
-        },
-        icon: <UndoIcon className="size-4" />,
-        duration: 5000,
-      });
-    } catch {
-      toast.error("Ovqatni o'chirib bo'lmadi");
-    }
-  };
-
-  const handleBulkRemoveFoods = React.useCallback(
-    async (selectedItems) => {
-      if (!isArray(selectedItems) || selectedItems.length === 0) {
-        return;
-      }
-
-      try {
-        for (const item of selectedItems) {
-          if (!item?.mealType || !item?.food?.id) continue;
-          await removeMealAction(dateKey, item.mealType, item.food.id);
-        }
-        toast.success(`${selectedItems.length} ta ovqat o'chirildi`);
-      } catch {
-        toast.error("Tanlangan ovqatlarni o'chirib bo'lmadi");
-      }
+  const handleOpenQuickAddMethod = React.useCallback(
+    (method) => {
+      setActionDrawerInitialNested(method === "recent" ? "catalog" : method);
+      setIsActionDrawerOpen(true);
     },
-    [dateKey, removeMealAction],
+    [setActionDrawerInitialNested, setIsActionDrawerOpen],
   );
 
-  const handleTransferMeal = React.useCallback(
-    ({ mode, mealType, food }) => {
-      if (!food?.id) return;
+  const handleOpenQuickSavedMeals = React.useCallback(() => {
+    setActionDrawerInitialNested(null);
+    setIsSavedMealsOpen(true);
+  }, [setActionDrawerInitialNested, setIsSavedMealsOpen]);
 
-      setMealTransferContext({
-        mode,
-        sourceDate: dateKey,
-        sourceMealType: mealType,
-        food,
-      });
+  const handleOpenPlanShopping = React.useCallback(
+    (planId = currentPlan?.id) => {
+      if (!planId) return;
+
+      setSelectedPlanId(planId);
+      setIsShoppingOpen(true);
     },
-    [dateKey],
-  );
-
-  const handleConfirmMealTransfer = React.useCallback(
-    async ({ mode, food, targetDate, targetMealType }) => {
-      if (!mealTransferContext || !food?.id || !targetDate || !targetMealType) {
-        return;
-      }
-
-      const isMove = mode === "move";
-      const sourceDate = mealTransferContext.sourceDate;
-      const sourceMealType = mealTransferContext.sourceMealType;
-
-      if (
-        isMove &&
-        sourceDate === targetDate &&
-        sourceMealType === targetMealType
-      ) {
-        toast("Bu ovqat allaqachon shu kunda va shu bo'limda turibdi");
-        return;
-      }
-
-      const mealPayload = {
-        ...food,
-        id: undefined,
-        isConsumed: undefined,
-        isFromPlanLinked: undefined,
-        isPlanned: undefined,
-        source: food.source ?? "manual",
-        addedAt: new Date(`${targetDate}T12:00:00`).toISOString(),
-      };
-
-      try {
-        await addMealAction(targetDate, targetMealType, mealPayload);
-
-        if (isMove) {
-          await removeMealAction(sourceDate, sourceMealType, food.id);
-        }
-
-        toast.success(isMove ? "Ovqat ko'chirildi" : "Ovqatdan nusxa olindi");
-        setMealTransferContext(null);
-      } catch {
-        toast.error(
-          isMove
-            ? "Ovqatni ko'chirib bo'lmadi"
-            : "Ovqatdan nusxa olib bo'lmadi",
-        );
-      }
-    },
-    [addMealAction, mealTransferContext, removeMealAction],
+    [currentPlan?.id, setIsShoppingOpen],
   );
 
   const currentPlanDayStatus = React.useMemo(
@@ -1240,124 +989,11 @@ const NutritionContent = ({ entryView = "home" }) => {
     [currentPlan, date, selectedDay],
   );
 
-  const getMealKey = (type) => {
-    return MEAL_LABEL_TO_TYPE[type] || toLower(String(type || ""));
-  };
-
-  const getActiveMealType = () => {
-    const hour = new Date().getHours();
-    if (hour >= 6 && hour < 10) return "breakfast";
-    if (hour >= 10 && hour < 14) return "lunch";
-    if (hour >= 14 && hour < 18) return "snack";
-    if (hour >= 18 && hour < 23) return "dinner";
-    return "snack";
-  };
-
   const activeMealType = getActiveMealType();
 
-  // Har bir meal type uchun rejalashtirilgan ovqatlar (kanban dan)
   const plannedByType = React.useMemo(() => {
-    const result = {};
-    forEach(currentDayPlan, (col) => {
-      const key = getMealKey(col.type);
-      if (key) {
-        result[key] = [
-          ...(result[key] || []),
-          ...map(col.items || [], (item, idx) => ({
-            ...item,
-            // Ensure stable ID so duplicate-prevention works correctly
-            id: item.id || `plan-${col.type}-${item.name}-${idx}`,
-            colType: col.type,
-          })),
-        ];
-      }
-    });
-    return result;
+    return buildPlannedByType(currentDayPlan);
   }, [currentDayPlan]);
-
-  const handleTogglePlanned = async (typeKey, food) => {
-    try {
-      if (food.isConsumed) {
-        await removeMealAction(dateKey, typeKey, food.id);
-        return;
-      }
-
-      const foodToLog = { ...food };
-      delete foodToLog.isPlanned;
-      delete foodToLog.isConsumed;
-      delete foodToLog.colType;
-      await addMealAction(dateKey, typeKey, {
-        ...foodToLog,
-        addedFromPlan: true,
-        source: "meal-plan",
-      });
-    } catch {
-      toast.error("Ovqat rejasini yangilab bo'lmadi");
-    }
-  };
-
-  const handleLogPlanned = React.useCallback(
-    async (typeKey, food, payload = {}) => {
-      try {
-        const macros = payload.macros || {};
-        await addMealAction(dateKey, typeKey, {
-          ...food,
-          addedFromPlan: true,
-          source: "meal-plan",
-          grams: payload.grams ?? food.grams,
-          cal: macros.cal ?? food.cal,
-          protein: macros.protein ?? food.protein,
-          carbs: macros.carbs ?? food.carbs,
-          fat: macros.fat ?? food.fat,
-          image: payload.image ?? food.image ?? null,
-          ingredients: payload.ingredients ?? food.ingredients ?? [],
-        });
-      } catch {
-        toast.error("Ovqatni log qilib bo'lmadi");
-      }
-    },
-    [addMealAction, dateKey],
-  );
-
-  const handleCopyFromYesterday = React.useCallback(
-    async (mealType) => {
-      try {
-        const result = await refetchYesterday();
-        const yesterdayMeals =
-          normalizeDayData(result.data?.data).meals?.[mealType] || [];
-
-        if (yesterdayMeals.length === 0) {
-          toast("Kecha bu ovqat bo'sh edi");
-          return;
-        }
-
-        const currentBarcodes = new Set(
-          map(meals[mealType], (f) => f.barcode || f.id),
-        );
-        let addedCount = 0;
-
-        for (const food of yesterdayMeals) {
-          if (!currentBarcodes.has(food.barcode || food.id)) {
-            await addMealAction(dateKey, mealType, {
-              ...food,
-              source: food.source ?? "manual",
-              addedAt: new Date().toISOString(),
-            });
-            addedCount++;
-          }
-        }
-
-        if (addedCount > 0) {
-          toast.success(`${addedCount} ta ovqat kechadan nusxalandi`);
-        } else {
-          toast("Barcha ovqatlar allaqachon qo'shilgan");
-        }
-      } catch {
-        toast.error("Kechagi ovqatlarni yuklab bo'lmadi");
-      }
-    },
-    [addMealAction, dateKey, meals, refetchYesterday],
-  );
 
   const handleSaveBuilder = async (newKanban) => {
     try {
@@ -1379,162 +1015,24 @@ const NutritionContent = ({ entryView = "home" }) => {
   };
 
   const sortedMealSections = React.useMemo(() => {
-    if (currentDayPlan.length === 0) {
-      return map(toPairs(MEAL_CONFIG), ([type, config]) => [
-        type,
-        {
-          ...config,
-          name: config.label,
-          foods: [
-            ...(meals[type] || []),
-            ...(pendingScanFoodsByType[type] || []),
-          ],
-          plannedItems: plannedByType[type] || [],
-        },
-      ]);
-    }
-
-    const plannedSections = reduce(
+    return buildSortedMealSections({
       currentDayPlan,
-      (acc, col) => {
-        const key = getMealKey(col.type);
-        const config = MEAL_CONFIG[key];
-
-        if (!config || acc[key]) {
-          return acc;
-        }
-
-        acc[key] = {
-          ...config,
-          name: config.label,
-          time: col.time || config.time,
-          foods: [
-            ...(meals[key] || []),
-            ...(pendingScanFoodsByType[key] || []),
-          ],
-          plannedItems: plannedByType[key] || [],
-        };
-
-        return acc;
-      },
-      {},
-    );
-
-    const loggedOnlyKeys = filter(
-      MEAL_TYPES,
-      (key) =>
-        !plannedSections[key] &&
-        ((meals[key] || []).length > 0 ||
-          (pendingScanFoodsByType[key] || []).length > 0),
-    );
-
-    return map([...keys(plannedSections), ...loggedOnlyKeys], (key) => [
-      key,
-      plannedSections[key] || {
-        ...MEAL_CONFIG[key],
-        name: MEAL_CONFIG[key].label,
-        foods: [...(meals[key] || []), ...(pendingScanFoodsByType[key] || [])],
-        plannedItems: plannedByType[key] || [],
-      },
-    ]);
+      meals,
+      pendingScanFoodsByType,
+      plannedByType,
+    });
   }, [currentDayPlan, meals, pendingScanFoodsByType, plannedByType]);
 
   const filteredMealSections = React.useMemo(() => {
-    const searchTerm = normalizeSearchText(mealSearch);
-    const [minCalories, maxCalories] = calorieRange;
-    const hasCalorieFilter =
-      minCalories > CALORIE_FILTER_DEFAULT[0] ||
-      maxCalories < CALORIE_FILTER_DEFAULT[1];
-    const hasDateFilter = Boolean(filterDateRange.start || filterDateRange.end);
-
-    const matchesSearch = (food) => {
-      if (!searchTerm) return true;
-      return some(
-        filter(
-          [
-            food?.name,
-            food?.title,
-            food?.description,
-            food?.barcode,
-            ...(isArray(food?.ingredients)
-              ? map(food.ingredients, (ingredient) => ingredient?.name)
-              : []),
-          ],
-          Boolean,
-        ),
-        (value) => includes(toLower(String(value)), searchTerm),
-      );
-    };
-
-    const matchesCalories = (food) => {
-      if (!hasCalorieFilter) return true;
-      const calories = Math.round(toNumber(food?.cal ?? food?.calories ?? 0));
-      return calories >= minCalories && calories <= maxCalories;
-    };
-
-    const matchesDateRange = (food) => {
-      if (!hasDateFilter) return true;
-      const itemDateKey = getMealDateKey(food, dateKey);
-      if (filterDateRange.start && itemDateKey < filterDateRange.start) {
-        return false;
-      }
-      if (filterDateRange.end && itemDateKey > filterDateRange.end) {
-        return false;
-      }
-      return true;
-    };
-
-    const matchesAdvancedFilters = (food) =>
-      matchesSearch(food) && matchesCalories(food) && matchesDateRange(food);
-
-    return reduce(
+    return filterMealSections({
       sortedMealSections,
-      (sections, [type, section]) => {
-        if (mealFilter !== "all" && type !== mealFilter) {
-          return sections;
-        }
-
-        const isActiveSource = (src) => {
-          if (sourceFilters.length === 0) return true;
-          return includes(sourceFilters, src);
-        };
-
-        const filteredFoods = filter(
-          section.foods || [],
-          (food) =>
-            isActiveSource(food.source || "manual") &&
-            matchesAdvancedFilters(food),
-        );
-
-        const filteredPlannedItems = isActiveSource("meal-plan")
-          ? filter(section.plannedItems || [], (food) =>
-              matchesAdvancedFilters(food),
-            )
-          : [];
-
-        if (
-          (sourceFilters.length > 0 ||
-            searchTerm ||
-            hasCalorieFilter ||
-            hasDateFilter) &&
-          filteredFoods.length === 0 &&
-          filteredPlannedItems.length === 0
-        ) {
-          return sections;
-        }
-
-        sections.push([
-          type,
-          {
-            ...section,
-            foods: filteredFoods,
-            plannedItems: filteredPlannedItems,
-          },
-        ]);
-        return sections;
-      },
-      [],
-    );
+      mealFilter,
+      sourceFilters,
+      mealSearch,
+      calorieRange,
+      filterDateRange,
+      dateKey,
+    });
   }, [
     calorieRange,
     dateKey,
@@ -1547,16 +1045,12 @@ const NutritionContent = ({ entryView = "home" }) => {
   ]);
 
   const activeNutritionFilterCount = React.useMemo(() => {
-    let count = sourceFilters.length;
-    if (normalizeSearchText(mealSearch)) count += 1;
-    if (
-      calorieRange[0] > CALORIE_FILTER_DEFAULT[0] ||
-      calorieRange[1] < CALORIE_FILTER_DEFAULT[1]
-    ) {
-      count += 1;
-    }
-    if (filterDateRange.start || filterDateRange.end) count += 1;
-    return count;
+    return getActiveNutritionFilterCount({
+      sourceFilters,
+      mealSearch,
+      calorieRange,
+      filterDateRange,
+    });
   }, [
     calorieRange,
     filterDateRange.end,
@@ -1571,44 +1065,6 @@ const NutritionContent = ({ entryView = "home" }) => {
     setCalorieRange(CALORIE_FILTER_DEFAULT);
     setFilterDateRange({ start: "", end: "" });
   }, []);
-
-  const handleMealImageUpload = React.useCallback(
-    (mealType, foodId, imageDataUrl, adjustedGrams, macros) => {
-      if (adjustedGrams != null && macros) {
-        void patchMeal(dateKey, mealType, foodId, {
-          ...(imageDataUrl != null ? { image: imageDataUrl } : {}),
-          ...(imageDataUrl != null ? { source: "camera" } : {}),
-          grams: adjustedGrams,
-          cal: macros.cal,
-          protein: macros.protein,
-          carbs: macros.carbs,
-          fat: macros.fat,
-        }).catch(() => {
-          toast.error("Ovqatni yangilab bo'lmadi");
-        });
-        return;
-      }
-
-      if (imageDataUrl != null) {
-        void patchMeal(dateKey, mealType, foodId, {
-          image: imageDataUrl,
-          source: "camera",
-        }).catch(() => {
-          toast.error("Rasmni saqlab bo'lmadi");
-        });
-      }
-    },
-    [dateKey, patchMeal],
-  );
-
-  const handleUpdateMeal = React.useCallback(
-    (mealType, foodId, patch) => {
-      void patchMeal(dateKey, mealType, foodId, patch).catch(() => {
-        toast.error("Ovqatni yangilab bo'lmadi");
-      });
-    },
-    [dateKey, patchMeal],
-  );
 
   const handleRetryScan = React.useCallback(
     (food) => {
@@ -1706,40 +1162,14 @@ const NutritionContent = ({ entryView = "home" }) => {
     }
   }, [addMealAction, dateKey, selectedScanDraftGroup]);
 
-  const handleCopyMealToToday = React.useCallback(
-    async (mealType, food) => {
-      try {
-        await addMealAction(todayKey, mealType, {
-          ...food,
-          id: undefined,
-          source: "history-copy",
-          addedAt: undefined,
-          isConsumed: undefined,
-          isFromPlanLinked: undefined,
-        });
-        toast.success(`${food.name || "Ovqat"} bugunga qo'shildi`);
-      } catch {
-        toast.error("Ovqatni bugunga qo'shib bo'lmadi");
-      }
-    },
-    [addMealAction, todayKey],
-  );
-
-  const handleAddWaterCup = React.useCallback(async () => {
-    try {
-      await addWaterCup(date, 250);
-      toast.success("250 ml suv qo'shildi");
-    } catch {
-      toast.error("Suvni qo'shib bo'lmadi");
-    }
-  }, [addWaterCup, date]);
-
   const sharedViewProps = {
     date,
     setDate: handleOverviewDateChange,
     dateKey,
     todayKey,
     selectedDateLabel,
+    dateShortcuts,
+    onSelectDateShortcut: handleDateShortcutChange,
     onOpenCalendar: () => setIsCalendarOpen(true),
     plans,
     currentPlan,
@@ -1762,6 +1192,9 @@ const NutritionContent = ({ entryView = "home" }) => {
     activeMealType,
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
+    onOpenQuickAddMethod: handleOpenQuickAddMethod,
+    onOpenSavedMeals: handleOpenQuickSavedMeals,
+    onOpenPlanShopping: handleOpenPlanShopping,
     setIsSavedMealsOpen,
     setIsPlansDrawerOpen,
     onAddWaterCup: handleAddWaterCup,
@@ -1831,6 +1264,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         activeFilterCount={activeNutritionFilterCount}
         addMealAction={addMealAction}
         addMealsBatchAction={addMealsBatchAction}
+        actionDrawerInitialNested={actionDrawerInitialNested}
         builderInitialData={builderInitialData}
         calorieRange={calorieRange}
         clearNutritionFilters={clearNutritionFilters}
@@ -1884,6 +1318,9 @@ const NutritionContent = ({ entryView = "home" }) => {
         pausePlan={pausePlan}
         planInsightsMap={planInsightsMap}
         planMetaDescription={planMetaDescription}
+        planMetaBudgetAmount={planMetaBudgetAmount}
+        planMetaBudgetPeriod={planMetaBudgetPeriod}
+        planMetaBudgetCurrency={planMetaBudgetCurrency}
         planMetaMode={planMetaMode}
         planMetaName={planMetaName}
         planMetaShouldOpenBuilder={planMetaShouldOpenBuilder}
@@ -1895,6 +1332,7 @@ const NutritionContent = ({ entryView = "home" }) => {
         setCalorieRange={setCalorieRange}
         setDuplicateMealPrompt={setDuplicateMealPrompt}
         setFilterDateRange={setFilterDateRange}
+        setActionDrawerInitialNested={setActionDrawerInitialNested}
         setIsActionDrawerOpen={setIsActionDrawerOpen}
         setIsAIOpen={setIsAIOpen}
         setIsBuilderOpen={setIsBuilderOpen}
@@ -1909,6 +1347,9 @@ const NutritionContent = ({ entryView = "home" }) => {
         setMealSearch={setMealSearch}
         setMealTransferContext={setMealTransferContext}
         setPlanMetaDescription={setPlanMetaDescription}
+        setPlanMetaBudgetAmount={setPlanMetaBudgetAmount}
+        setPlanMetaBudgetPeriod={setPlanMetaBudgetPeriod}
+        setPlanMetaBudgetCurrency={setPlanMetaBudgetCurrency}
         setPlanMetaName={setPlanMetaName}
         setSelectedPlanId={setSelectedPlanId}
         setSelectedScanId={setSelectedScanId}
@@ -1921,7 +1362,6 @@ const NutritionContent = ({ entryView = "home" }) => {
           onOpenChange={setIsCalendarOpen}
           date={date}
           onChange={handleOverviewDateChange}
-          maxDate={todayDate}
           title="Sana tanlang"
           description="Nutrition overview ma'lumotlari tanlangan kunga moslanadi."
         />

@@ -81,8 +81,8 @@ describe("DashboardAiInsightCard", () => {
     expect(screen.getByText("1/2 report qoldi")).toBeInTheDocument();
     expect(screen.getByText("3 ta uzun davr Premiumda")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Premiumga o'tish/i }),
-    ).toHaveAttribute("href", "/user/payments");
+      screen.queryByRole("link", { name: /Premiumga o'tish/i }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /AI reportni ochish/i }),
     ).toHaveAttribute("href", "/user/report");
@@ -107,8 +107,8 @@ describe("DashboardAiInsightCard", () => {
     expect(screen.getByText("Limit tugagan")).toBeInTheDocument();
     expect(screen.getByText(/Bu oy yangi report limiti tugagan/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Premiumga o'tish/i }),
-    ).toHaveAttribute("href", "/user/payments");
+      screen.queryByRole("link", { name: /Premiumga o'tish/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the latest AI report and next action for premium users", () => {

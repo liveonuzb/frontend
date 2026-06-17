@@ -105,6 +105,13 @@ const renderFriends = (initialEntries = ["/user/friends"]) =>
     </MemoryRouter>,
   );
 
+const renderEmbeddedFriends = () =>
+  render(
+    <MemoryRouter initialEntries={["/user/dashboard/profile/friends"]}>
+      <FriendsContainer embedded />
+    </MemoryRouter>,
+  );
+
 describe("FriendsContainer", () => {
   beforeEach(() => {
     mocks.navigate.mockClear();
@@ -194,5 +201,16 @@ describe("FriendsContainer", () => {
     fireEvent.click(screen.getByRole("button", { name: /Chat/i }));
 
     expect(mocks.navigate).toHaveBeenCalledWith("/user/chat?userId=friend-1");
+  });
+
+  it("renders a compact embedded drawer variant with friends and recommendation tabs", () => {
+    renderEmbeddedFriends();
+
+    expect(
+      screen.queryByRole("heading", { level: 1, name: "Do'stlar" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Do'stlar 1" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Tavsiya 2" })).toBeInTheDocument();
+    expect(screen.getByText("Do'stlar ro'yxati")).toBeInTheDocument();
   });
 });

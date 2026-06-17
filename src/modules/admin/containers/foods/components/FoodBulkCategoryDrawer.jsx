@@ -30,49 +30,61 @@ const FoodBulkCategoryDrawer = ({
   onOpenChange,
   selectedFoodCount,
   assignableCategories,
+  assignableItems,
   bulkCategoryIds,
   setBulkCategoryIds,
+  selectedIds,
+  setSelectedIds,
   currentLanguage,
   isAssigningCategories,
+  isSaving,
   onAssign,
+  title = "Bulk kategoriya biriktirish",
+  description,
+  emptyLabel = "Faol kategoriyalar topilmadi.",
+  saveLabel = "Kategoriyalarni biriktirish",
 }) => {
+  const items = assignableItems ?? assignableCategories ?? [];
+  const checkedIds = selectedIds ?? bulkCategoryIds ?? [];
+  const setCheckedIds = setSelectedIds ?? setBulkCategoryIds;
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
         <DrawerHeader>
-          <DrawerTitle>Bulk kategoriya biriktirish</DrawerTitle>
+          <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>
-            Tanlangan {selectedFoodCount} ta ovqatga qo&apos;shimcha
-            kategoriyalar biriktiriladi.
+            {description ??
+              `Tanlangan ${selectedFoodCount} ta ovqatga qo'shimcha kategoriyalar biriktiriladi.`}
           </DrawerDescription>
         </DrawerHeader>
 
         <div className="px-6 py-4 space-y-3 overflow-y-auto max-h-[50vh] no-scrollbar">
-          {assignableCategories.length ? (
-            lodashMap(assignableCategories, (category) => (
+          {items.length ? (
+            lodashMap(items, (item) => (
               <label
-                key={category.id}
+                key={item.id}
                 className="flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3"
               >
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
                     {resolveLabel(
-                      category.translations,
-                      category.name,
+                      item.translations,
+                      item.name,
                       currentLanguage,
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    ID: {category.id}
+                    ID: {item.id}
                   </p>
                 </div>
                 <Checkbox
-                  checked={includes(bulkCategoryIds, category.id)}
+                  checked={includes(checkedIds, item.id)}
                   onCheckedChange={(checked) =>
-                    setBulkCategoryIds((cur) =>
+                    setCheckedIds((cur) =>
                       checked
-                        ? [...cur, category.id]
-                        : lodashFilter(cur, (id) => id !== category.id),
+                        ? [...cur, item.id]
+                        : lodashFilter(cur, (id) => id !== item.id),
                     )
                   }
                 />
@@ -80,7 +92,7 @@ const FoodBulkCategoryDrawer = ({
             ))
           ) : (
             <p className="text-sm text-muted-foreground">
-              Faol kategoriyalar topilmadi.
+              {emptyLabel}
             </p>
           )}
         </div>
@@ -88,9 +100,9 @@ const FoodBulkCategoryDrawer = ({
         <DrawerFooter className="border-t bg-muted/5 gap-2 px-6 py-4">
           <Button
             onClick={onAssign}
-            disabled={!bulkCategoryIds.length || isAssigningCategories}
+            disabled={!checkedIds.length || (isSaving ?? isAssigningCategories)}
           >
-            Kategoriyalarni biriktirish
+            {saveLabel}
           </Button>
         </DrawerFooter>
       </DrawerContent>

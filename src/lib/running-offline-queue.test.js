@@ -10,6 +10,7 @@ import map from "lodash/map";
 
 const point = (sequence) => ({
   sequence,
+  segmentIndex: 0,
   latitude: 41 + sequence / 1000,
   longitude: 69,
   sourceTimestamp: `2026-05-12T10:00:${String(sequence % 60).padStart(2, "0")}.000Z`,

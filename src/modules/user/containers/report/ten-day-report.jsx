@@ -115,7 +115,8 @@ export default function TenDayReport() {
   }, [days, endDateKey, setBreadcrumbs]);
 
   const { data: response, isLoading } = useGetQuery({
-    url: `/user/tracking/reports/range?days=${days}&endDate=${endDateKey}`,
+    url: "/user/nutrition/reports/range",
+    params: { days, endDate: endDateKey },
     queryProps: {
       queryKey: rangeReportQueryKey(days, endDateKey),
     },

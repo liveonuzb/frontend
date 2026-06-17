@@ -2,6 +2,10 @@ import React from "react";
 import get from "lodash/get";
 import { useNavigate } from "react-router";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import CalorieGaugeComponent from "@/components/calorie-gauge-widget";
 import {
   calculateMealCalories,
@@ -47,7 +51,7 @@ export default function CalorieGaugeWidget({
     },
   });
   const { data: trackingData } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, dateKey),
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
       enabled: shouldFetchDay && Boolean(dateKey),

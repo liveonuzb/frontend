@@ -15,6 +15,7 @@ import { WeightTab } from "./weight-tab";
 import { MeasurementsTab } from "./measurements-tab";
 import MeasurementTrendsSection from "./measurement-trends-section";
 import { TrackingPageLayout } from "@/components/tracking-page-shell";
+import { getUserSurfaceClassName } from "@/modules/user/lib/card-styles";
 
 const measurementKeys = ["chest", "waist", "hips", "arm", "thigh", "neck"];
 
@@ -73,7 +74,7 @@ const Index = () => {
         >
           <TrackingPageLayout
             aside={
-              <section className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6">
+              <section className={getUserSurfaceClassName("p-5 sm:p-6")}>
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                     Tracking
@@ -111,7 +112,9 @@ const Index = () => {
                   ], ({ label, value, hint }) => (
                     <div
                       key={label}
-                      className="rounded-[22px] border border-border/60 p-4"
+                      className={getUserSurfaceClassName(
+                        "border border-border/50 bg-muted/30 p-4",
+                      )}
                     >
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         {label}
@@ -146,9 +149,9 @@ const Index = () => {
             <TabsContent value="weight" className="mt-0">
               {isLoading ? (
                 <div className="space-y-4">
-                  <Skeleton className="h-48 w-full rounded-[28px]" />
-                  <Skeleton className="h-24 w-full rounded-[28px]" />
-                  <Skeleton className="h-24 w-full rounded-[28px]" />
+                  <Skeleton className="h-48 w-full rounded-2xl" />
+                  <Skeleton className="h-24 w-full rounded-2xl" />
+                  <Skeleton className="h-24 w-full rounded-2xl" />
                 </div>
               ) : (
                 <WeightTab
@@ -165,10 +168,10 @@ const Index = () => {
               <div className="space-y-4">
                 {isLoading ? (
                   <div className="space-y-4">
-                    <Skeleton className="h-48 w-full rounded-[28px]" />
+                    <Skeleton className="h-48 w-full rounded-2xl" />
                     <div className="grid grid-cols-2 gap-3">
                       {map([0, 1, 2, 3], (i) => (
-                        <Skeleton key={i} className="h-20 rounded-[22px]" />
+                        <Skeleton key={i} className="h-20 rounded-2xl" />
                       ))}
                     </div>
                   </div>

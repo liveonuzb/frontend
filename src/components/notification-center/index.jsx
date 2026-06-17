@@ -708,21 +708,27 @@ const NotificationCenter = ({ className, ...props }) => {
     <>
       <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
         <Button
+          type="button"
           variant="ghost"
           size="icon-sm"
           className={cn("relative", className)}
+          aria-label={
+            model.unreadCount > 0
+              ? `${model.unreadCount} ta o'qilmagan bildirishnoma`
+              : "Bildirishnomalar"
+          }
           onClick={() => setOpen(true)}
           {...props}
         >
           <BellIcon className="size-4" />
           {model.unreadCount > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+            <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
               {model.unreadCount}
             </span>
           ) : null}
         </Button>
 
-        <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+        <DrawerContent className="data-[vaul-drawer-direction=bottom]:h-[min(82vh,42rem)] data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader className="relative px-14 pb-4 pt-7">
             {canOpenSettings ? (
               <Button

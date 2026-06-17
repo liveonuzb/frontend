@@ -19,6 +19,7 @@ const RecipeReviewStep = ({
   onDraftSave,
   onPublish,
   onAddToMealPlan,
+  isSubmitting,
 }) => (
   <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
     <Card>
@@ -103,23 +104,33 @@ const RecipeReviewStep = ({
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Status</span>
+            <span className="text-muted-foreground">Holat</span>
             <span className="font-semibold text-foreground">{publishStatus}</span>
           </div>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="flex flex-col gap-2 p-5">
-          <Button type="button" variant="outline" onClick={onDraftSave}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={onDraftSave}
+          >
             Qoralama sifatida saqlash
           </Button>
-          <Button type="button" onClick={onPublish}>
+          <Button type="button" disabled={isSubmitting} onClick={onPublish}>
             <SendIcon data-icon="inline-start" />
-            Nashr etish
+            Admin ko'rib chiqishiga yuborish
           </Button>
-          <Button type="button" variant="secondary" onClick={onAddToMealPlan}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={onAddToMealPlan}
+          >
             <CalendarPlusIcon data-icon="inline-start" />
-            Meal plan ga qo'shish
+            Rejaga qo'shish
           </Button>
         </CardContent>
       </Card>

@@ -38,10 +38,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import { Drawer } from "@/components/ui/drawer";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
-import FoodDetailPortionDrawer, {
+import FoodDetailPortionDrawer from "./food-detail-portion-drawer.jsx";
+import {
   calculateFoodPortionMacros,
   getFoodSliderMax,
-} from "./food-detail-portion-drawer.jsx";
+} from "./food-portion-utils.js";
 
 import filter from "lodash/filter";
 import map from "lodash/map";

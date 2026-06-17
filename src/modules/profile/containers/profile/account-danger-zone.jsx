@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/drawer";
 import useApi from "@/hooks/api/use-api";
 import { usePostQuery } from "@/hooks/api";
+import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
 import {
-  getRequestErrorMessage,
-} from "@/hooks/app/use-profile-settings";
-import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
+  PROFILE_OVERVIEW_TAB,
+  useProfileOverlay,
+} from "@/modules/profile/hooks/use-profile-overlay";
+import { getUserCardClassName } from "@/modules/user/lib/card-styles";
 import { useAuthStore } from "@/store";
 import { cn } from "@/lib/utils";
 
@@ -35,14 +37,19 @@ export const AccountDangerZone = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { request } = useApi();
-  const { closeProfile } = useProfileOverlay();
+  const {
+    activeProfileDrawer,
+    closeProfile,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
   const logout = useAuthStore((state) => state.logout);
   const refreshToken = useAuthStore((state) => state.refreshToken);
   const roles = useAuthStore((state) => state.roles);
   const { mutateAsync: logoutRequest, isPending: isLoggingOut } = usePostQuery();
-  const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [confirmationText, setConfirmationText] = React.useState("");
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const isDeleteOpen = activeProfileDrawer === "delete-account";
 
   const isSuperAdmin =
     isArray(roles) && includes(roles, "SUPER_ADMIN");
@@ -54,13 +61,17 @@ export const AccountDangerZone = () => {
         return;
       }
 
-      setIsDeleteOpen(nextOpen);
+      if (nextOpen) {
+        openProfileDrawer("delete-account", PROFILE_OVERVIEW_TAB);
+      } else {
+        closeProfileDrawer();
+      }
 
       if (!nextOpen) {
         setConfirmationText("");
       }
     },
-    [isDeleting],
+    [closeProfileDrawer, isDeleting, openProfileDrawer],
   );
 
   const handleLogout = React.useCallback(async () => {
@@ -100,7 +111,7 @@ export const AccountDangerZone = () => {
           defaultValue: "Hisob muvaffaqiyatli o'chirildi.",
         }),
       );
-      setIsDeleteOpen(false);
+      closeProfileDrawer();
       setConfirmationText("");
       closeProfile?.();
       logout();
@@ -118,11 +129,21 @@ export const AccountDangerZone = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [canConfirm, closeProfile, isDeleting, logout, navigate, queryClient, request, t]);
+  }, [
+    canConfirm,
+    closeProfile,
+    closeProfileDrawer,
+    isDeleting,
+    logout,
+    navigate,
+    queryClient,
+    request,
+    t,
+  ]);
 
   return (
     <>
-      <Card className="overflow-hidden">
+      <Card className={getUserCardClassName("gap-0 overflow-hidden py-0")}>
         <CardContent className="p-0">
           <AccountActionRow
             icon={LogOutIcon}
@@ -140,7 +161,9 @@ export const AccountDangerZone = () => {
                 label={t("profile.security.account.delete", {
                   defaultValue: "Hisobni o'chirish",
                 })}
-                onClick={() => setIsDeleteOpen(true)}
+                onClick={() =>
+                  openProfileDrawer("delete-account", PROFILE_OVERVIEW_TAB)
+                }
                 destructive
               />
             </>

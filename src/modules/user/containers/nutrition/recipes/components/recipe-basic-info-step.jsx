@@ -19,7 +19,7 @@ import RecipeImage from "./recipe-image.jsx";
 import RecipeImagePickerDrawer from "./recipe-image-picker-drawer.jsx";
 import RecipeOptionPickerDrawer from "./recipe-option-picker-drawer.jsx";
 
-const categoryOptions = ["Nonushta", "Tushlik", "Kechki ovqat", "Snack"];
+const categoryOptions = ["Nonushta", "Tushlik", "Kechki ovqat", "Tamaddi"];
 const difficultyOptions = ["Oson", "O'rtacha", "Qiyin"];
 const dietTags = [
   "Yuqori protein",

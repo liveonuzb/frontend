@@ -12,27 +12,16 @@
       "language": "Language",
       "languageTitle": "Choose language",
       "languageDescription": "Change the LiveOn interface language.",
+      "mode": "Mode",
       "menuOpen": "Open menu",
       "menuClose": "Close menu",
       "menuTitle": "LiveOn menu",
       "menuDescription": "Jump to a section or start your personal plan.",
       "links": [
-        [
-          "testimonials",
-          "Programs"
-        ],
-        [
-          "progress",
-          "Results"
-        ],
-        [
-          "pricing",
-          "Pricing"
-        ],
-        [
-          "faq",
-          "FAQ"
-        ]
+        ["testimonials", "Programs"],
+        ["progress", "Results"],
+        ["pricing", "Pricing"],
+        ["faq", "FAQ"]
       ]
     },
     "hero": {
@@ -42,18 +31,9 @@
       "primaryCta": "Start free",
       "secondaryCta": "View programs",
       "metrics": [
-        [
-          "50K+",
-          "active users"
-        ],
-        [
-          "-4.8 kg",
-          "average weight loss"
-        ],
-        [
-          "92%",
-          "plan adherence"
-        ]
+        ["50K+", "active users"],
+        ["-4.8 kg", "average weight loss"],
+        ["92%", "plan adherence"]
       ],
       "dashboard": {
         "eyebrow": "My indicators",
@@ -67,21 +47,9 @@
         },
         "mealsLabel": "Meals",
         "meals": [
-          [
-            "Breakfast",
-            "420 kcal",
-            "Ready"
-          ],
-          [
-            "Lunch",
-            "560 kcal",
-            "Planned"
-          ],
-          [
-            "Dinner",
-            "440 kcal",
-            "Adapts"
-          ]
+          ["Breakfast", "420 kcal", "Ready"],
+          ["Lunch", "560 kcal", "Planned"],
+          ["Dinner", "440 kcal", "Adapts"]
         ],
         "workout": {
           "label": "Workout",
@@ -103,6 +71,41 @@
           "value": "-1.4 kg",
           "delta": "pace is strong"
         }
+      },
+      "preview": {
+        "ariaLabel": "LiveOn app preview slides",
+        "calories": {
+          "title": "Today's calories",
+          "eatenLabel": "Eaten",
+          "value": "2,160",
+          "unit": "kcal",
+          "progress": 78,
+          "macros": [
+            ["Carbs", "235", "260g", 86, "lime"],
+            ["Protein", "140", "150g", 82, "orange"],
+            ["Fat", "64", "80g", 76, "violet"]
+          ]
+        },
+        "tracking": {
+          "eyebrow": "Daily tracking",
+          "title": "Water and mood side by side",
+          "body": "LiveOn keeps your daily rhythm, not only calories.",
+          "water": {
+            "label": "Water",
+            "value": "2100",
+            "target": "2500 ml",
+            "progress": 78
+          },
+          "mood": {
+            "label": "Mood",
+            "value": "Good"
+          },
+          "stats": [
+            ["Water", "2.1 L", "DropletsIcon"],
+            ["Day focus", "7-8 hours sleep", "CheckCircle2Icon"],
+            ["LiveOn AI", "78%", "BotIcon"]
+          ]
+        }
       }
     },
     "productTour": {
@@ -116,11 +119,7 @@
           "title": "Choose a plan",
           "body": "Pick a program and calorie plan that matches your goal.",
           "icon": "TargetIcon",
-          "highlights": [
-            "Goal weight",
-            "Calorie range",
-            "Habits"
-          ]
+          "highlights": ["Goal weight", "Calorie range", "Habits"]
         },
         {
           "id": "ai",
@@ -128,11 +127,7 @@
           "title": "Track calories",
           "body": "Log your meals and stay close to your daily calorie target.",
           "icon": "BotIcon",
-          "highlights": [
-            "Meal plans",
-            "Workout guidance",
-            "Water rhythm"
-          ]
+          "highlights": ["Meal plans", "Workout guidance", "Water rhythm"]
         },
         {
           "id": "daily",
@@ -140,11 +135,7 @@
           "title": "Do workouts",
           "body": "Follow the training plan and keep your routine consistent.",
           "icon": "CalendarCheckIcon",
-          "highlights": [
-            "Meal log",
-            "Workout status",
-            "Mood"
-          ]
+          "highlights": ["Meal log", "Workout status", "Mood"]
         },
         {
           "id": "progress",
@@ -152,11 +143,7 @@
           "title": "See results",
           "body": "Track changes in weight, measurements, and progress photos.",
           "icon": "LineChartIcon",
-          "highlights": [
-            "10-day report",
-            "Weight trend",
-            "Next step"
-          ]
+          "highlights": ["10-day report", "Weight trend", "Next step"]
         }
       ]
     },
@@ -171,77 +158,49 @@
           "title": "Plan choice",
           "body": "Choose the direction that fits your goal and habits.",
           "icon": "TargetIcon",
-          "bullets": [
-            "Goal",
-            "Profile",
-            "Constraints"
-          ]
+          "bullets": ["Goal", "Profile", "Constraints"]
         },
         {
           "id": "dashboard",
           "title": "Calorie tracking",
           "body": "Keep daily limits and meals under control.",
           "icon": "BarChart3Icon",
-          "bullets": [
-            "Daily status",
-            "Quick actions",
-            "AI reminder"
-          ]
+          "bullets": ["Daily status", "Quick actions", "AI reminder"]
         },
         {
           "id": "nutrition",
           "title": "Food control",
           "body": "Log meals and understand what you eat.",
           "icon": "UtensilsIcon",
-          "bullets": [
-            "Meal plan",
-            "Recipe",
-            "Portion"
-          ]
+          "bullets": ["Meal plan", "Recipe", "Portion"]
         },
         {
           "id": "workouts",
           "title": "Workout plan",
           "body": "A plan for home or gym training.",
           "icon": "DumbbellIcon",
-          "bullets": [
-            "Plan",
-            "Session",
-            "Report"
-          ]
+          "bullets": ["Plan", "Session", "Report"]
         },
         {
           "id": "water-mood",
           "title": "Water intake",
           "body": "Reach your daily water goal.",
           "icon": "DropletsIcon",
-          "bullets": [
-            "Water",
-            "Reminder",
-            "Mood"
-          ]
+          "bullets": ["Water", "Reminder", "Mood"]
         },
         {
           "id": "progress",
           "title": "Weight tracking",
           "body": "Log weight and see the trend.",
           "icon": "LineChartIcon",
-          "bullets": [
-            "Trend",
-            "10 days",
-            "Result"
-          ]
+          "bullets": ["Trend", "10 days", "Result"]
         },
         {
           "id": "profile",
           "title": "Steps",
           "body": "Track daily activity through steps.",
           "icon": "UserCheckIcon",
-          "bullets": [
-            "Language",
-            "Theme",
-            "Health"
-          ]
+          "bullets": ["Language", "Theme", "Health"]
         }
       ]
     },
@@ -294,26 +253,14 @@
       "title": "One daily plan connects the work",
       "body": "The plan is simple: what to eat, how to train and what to track.",
       "features": [
-        [
-          "Meals",
-          "3-5 meals with macros and replacements.",
-          "UtensilsIcon"
-        ],
-        [
-          "Workouts",
-          "Home or gym workload for your level.",
-          "DumbbellIcon"
-        ],
+        ["Meals", "3-5 meals with macros and replacements.", "UtensilsIcon"],
+        ["Workouts", "Home or gym workload for your level.", "DumbbellIcon"],
         [
           "Water and habits",
           "Water, sleep, steps and daily focus.",
           "DropletsIcon"
         ],
-        [
-          "Reports",
-          "Weight, calories and completion trends.",
-          "BarChart3Icon"
-        ]
+        ["Reports", "Weight, calories and completion trends.", "BarChart3Icon"]
       ]
     },
     "showcase": {
@@ -363,42 +310,12 @@
       "title": "Results stay clear on one screen",
       "body": "See weight, calories, water, workouts and habits together.",
       "metrics": [
-        [
-          "7 days",
-          "completion streak",
-          "FlameIcon",
-          "orange"
-        ],
-        [
-          "-1.2 kg",
-          "weekly trend",
-          "TrendingDownIcon",
-          "green"
-        ],
-        [
-          "2.1 L",
-          "water target",
-          "DropletsIcon",
-          "teal"
-        ],
-        [
-          "10,842",
-          "steps",
-          "ZapIcon",
-          "blue"
-        ],
-        [
-          "2160 kcal",
-          "nutrition",
-          "BarChart3Icon",
-          "orange"
-        ],
-        [
-          "42 min",
-          "workout",
-          "ActivityIcon",
-          "blue"
-        ]
+        ["7 days", "completion streak", "FlameIcon", "orange"],
+        ["-1.2 kg", "weekly trend", "TrendingDownIcon", "green"],
+        ["2.1 L", "water target", "DropletsIcon", "teal"],
+        ["10,842", "steps", "ZapIcon", "blue"],
+        ["2160 kcal", "nutrition", "BarChart3Icon", "orange"],
+        ["42 min", "workout", "ActivityIcon", "blue"]
       ],
       "chartTitle": "Weekly rhythm",
       "weightTitle": "Weight",
@@ -514,72 +431,33 @@
         ]
       ]
     },
-    "final": {
-      "title": "Start with discipline today and see a new you tomorrow.",
-      "body": "LiveOn stays with you through plan, discipline, and result.",
-      "cta": "Start free",
-      "secondary": "View programs"
-    },
     "footer": {
       "tagline": "Your best assistant for weight loss and workout planning.",
       "columns": [
         [
           "Product",
           [
-            [
-              "Features",
-              "#features"
-            ],
-            [
-              "Nutrition",
-              "#nutrition"
-            ],
-            [
-              "Workouts",
-              "#workouts"
-            ],
-            [
-              "Progress",
-              "#progress"
-            ],
-            [
-              "Pricing",
-              "#pricing"
-            ]
+            ["Features", "#features"],
+            ["Nutrition", "#nutrition"],
+            ["Workouts", "#workouts"],
+            ["Progress", "#progress"],
+            ["Pricing", "#pricing"]
           ]
         ],
         [
           "Company",
           [
-            [
-              "About",
-              "#local-market"
-            ],
-            [
-              "Contacts",
-              "mailto:support@liveon.uz"
-            ]
+            ["About", "#local-market"],
+            ["Contacts", "mailto:support@liveon.uz"]
           ]
         ],
         [
           "Support",
           [
-            [
-              "FAQ",
-              "#faq"
-            ],
-            [
-              "Help",
-              "mailto:support@liveon.uz"
-            ],
-            [
-              "Terms",
-              "/terms"
-            ],
-            [
-              "Privacy",
-              "/privacy"
-            ]
+            ["FAQ", "#faq"],
+            ["Help", "mailto:support@liveon.uz"],
+            ["Terms", "/terms"],
+            ["Privacy", "/privacy"]
           ]
         ]
       ],

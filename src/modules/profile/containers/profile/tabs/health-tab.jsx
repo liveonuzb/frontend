@@ -15,6 +15,10 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import useMe from "@/hooks/app/use-me";
 import useWorkoutCalorieAdjustmentPreference from "@/hooks/app/use-workout-calorie-adjustment";
@@ -1246,7 +1250,7 @@ export const HealthTab = ({ embedded = false }) => {
 
   const { data: healthReportData, isLoading: isHealthReportLoading } =
     useGetQuery({
-      url: "/daily-tracking/reports/health",
+      url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, "reports/health"),
       params: { days: periodDays },
       queryProps: {
         queryKey: ["daily-tracking", "health-report", "profile", periodDays],
@@ -1254,7 +1258,7 @@ export const HealthTab = ({ embedded = false }) => {
     });
   const { data: waterAnalyticsData, isLoading: isWaterAnalyticsLoading } =
     useGetQuery({
-      url: "/daily-tracking/water/analytics",
+      url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, "water/analytics"),
       params: { days: periodDays },
       queryProps: {
         queryKey: ["water", "analytics", "profile", periodDays],

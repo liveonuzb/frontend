@@ -282,7 +282,7 @@ const FoodFormDrawer = ({
                           <MultipleDrawerPicker
                             value={field.value}
                             onChange={field.onChange}
-                            url="/admin/food-categories"
+                            url="/admin/nutrition/food-categories"
                             queryKey={FOOD_CATEGORIES_QUERY_KEY}
                             valueKey="id"
                             title="Kategoriyalarni tanlang"
@@ -318,7 +318,7 @@ const FoodFormDrawer = ({
                           <MultipleDrawerPicker
                             value={field.value}
                             onChange={field.onChange}
-                            url="/admin/cuisines"
+                            url="/admin/nutrition/cuisines"
                             queryKey={CUISINES_QUERY_KEY}
                             valueKey="id"
                             title="Oshxonalarni tanlang"

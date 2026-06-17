@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   BarChart3Icon,
   DownloadIcon,
@@ -18,6 +19,7 @@ import NutritionCard from "../ui/nutrition-card.jsx";
 import AIRecommendationCard from "../ui/ai-recommendation-card.jsx";
 
 export default function NutritionReportView() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatchReportAction = (eventName) => {
     if (typeof window === "undefined") return;
@@ -26,9 +28,9 @@ export default function NutritionReportView() {
   const sidebar = (
     <>
       <AIRecommendationCard
-        title="AI tavsiya"
-        description="Hisobotdagi kaloriya, suv va makro trendlar asosida keyingi hafta uchun aniqroq reja tuzing."
-        actionLabel="Rejalarni ko'rish"
+        title={t("user.nutrition.reportPage.aiTitle")}
+        description={t("user.nutrition.reportPage.aiDescription")}
+        actionLabel={t("user.nutrition.reportPage.viewPlans")}
         onAction={() => navigate("/user/nutrition/plans")}
       />
       <NutritionCard>
@@ -37,20 +39,24 @@ export default function NutritionReportView() {
             <BarChart3Icon className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-black">Hisobot scope</h2>
+            <h2 className="text-sm font-black">
+              {t("user.nutrition.reportPage.scopeTitle")}
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Ma'lumotlar kiritilgan ovqatlar, suv loglari va maqsadlar asosida hisoblanadi.
+              {t("user.nutrition.reportPage.scopeDescription")}
             </p>
           </div>
         </div>
       </NutritionCard>
       <NutritionCard>
-        <h2 className="text-sm font-black">Tez tekshiruv</h2>
+        <h2 className="text-sm font-black">
+          {t("user.nutrition.reportPage.quickCheckTitle")}
+        </h2>
         <div className="mt-3 space-y-2">
           {[
-            [TargetIcon, "Maqsadga rioya qilish"],
-            [ScaleIcon, "Makro balans"],
-            [SparklesIcon, "Trend insightlar"],
+            [TargetIcon, t("user.nutrition.reportPage.quickGoal")],
+            [ScaleIcon, t("user.nutrition.reportPage.quickMacro")],
+            [SparklesIcon, t("user.nutrition.reportPage.quickTrends")],
           ].map(([Icon, label]) => (
             <div key={label} className="flex items-center gap-2 rounded-2xl bg-muted/40 px-3 py-2 text-sm font-bold">
               <Icon className="size-4 text-primary" aria-hidden="true" />
@@ -66,8 +72,8 @@ export default function NutritionReportView() {
     <NutritionLayout sidebar={sidebar}>
       <NutritionPageHeader
         eyebrow="Analytics"
-        title="Hisobot"
-        description="Kaloriya, makro, suv va ovqat kiritish odatlarini trendlar orqali kuzating."
+        title={t("user.nutrition.reportPage.title")}
+        description={t("user.nutrition.reportPage.description")}
         actions={(
           <>
             <Button
@@ -77,7 +83,7 @@ export default function NutritionReportView() {
               onClick={() => dispatchReportAction(NUTRITION_REPORT_TOGGLE_COMPARISON_EVENT)}
             >
               <ScaleIcon className="size-4" />
-              Taqqoslash
+              {t("user.nutrition.reportPage.compare")}
             </Button>
             <Button
               type="button"
@@ -85,15 +91,14 @@ export default function NutritionReportView() {
               onClick={() => dispatchReportAction(NUTRITION_REPORT_EXPORT_EVENT)}
             >
               <DownloadIcon className="size-4" />
-              Eksport qilish
+              {t("user.nutrition.reportPage.export")}
             </Button>
           </>
         )}
       />
       <NutritionAnalyticsSection />
       <p className="text-xs font-medium text-muted-foreground">
-        Hisobot ma'lumotlari kiritilgan ovqatlar va maqsadlar asosida hisoblanadi.
-        Oxirgi yangilanish tanlangan sana oralig'i qayta yuklanganda yangilanadi.
+        {t("user.nutrition.reportPage.footerNote")}
       </p>
     </NutritionLayout>
   );

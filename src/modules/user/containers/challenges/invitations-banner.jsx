@@ -5,6 +5,10 @@ import take from "lodash/take";
 import { AnimatePresence, motion } from "framer-motion";
 import { BellIcon, TrophyIcon, UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  getUserAccentCardClassName,
+  getUserInteractiveCardClassName,
+} from "@/modules/user/lib/card-styles";
 
 const InvitationsBanner = ({
   invitations = [],
@@ -18,15 +22,14 @@ const InvitationsBanner = ({
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative overflow-hidden rounded-[1.75rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-primary/5 p-1 shadow-xl shadow-primary/5"
+        className={getUserAccentCardClassName(
+          "relative overflow-hidden border border-primary/15 bg-primary/5 p-1",
+        )}
       >
-        <div className="absolute -right-12 -top-12 size-40 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 size-40 rounded-full bg-orange-500/10 blur-3xl" />
-
         <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20 ring-4 ring-primary/10">
-              <BellIcon className="size-6 text-white" />
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+              <BellIcon className="size-6" />
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">
@@ -60,7 +63,9 @@ const InvitationsBanner = ({
             <motion.div
               key={inv.id}
               layout
-              className="group relative overflow-hidden rounded-2xl border border-border/40 bg-card/70 p-4 transition-all hover:border-primary/30 hover:bg-card"
+              className={getUserInteractiveCardClassName(
+                "group relative overflow-hidden p-4",
+              )}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
@@ -88,7 +93,7 @@ const InvitationsBanner = ({
                   </Button>
                   <Button
                     size="sm"
-                    className="h-9 rounded-xl px-5 font-bold shadow-md shadow-primary/20"
+                    className="h-9 rounded-xl px-5 font-bold"
                     onClick={() => onRespond?.(inv.id, "ACCEPT")}
                     disabled={Boolean(get(respondingById, inv.id))}
                   >

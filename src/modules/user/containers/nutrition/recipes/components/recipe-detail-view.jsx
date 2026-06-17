@@ -19,9 +19,16 @@ import {
 import find from "lodash/find";
 import map from "lodash/map";
 import slice from "lodash/slice";
+import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
@@ -33,13 +40,13 @@ import {
 } from "@/components/ui/drawer.jsx";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils.js";
+import CreateRecipeShoppingListButton from "./create-recipe-shopping-list-button.jsx";
 import NutritionSummary from "./nutrition-summary.jsx";
 import RecipeImage from "./recipe-image.jsx";
 import {
-  MOCK_RECIPES,
   formatQuantity,
   getRecipeNutrition,
-} from "../recipe-mock-data.js";
+} from "../recipe-ui-utils.js";
 
 const TimeSummaryItem = ({ icon: Icon, value, label }) => (
   <div className="flex items-center gap-3 rounded-2xl border border-border bg-background px-3 py-3">
@@ -51,7 +58,56 @@ const TimeSummaryItem = ({ icon: Icon, value, label }) => (
   </div>
 );
 
-const IngredientsChecklist = ({ recipe, servings, onServingsChange }) => {
+const getMetaValue = (value, fallback = "Ko'rsatilmagan") => {
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : fallback;
+  }
+
+  return value || fallback;
+};
+
+const RecipeMetaGrid = ({ recipe }) => {
+  const metaItems = [
+    {
+      label: "Kategoriya",
+      value: getMetaValue(recipe.category || recipe.categoryLabels),
+    },
+    {
+      label: "Oshxona",
+      value: getMetaValue(recipe.cuisineLabels),
+    },
+    {
+      label: "Qiyinchilik",
+      value: getMetaValue(recipe.difficulty),
+    },
+    {
+      label: "Allergenlar",
+      value: getMetaValue(recipe.allergens, "Belgilanmagan"),
+    },
+  ];
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {map(metaItems, (item) => (
+        <div
+          key={item.label}
+          className="rounded-2xl border border-border bg-background p-3 text-sm"
+        >
+          <div className="font-semibold text-foreground">{item.label}</div>
+          <div className="mt-1 text-muted-foreground">{item.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const IngredientsChecklist = ({
+  recipe,
+  servings,
+  isUpdating,
+  onServingsChange,
+  onCreateShoppingList,
+}) => {
   const [checkedMap, setCheckedMap] = React.useState({});
 
   return (
@@ -122,9 +178,13 @@ const IngredientsChecklist = ({ recipe, servings, onServingsChange }) => {
             </label>
           );
         })}
-        <Button type="button" variant="outline" className="mt-3">
-          Masalliqlarni almashtirish
-        </Button>
+        {onCreateShoppingList ? (
+          <CreateRecipeShoppingListButton
+            className="mt-3"
+            isUpdating={isUpdating}
+            onClick={onCreateShoppingList}
+          />
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -152,7 +212,7 @@ const InstructionsTimeline = ({ steps }) => (
                 {step.title}
               </h3>
               {step.durationMinutes ? (
-                <Badge variant="outline">{step.durationMinutes} min</Badge>
+                <Badge variant="outline">{step.durationMinutes} daq</Badge>
               ) : null}
             </div>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -181,7 +241,10 @@ const NutritionComposition = ({ nutrition }) => (
             <div className="text-sm text-muted-foreground">kkal</div>
           </div>
         </div>
-        <NutritionSummary nutrition={nutrition} className="grid-cols-1 sm:grid-cols-3" />
+        <NutritionSummary
+          nutrition={nutrition}
+          className="grid-cols-1 sm:grid-cols-3"
+        />
       </div>
       <Separator />
       <div className="flex flex-col text-sm">
@@ -206,42 +269,26 @@ const NutritionComposition = ({ nutrition }) => (
   </Card>
 );
 
-const RelatedRecipes = ({ currentRecipeId }) => {
-  const related = slice(
-    MOCK_RECIPES.filter((recipe) => recipe.id !== currentRecipeId),
-    0,
-    4,
-  );
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>O'xshash retseptlar</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {map(related, (recipe) => (
-          <div key={recipe.id} className="grid grid-cols-[76px_minmax(0,1fr)] gap-3">
-            <div className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-              <RecipeImage recipe={recipe} />
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-foreground">
-                {recipe.title}
-              </div>
-              <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>{recipe.totalTimeMinutes} min</span>
-                <span>{recipe.caloriesPerServing} kkal</span>
-              </div>
-            </div>
-          </div>
-        ))}
-        <Button type="button" variant="outline">
-          Barchasini ko'rish
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
+const RelatedRecipes = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle>O'xshash retseptlar</CardTitle>
+    </CardHeader>
+    <CardContent className="flex flex-col gap-3">
+      <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
+        <p className="text-sm font-medium text-foreground">
+          Hozircha o'xshash retseptlar mavjud emas.
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Retseptlar katalogidan boshqa variantlarni ko'rishingiz mumkin.
+        </p>
+      </div>
+      <Button type="button" variant="outline" asChild>
+        <Link to="/user/nutrition/recipes">Retseptlarga qaytish</Link>
+      </Button>
+    </CardContent>
+  </Card>
+);
 
 const detailSections = [
   {
@@ -306,6 +353,8 @@ const DetailSectionDrawer = ({
   nutrition,
   onOpenChange,
   onServingsChange,
+  onCreateShoppingList,
+  isUpdating,
 }) => {
   const activeSection = find(detailSections, (item) => item.value === section);
 
@@ -325,7 +374,9 @@ const DetailSectionDrawer = ({
             <IngredientsChecklist
               recipe={recipe}
               servings={servings}
+              isUpdating={isUpdating}
               onServingsChange={onServingsChange}
+              onCreateShoppingList={onCreateShoppingList}
             />
           ) : null}
           {section === "steps" ? <InstructionsTimeline steps={steps} /> : null}
@@ -334,7 +385,7 @@ const DetailSectionDrawer = ({
           ) : null}
           {section === "more" ? (
             <div className="flex flex-col gap-4">
-              <RelatedRecipes currentRecipeId={recipe.id} />
+              <RelatedRecipes />
               <Card>
                 <CardContent className="flex flex-col gap-2 p-5">
                   <h2 className="text-base font-semibold text-foreground">
@@ -377,6 +428,7 @@ const RecipeDetailView = ({
   onFavorite,
   onSave,
   onAddToMealPlan,
+  onCreateShoppingList,
   onEdit,
   onStartCooking,
   variant = "page",
@@ -400,27 +452,31 @@ const RecipeDetailView = ({
             <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-muted">
               <RecipeImage recipe={recipe} />
               <Badge variant="secondary" className="absolute left-3 top-3">
-                {recipe.totalTimeMinutes} min
+                {recipe.totalTimeMinutes} daq
               </Badge>
               <Button
                 type="button"
                 variant={isFavorite ? "default" : "outline"}
                 size="icon-sm"
-                aria-label={isFavorite ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo'shish"}
+                aria-label={
+                  isFavorite
+                    ? "Sevimlilardan olib tashlash"
+                    : "Sevimlilarga qo'shish"
+                }
                 aria-pressed={Boolean(isFavorite)}
                 className="absolute right-3 top-3 bg-background/90"
                 disabled={isUpdating}
                 onClick={onFavorite}
               >
-                <HeartIcon className={cn("size-4", isFavorite && "fill-current")} />
+                <HeartIcon
+                  className={cn("size-4", isFavorite && "fill-current")}
+                />
               </Button>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {map(slice(MOCK_RECIPES, 0, 4), (item, index) => (
-                <div key={item.id} className="aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                  <RecipeImage recipe={index === 0 ? recipe : item} />
-                </div>
-              ))}
+              <div className="aspect-[4/3] overflow-hidden rounded-xl border border-primary bg-muted">
+                <RecipeImage recipe={recipe} />
+              </div>
             </div>
           </div>
 
@@ -471,12 +527,7 @@ const RecipeDetailView = ({
                 label="Porsiya"
               />
             </div>
-            <div className="rounded-2xl border border-border bg-background p-3 text-sm">
-              <span className="font-semibold text-foreground">
-                Qiyinchilik darajasi
-              </span>
-              <span className="ml-3 text-muted-foreground">{recipe.difficulty}</span>
-            </div>
+            <RecipeMetaGrid recipe={recipe} />
           </div>
         </CardContent>
       </Card>
@@ -494,50 +545,53 @@ const RecipeDetailView = ({
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-          <IngredientsChecklist
-            recipe={recipe}
-            servings={servings}
-            onServingsChange={onServingsChange}
-          />
-          <div className="flex flex-col gap-5">
-            <InstructionsTimeline steps={steps} />
-            <NutritionComposition nutrition={nutrition} />
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+            <IngredientsChecklist
+              recipe={recipe}
+              servings={servings}
+              isUpdating={isUpdating}
+              onServingsChange={onServingsChange}
+              onCreateShoppingList={onCreateShoppingList}
+            />
+            <div className="flex flex-col gap-5">
+              <InstructionsTimeline steps={steps} />
+              <NutritionComposition nutrition={nutrition} />
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-5">
-          <RelatedRecipes currentRecipeId={recipe.id} />
-          <Card>
-            <CardContent className="flex flex-col gap-2 p-5">
-              <h2 className="text-base font-semibold text-foreground">
-                Foydali maslahat
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Quinoani tayyorlashdan oldin uni yaxshilab yuvish yengil va mazali bo'lishiga yordam beradi.
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex flex-col gap-3 p-5">
-              <h2 className="text-base font-semibold text-foreground">
-                Ushbu retseptni yoqtirdingizmi?
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Do'stlaringiz bilan bo'lishing va ularni ilhomlantiring.
-              </p>
-              <Button type="button" variant="outline">
-                <Share2Icon data-icon="inline-start" />
-                Ulashish
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="flex flex-col gap-5">
+            <RelatedRecipes />
+            <Card>
+              <CardContent className="flex flex-col gap-2 p-5">
+                <h2 className="text-base font-semibold text-foreground">
+                  Foydali maslahat
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Quinoani tayyorlashdan oldin uni yaxshilab yuvish yengil va
+                  mazali bo'lishiga yordam beradi.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-5">
+                <h2 className="text-base font-semibold text-foreground">
+                  Ushbu retseptni yoqtirdingizmi?
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Do'stlaringiz bilan bo'lishing va ularni ilhomlantiring.
+                </p>
+                <Button type="button" variant="outline">
+                  <Share2Icon data-icon="inline-start" />
+                  Ulashish
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
       <Card className="sticky bottom-3 z-10 bg-card/95 backdrop-blur">
-        <CardFooter className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.75fr)_auto]">
+        <CardFooter className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,0.75fr)_auto]">
           <Button
             type="button"
             className="col-span-2 sm:col-span-1"
@@ -551,7 +605,21 @@ const RecipeDetailView = ({
             <CalendarPlusIcon data-icon="inline-start" />
             Qo'shish
           </Button>
-          <Button type="button" variant="outline" disabled={isUpdating} onClick={onSave}>
+          {onCreateShoppingList ? (
+            <CreateRecipeShoppingListButton
+              className="col-span-2 h-10 sm:col-span-1"
+              isUpdating={isUpdating}
+              onClick={onCreateShoppingList}
+            >
+              Xarid ro'yxati
+            </CreateRecipeShoppingListButton>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isUpdating}
+            onClick={onSave}
+          >
             <BookmarkIcon data-icon="inline-start" />
             Saqlash
           </Button>
@@ -559,7 +627,12 @@ const RecipeDetailView = ({
             <EditIcon data-icon="inline-start" />
             Tahrirlash
           </Button>
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Ko'proq">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Ko'proq"
+          >
             <MoreVerticalIcon />
           </Button>
         </CardFooter>
@@ -574,6 +647,8 @@ const RecipeDetailView = ({
         nutrition={nutrition}
         onOpenChange={(nextOpen) => !nextOpen && setSectionDrawer("")}
         onServingsChange={onServingsChange}
+        onCreateShoppingList={onCreateShoppingList}
+        isUpdating={isUpdating}
       />
     </div>
   );

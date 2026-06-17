@@ -78,7 +78,7 @@ describe("AI access normalization", () => {
       }),
     ).toMatchObject({
       isDisabled: true,
-      label: "Premium kerak",
+      label: "Limit tugadi",
     });
 
     expect(

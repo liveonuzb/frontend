@@ -1,25 +1,30 @@
 import React from "react";
 import { Outlet, useSearchParams } from "react-router";
-import concat from "lodash/concat";
-import get from "lodash/get";
-import includes from "lodash/includes";
-import isArray from "lodash/isArray";
-import map from "lodash/map";
-import size from "lodash/size";
-import toNumber from "lodash/toNumber";
-import trim from "lodash/trim";
 import {
+  concat,
+  filter,
+  get,
+  includes,
+  map,
+  size,
+  slice,
+  toNumber,
+  trim,
+} from "lodash";
+import {
+  ArchiveIcon,
   BookOpenIcon,
   CheckCircleIcon,
   ClockIcon,
   EyeIcon,
   FlameIcon,
-  ImageIcon,
   LanguagesIcon,
   PencilIcon,
   PlusIcon,
   RotateCcwIcon,
+  SaveIcon,
   SearchIcon,
+  SparklesIcon,
   UtensilsIcon,
   XCircleIcon,
 } from "lucide-react";
@@ -29,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner.jsx";
-import { useGetQuery, usePatchQuery, usePostFileQuery } from "@/hooks/api";
+import { useGetQuery, usePatchQuery } from "@/hooks/api";
 import {
   AdminListHeader,
   AdminListPageShell,
@@ -40,12 +45,7 @@ import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-n
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
 
-export const ADMIN_RECIPES_QUERY_KEY = ["admin", "recipes"];
-export const ADMIN_RECIPE_GALLERY_QUERY_KEY = [
-  "admin",
-  "recipes",
-  "gallery-images",
-];
+const ADMIN_RECIPES_QUERY_KEY = ["admin", "recipes"];
 
 const SORT_FIELDS = ["createdAt", "name", "calories", "protein"];
 const SORT_DIRECTIONS = ["asc", "desc"];
@@ -56,9 +56,6 @@ const RECIPE_STATUS_LABELS = {
   rejected: "Rejected",
   archived: "Archived",
 };
-
-const getPayload = (response, fallback = {}) =>
-  get(response, "data.data", get(response, "data", fallback));
 
 const resolveLabel = (translations, fallback, language) =>
   trim(get(translations, language, "")) ||
@@ -82,6 +79,12 @@ const RecipeStat = ({ icon: Icon, children }) => (
   </span>
 );
 
+const getReadinessVariant = (status) => {
+  if (status === "ready") return "default";
+  if (status === "blocked") return "destructive";
+  return "secondary";
+};
+
 const RecipeListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigateAdminDrawer = useAdminDrawerListNavigation();
@@ -89,10 +92,6 @@ const RecipeListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage =
     useLanguageStore((state) => state.currentLanguage) || "uz";
-  const [galleryLabel, setGalleryLabel] = React.useState("");
-  const [rejectReasons, setRejectReasons] = React.useState({});
-  const galleryLabelId = React.useId();
-  const galleryFileId = React.useId();
 
   const search = searchParams.get("q") || "";
   const currentPage = Math.max(1, toNumber(searchParams.get("page")) || 1);
@@ -132,37 +131,40 @@ const RecipeListPage = () => {
   );
 
   const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/foods",
+    url: "/admin/nutrition/recipes",
     params: queryParams,
     queryProps: {
       queryKey: [...ADMIN_RECIPES_QUERY_KEY, queryParams],
     },
   });
-  const { data: galleryData, isLoading: isGalleryLoading } = useGetQuery({
-    url: "/admin/recipes/gallery/images",
-    queryProps: {
-      queryKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
-    },
-  });
-  const galleryUploadMutation = usePostFileQuery({
-    queryKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
-    listKey: ADMIN_RECIPES_QUERY_KEY,
-  });
   const publicationMutation = usePatchQuery({
     queryKey: ADMIN_RECIPES_QUERY_KEY,
-    listKey: ADMIN_RECIPE_GALLERY_QUERY_KEY,
+  });
+  const recognitionMutation = usePatchQuery({
+    queryKey: [...ADMIN_RECIPES_QUERY_KEY, "product-recognition-jobs"],
+  });
+
+  const recognitionQueueParams = React.useMemo(
+    () => ({ status: "needs_review", page: 1, pageSize: 5 }),
+    [],
+  );
+  const { data: recognitionQueueData } = useGetQuery({
+    url: "/admin/nutrition/recipes/product-recognition-jobs",
+    params: recognitionQueueParams,
+    queryProps: {
+      queryKey: [
+        ...ADMIN_RECIPES_QUERY_KEY,
+        "product-recognition-jobs",
+        recognitionQueueParams,
+      ],
+    },
   });
 
   const recipes = get(data, "data.data", []);
-  const galleryPayload = React.useMemo(
-    () => getPayload(galleryData, { images: [] }),
-    [galleryData],
-  );
-  const galleryImages = React.useMemo(
-    () =>
-      isArray(galleryPayload) ? galleryPayload : get(galleryPayload, "images", []),
-    [galleryPayload],
-  );
+  const recognitionJobs = get(recognitionQueueData, "data.data", []);
+  const recognitionMeta = get(recognitionQueueData, "data.meta", {});
+  const recognitionTotal =
+    toNumber(get(recognitionMeta, "total")) || size(recognitionJobs);
   const meta = get(data, "data.meta", {
     total: 0,
     page: currentPage,
@@ -226,63 +228,80 @@ const RecipeListPage = () => {
     navigateAdminDrawer(`recipe/${recipe.id}`);
   };
 
-  const handleGalleryUpload = React.useCallback(
-    async (event) => {
-      const file = get(event, "target.files.0");
-      if (!file) {
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("image", file);
-      formData.append("label", trim(galleryLabel) || file.name);
-
-      await galleryUploadMutation.mutateAsync({
-        url: "/admin/recipes/gallery/images",
-        attributes: formData,
-        config: {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      });
-      setGalleryLabel("");
-      event.target.value = "";
-      toast.success("Recipe gallery image uploaded");
-    },
-    [galleryLabel, galleryUploadMutation],
-  );
-
-  const handleApproveRecipe = React.useCallback(
+  const handlePublishRecipe = React.useCallback(
     async (recipe) => {
-      await publicationMutation.mutateAsync({
-        url: `/admin/recipes/${recipe.id}/approve-publication`,
-      });
-      toast.success("Recipe public qilindi");
+      try {
+        await publicationMutation.mutateAsync({
+          url: `/admin/nutrition/recipes/${recipe.id}/publish`,
+        });
+        toast.success("Recipe public qilindi");
+      } catch (error) {
+        toast.error(
+          get(error, "response.data.message", "Recipe public qilinmadi"),
+        );
+      }
     },
     [publicationMutation],
   );
 
-  const handleRejectRecipe = React.useCallback(
+  const handleArchiveRecipe = React.useCallback(
     async (recipe) => {
-      const reason =
-        trim(get(rejectReasons, recipe.id, "")) || "Admin review rejected";
-
-      await publicationMutation.mutateAsync({
-        url: `/admin/recipes/${recipe.id}/reject-publication`,
-        attributes: { reason },
-      });
-      toast.success("Recipe public qilishdan rad etildi");
+      try {
+        await publicationMutation.mutateAsync({
+          url: `/admin/nutrition/recipes/${recipe.id}/archive`,
+        });
+        toast.success("Recipe arxivlandi");
+      } catch (error) {
+        toast.error(get(error, "response.data.message", "Recipe arxivlanmadi"));
+      }
     },
-    [publicationMutation, rejectReasons],
+    [publicationMutation],
   );
 
-  const updateRejectReason = React.useCallback((recipeId, reason) => {
-    setRejectReasons((currentReasons) => ({
-      ...currentReasons,
-      [recipeId]: reason,
-    }));
-  }, []);
+  const handleSaveRecognitionSuggestions = React.useCallback(
+    async (job) => {
+      const suggestions = get(job, "suggestions", []);
+
+      if (!size(suggestions)) {
+        toast.error("Saqlanadigan suggestion topilmadi");
+        return;
+      }
+
+      try {
+        await recognitionMutation.mutateAsync({
+          url: `/admin/nutrition/recipes/product-recognition-jobs/${job.id}/suggestions`,
+          attributes: { suggestions },
+        });
+        toast.success("Recognition suggestion saqlandi");
+      } catch (error) {
+        toast.error(
+          get(error, "response.data.message", "Suggestion saqlanmadi"),
+        );
+      }
+    },
+    [recognitionMutation],
+  );
+
+  const handleReviewRecognitionJob = React.useCallback(
+    async (job, status) => {
+      try {
+        await recognitionMutation.mutateAsync({
+          url: `/admin/nutrition/recipes/product-recognition-jobs/${job.id}/review`,
+          attributes: { status },
+        });
+        toast.success(
+          status === "approved"
+            ? "Recognition job approve qilindi"
+            : "Recognition job reject qilindi",
+        );
+      } catch (error) {
+        toast.error(
+          get(error, "response.data.message", "Recognition review saqlanmadi"),
+        );
+      }
+    },
+    [recognitionMutation],
+  );
 
   const toolbarFilters = React.useMemo(
     () => (
@@ -348,78 +367,104 @@ const RecipeListPage = () => {
         actions={toolbarActions}
       />
 
-      {canManageContent ? (
-        <section className="grid gap-4 rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-1">
-            <h2 className="flex items-center gap-2 text-base font-semibold">
-              <ImageIcon className="size-4 text-primary" aria-hidden="true" />
-              Recipe gallery
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Userlar custom recipe yaratganda tanlay oladigan rasmlar.
-            </p>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-[1fr_1fr]">
-            <label htmlFor={galleryLabelId} className="grid gap-1.5">
-              <span className="text-xs font-bold uppercase text-muted-foreground">
-                Label
+      {recognitionJobs.length ? (
+        <section
+          aria-label="AI product recognition review"
+          className="space-y-3 rounded-lg border bg-card p-4 shadow-sm"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                <SparklesIcon className="size-4" aria-hidden="true" />
               </span>
-              <Input
-                id={galleryLabelId}
-                aria-label="Recipe gallery image label"
-                value={galleryLabel}
-                onChange={(event) => setGalleryLabel(event.target.value)}
-                placeholder="Masalan: Fresh salad"
-                disabled={galleryUploadMutation.isPending}
-              />
-            </label>
-            <label htmlFor={galleryFileId} className="grid gap-1.5">
-              <span className="text-xs font-bold uppercase text-muted-foreground">
-                Image
-              </span>
-              <Input
-                id={galleryFileId}
-                aria-label="Recipe gallery image file"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                disabled={galleryUploadMutation.isPending}
-                onChange={handleGalleryUpload}
-              />
-            </label>
+              <div>
+                <h2 className="text-sm font-semibold">
+                  AI product recognition review
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {recognitionTotal} job review kerak
+                </p>
+              </div>
+            </div>
+            <Badge variant="outline">Pending va failed jobs</Badge>
           </div>
+          <div className="grid gap-2">
+            {map(recognitionJobs, (job) => {
+              const products = map(
+                get(job, "recognizedProducts", []),
+                (product) => trim(get(product, "name", "")),
+              )
+                .filter(Boolean)
+                .join(", ");
+              const suggestions = get(job, "suggestions", []);
+              const firstSuggestion = get(suggestions, "0.title", "");
 
-          <div className="flex flex-wrap gap-2">
-            {isGalleryLoading ? (
-              <Spinner />
-            ) : size(galleryImages) ? (
-              map(galleryImages, (image) => (
+              return (
                 <div
-                  key={image.id}
-                  className="flex items-center gap-2 rounded-lg border bg-background px-2 py-1.5 text-sm"
+                  key={job.id}
+                  className="grid gap-3 rounded-lg border border-dashed p-3 lg:grid-cols-[1fr_auto]"
                 >
-                  {image.url ? (
-                    <img
-                      src={image.url}
-                      alt=""
-                      className="size-9 rounded-md object-cover"
-                    />
-                  ) : (
-                    <span className="grid size-9 place-items-center rounded-md bg-muted text-muted-foreground">
-                      <ImageIcon className="size-4" aria-hidden="true" />
-                    </span>
-                  )}
-                  <span className="font-medium">{image.label}</span>
-                  <Badge variant={image.isActive ? "default" : "secondary"}>
-                    {image.isActive ? "Faol" : "Nofaol"}
-                  </Badge>
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={job.status === "failed" ? "destructive" : "secondary"}
+                      >
+                        {job.status}
+                      </Badge>
+                      <span className="text-sm font-medium">
+                        {products || "Product topilmadi"}
+                      </span>
+                    </div>
+                    {firstSuggestion ? (
+                      <p className="text-sm text-muted-foreground">
+                        {firstSuggestion}
+                      </p>
+                    ) : null}
+                    {job.error ? (
+                      <p className="text-xs text-destructive">{job.error}</p>
+                    ) : null}
+                    {job.user ? (
+                      <p className="text-xs text-muted-foreground">
+                        {get(job, "user.firstName") || get(job, "user.phone")}
+                      </p>
+                    ) : null}
+                  </div>
+                  {canManageContent ? (
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      {size(suggestions) ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={recognitionMutation.isPending}
+                          onClick={() => handleSaveRecognitionSuggestions(job)}
+                        >
+                          <SaveIcon data-icon="inline-start" />
+                          Suggestionni saqlash
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={recognitionMutation.isPending}
+                        onClick={() => handleReviewRecognitionJob(job, "approved")}
+                      >
+                        <CheckCircleIcon data-icon="inline-start" />
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={recognitionMutation.isPending}
+                        onClick={() => handleReviewRecognitionJob(job, "rejected")}
+                      >
+                        <XCircleIcon data-icon="inline-start" />
+                        Reject
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                Gallery image yo&apos;q.
-              </span>
-            )}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -450,12 +495,17 @@ const RecipeListPage = () => {
               "recipeStatus",
               recipe.isActive ? "published" : "draft",
             );
+            const readiness = get(recipe, "readiness", {});
+            const readinessIssues = get(readiness, "issues", []);
+            const readinessStatus = get(readiness, "status", "blocked");
+            const criticalIssueCount = size(
+              filter(readinessIssues, { blocker: true }),
+            );
             const statusLabel = get(
               RECIPE_STATUS_LABELS,
               recipeStatus,
               recipeStatus || "Draft",
             );
-            const rejectReason = get(rejectReasons, recipe.id, "");
             const categoryLabels = map(
               get(recipe, "categories", []),
               (category) =>
@@ -535,45 +585,50 @@ const RecipeListPage = () => {
                     <span>Uglevod: {toNumber(recipe.carbs) || 0}g</span>
                     <span>Yog': {toNumber(recipe.fat) || 0}g</span>
                     <span>Porsiya: {toNumber(recipe.servings) || 1}</span>
-                    {get(recipe, "publicationRequestedAt") ? (
-                      <span>Public review so&apos;rovi bor</span>
-                    ) : null}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <Badge variant={getReadinessVariant(readinessStatus)}>
+                      Readiness {toNumber(get(readiness, "score")) || 0}%
+                    </Badge>
+                    {criticalIssueCount ? (
+                      <span>{criticalIssueCount} blocker</span>
+                    ) : (
+                      <span>Publish uchun tayyor</span>
+                    )}
+                    {map(slice(readinessIssues, 0, 2), (issue) => (
+                      <span key={get(issue, "code")} className="truncate">
+                        {get(issue, "label")}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-start gap-2 md:justify-end">
-                  {recipeStatus === "pending_review" && canManageContent ? (
-                    <div className="flex w-full flex-col gap-2 md:w-64">
-                      <Input
-                        aria-label={`${title} rad sababi`}
-                        value={rejectReason}
-                        onChange={(event) =>
-                          updateRejectReason(recipe.id, event.target.value)
-                        }
-                        placeholder="Rad sababi"
-                        disabled={publicationMutation.isPending}
-                      />
-                      <div className="flex flex-wrap gap-2 md:justify-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={publicationMutation.isPending}
-                          onClick={() => handleApproveRecipe(recipe)}
-                        >
-                          <CheckCircleIcon data-icon="inline-start" />
-                          Public qilish
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={publicationMutation.isPending}
-                          onClick={() => handleRejectRecipe(recipe)}
-                        >
-                          <XCircleIcon data-icon="inline-start" />
-                          Rad etish
-                        </Button>
-                      </div>
-                    </div>
+                  {recipeStatus !== "published" && canManageContent ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={
+                        publicationMutation.isPending ||
+                        !get(readiness, "readyToPublish", false)
+                      }
+                      onClick={() => handlePublishRecipe(recipe)}
+                    >
+                      <CheckCircleIcon data-icon="inline-start" />
+                      Publish
+                    </Button>
+                  ) : null}
+                  {recipeStatus !== "archived" && canManageContent ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={publicationMutation.isPending}
+                      onClick={() => handleArchiveRecipe(recipe)}
+                    >
+                      <ArchiveIcon data-icon="inline-start" />
+                      Archive
+                    </Button>
                   ) : null}
                   <Button
                     type="button"

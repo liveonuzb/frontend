@@ -13,7 +13,6 @@ import {
   LoaderCircleIcon,
   XIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +27,6 @@ import { useUserNotificationsFeed } from "@/hooks/app/use-notifications";
 import { useAddMealOverlayStore } from "@/store";
 
 const PREMIUM_GIFT_TYPE = "premium_gift_received";
-const PREMIUM_GIFT_TARGET = "/user/dashboard?profile=open&profileTab=premium";
 
 const getPremiumGiftMetadata = (notification) => {
   const metadata = notification?.metadata;
@@ -65,7 +63,6 @@ const formatDate = (value) => {
 };
 
 const PremiumGiftReceivedDrawer = () => {
-  const navigate = useNavigate();
   const isAddMealOverlayOpen = useAddMealOverlayStore(
     (state) => state.isActionDrawerOpen,
   );
@@ -211,7 +208,7 @@ const PremiumGiftReceivedDrawer = () => {
   ]);
 
   const acknowledgeNotification = React.useCallback(
-    async (notification, target = null) => {
+    async (notification) => {
       if (!notification?.id || acknowledgingId === notification.id) {
         return;
       }
@@ -223,9 +220,6 @@ const PremiumGiftReceivedDrawer = () => {
 
       try {
         await markNotificationRead(notification.id);
-        if (target) {
-          navigate(target);
-        }
       } catch (error) {
         setAckedId(null);
         setIsOpen(true);
@@ -237,14 +231,13 @@ const PremiumGiftReceivedDrawer = () => {
         }
       }
     },
-    [acknowledgingId, markNotificationRead, navigate],
+    [acknowledgingId, markNotificationRead],
   );
 
   const metadata = getPremiumGiftMetadata(currentNotification);
   const planName = trim(String(get(metadata, "planName", ""))) || "Premium";
   const expiresAt = formatDate(get(metadata, "expiresAt"));
   const note = trim(String(get(metadata, "note", "")));
-  const target = currentNotification?.target || PREMIUM_GIFT_TARGET;
 
   return (
     <Drawer
@@ -321,7 +314,7 @@ const PremiumGiftReceivedDrawer = () => {
             className="w-full"
             onClick={() =>
               currentNotification
-                ? void acknowledgeNotification(currentNotification, target)
+                ? void acknowledgeNotification(currentNotification)
                 : undefined
             }
             disabled={Boolean(acknowledgingId)}
@@ -329,7 +322,7 @@ const PremiumGiftReceivedDrawer = () => {
             {acknowledgingId ? (
               <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
             ) : null}
-            Premiumni ko'rish
+            Tushunarli
           </Button>
         </DrawerBody>
       </DrawerContent>

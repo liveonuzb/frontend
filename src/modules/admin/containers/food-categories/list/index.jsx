@@ -46,6 +46,7 @@ import {
   getCategoryBadgeAppearance,
 } from "@/lib/category-badge";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import TaxonomyGovernanceSummary from "@/modules/admin/components/taxonomy-governance-summary.jsx";
 import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useCategoryFilters } from "./use-filters.js";
@@ -79,7 +80,7 @@ const countFilledTranslations = (translations = {}) =>
 
 const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
   const { data: foodsData, isLoading, isFetching } = useGetQuery({
-    url: `/admin/food-categories/${categoryId}/foods`,
+    url: `/admin/nutrition/food-categories/${categoryId}/foods`,
     queryProps: {
       queryKey: ["admin", "food-category-foods", categoryId],
       enabled: Boolean(categoryId),
@@ -95,7 +96,7 @@ const CategoryFoodsGrid = ({ canManage, categoryId, currentLanguage }) => {
   const reorderFoods = React.useCallback(
     async (payload) =>
       reorderMutation.mutateAsync({
-        url: `/admin/food-categories/${categoryId}/foods/reorder`,
+        url: `/admin/nutrition/food-categories/${categoryId}/foods/reorder`,
         attributes: payload,
       }),
     [categoryId, reorderMutation],
@@ -310,7 +311,7 @@ const Index = () => {
   const updateCategory = React.useCallback(
     async (id, payload) =>
       patchMutation.mutateAsync({
-        url: `/admin/food-categories/${id}`,
+        url: `/admin/nutrition/food-categories/${id}`,
         attributes: payload,
       }),
     [patchMutation],
@@ -319,7 +320,7 @@ const Index = () => {
   const deleteCategory = React.useCallback(
     async (id) =>
       deleteMutation.mutateAsync({
-        url: `/admin/food-categories/${id}`,
+        url: `/admin/nutrition/food-categories/${id}`,
       }),
     [deleteMutation],
   );
@@ -327,7 +328,7 @@ const Index = () => {
   const reorderCategories = React.useCallback(
     async (payload) =>
       reorderMutation.mutateAsync({
-        url: "/admin/food-categories/reorder",
+        url: "/admin/nutrition/food-categories/reorder",
         attributes: payload,
       }),
     [reorderMutation],
@@ -395,7 +396,7 @@ const Index = () => {
   );
 
   const { data: categoriesData, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/food-categories",
+    url: "/admin/nutrition/food-categories",
     params: queryParams,
     queryProps: { queryKey: [...CATEGORIES_QUERY_KEY, queryParams] },
   });
@@ -612,6 +613,8 @@ const Index = () => {
         />
       </div>
 
+      <TaxonomyGovernanceSummary groupKey="foodCategories" />
+
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>
           {get(meta, "total", 0)} ta kategoriya
@@ -684,6 +687,5 @@ const Index = () => {
 };
 
 export default Index;
-
 
 

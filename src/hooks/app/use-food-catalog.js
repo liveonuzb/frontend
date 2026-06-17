@@ -18,17 +18,31 @@ import { api } from "@/hooks/api/use-api.js";
 import { getApiResponseData } from "@/lib/api-response.js";
 import useLanguageStore from "@/store/language-store";
 import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
+import {
+  NUTRITION_FOODS_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
+import {
+  NUTRITION_FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY,
+  NUTRITION_FOODS_CATALOG_QUERY_KEY,
+  NUTRITION_FOODS_QUICK_ADD_QUERY_KEY,
+  NUTRITION_FOOD_RECIPE_QUERY_KEY,
+  getNutritionFoodRecipeQueryKey,
+  getNutritionFoodsByCategoryQueryKey,
+  invalidateNutritionAudioTranscriptHistory,
+  invalidateNutritionQuickAdd,
+} from "@/hooks/app/nutrition-query-keys";
 
-export const FOODS_CATALOG_QUERY_KEY = ["foods", "catalog"];
-export const FOODS_QUICK_ADD_QUERY_KEY = ["foods", "quick-add"];
-export const FOOD_RECIPE_QUERY_KEY = ["foods", "recipe"];
-export const FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY = [
-  "foods",
-  "audio-transcript-history",
-];
+export const FOODS_CATALOG_QUERY_KEY = NUTRITION_FOODS_CATALOG_QUERY_KEY;
+export const FOODS_QUICK_ADD_QUERY_KEY = NUTRITION_FOODS_QUICK_ADD_QUERY_KEY;
+export const FOOD_RECIPE_QUERY_KEY = NUTRITION_FOOD_RECIPE_QUERY_KEY;
+export const FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY =
+  NUTRITION_FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY;
 
 const GRAM_BASED_UNITS = new Set(["g", "ml"]);
 const FOODS_CATALOG_PAGE_SIZE = 20;
+const nutritionFoodsPath = (path) =>
+  nutritionApiPath(NUTRITION_FOODS_API_ROOT, path);
 
 const MIME_EXTENSION_MAP = {
   "image/jpeg": "jpg",
@@ -197,13 +211,13 @@ export const enrichTrackedMealItem = (item, foodMap) => {
 const useFoodCatalog = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const { data, ...query } = useGetQuery({
-    url: "/foods/catalog",
+    url: nutritionFoodsPath(),
     queryProps: {
       queryKey: FOODS_CATALOG_QUERY_KEY,
     },
   });
   const { data: quickAddData, ...quickAddQuery } = useGetQuery({
-    url: "/foods/quick-add",
+    url: nutritionFoodsPath("quick-add"),
     queryProps: {
       queryKey: FOODS_QUICK_ADD_QUERY_KEY,
     },
@@ -280,11 +294,15 @@ export const useFoodsByCategory = (categoryId, options = {}) => {
   const pageSize = options.pageSize ?? FOODS_CATALOG_PAGE_SIZE;
   const enabled = options.enabled ?? true;
   const query = useInfiniteQuery({
-    queryKey: ["foods", "catalog", "category", categoryId, search, pageSize],
+    queryKey: getNutritionFoodsByCategoryQueryKey(
+      categoryId,
+      search,
+      pageSize,
+    ),
     enabled: Boolean(categoryId && enabled),
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
-      api.get("/foods/catalog", {
+      api.get(nutritionFoodsPath(), {
         params: {
           categoryId,
           page: pageParam,
@@ -330,9 +348,11 @@ export const useFoodRecipe = (catalogFoodId, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const enabled = options.enabled ?? true;
   const { data, ...query } = useGetQuery({
-    url: catalogFoodId ? `/foods/catalog/${catalogFoodId}/recipe` : "",
+    url: catalogFoodId
+      ? nutritionFoodsPath(`catalog/${catalogFoodId}/recipe`)
+      : "",
     queryProps: {
-      queryKey: [...FOOD_RECIPE_QUERY_KEY, catalogFoodId, currentLanguage],
+      queryKey: getNutritionFoodRecipeQueryKey(catalogFoodId, currentLanguage),
       enabled: Boolean(catalogFoodId && enabled),
     },
   });
@@ -381,7 +401,7 @@ export const useFoodBarcodeLookup = () => {
       setIsLookingUp(true);
       try {
         const response = await api.get(
-          `/foods/barcode/${encodeURIComponent(normalizedCode)}`,
+          nutritionFoodsPath(`barcode/${encodeURIComponent(normalizedCode)}`),
         );
         const payload = getApiResponseData(response);
         const food = get(payload, "food", payload);
@@ -406,9 +426,7 @@ export const useFoodQuickAddActions = () => {
   const removeFavoriteMutation = useDeleteQuery();
 
   const invalidateQuickAdd = React.useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: FOODS_QUICK_ADD_QUERY_KEY,
-    });
+    await invalidateNutritionQuickAdd(queryClient);
   }, [queryClient]);
 
   const addFavoriteFood = React.useCallback(
@@ -418,7 +436,7 @@ export const useFoodQuickAddActions = () => {
       }
 
       await addFavoriteMutation.mutateAsync({
-        url: `/foods/favorites/${catalogFoodId}`,
+        url: nutritionFoodsPath(`favorites/${catalogFoodId}`),
       });
       await invalidateQuickAdd();
     },
@@ -432,7 +450,7 @@ export const useFoodQuickAddActions = () => {
       }
 
       await removeFavoriteMutation.mutateAsync({
-        url: `/foods/favorites/${catalogFoodId}`,
+        url: nutritionFoodsPath(`favorites/${catalogFoodId}`),
       });
       await invalidateQuickAdd();
     },
@@ -504,7 +522,7 @@ export const useFoodScan = () => {
   const scanMealImage = React.useCallback(
     async ({ imageDataUrl, imageUrl }) => {
       const response = await postMutation.mutateAsync({
-        url: "/foods/scan-meal",
+        url: nutritionFoodsPath("scan-meal"),
         attributes: {
           ...imagePayload({ imageDataUrl, imageUrl }),
           mode: "ai",
@@ -588,7 +606,7 @@ export const useFoodScan = () => {
     scanMealImage,
     analyzeMealImageDraft: async ({ imageDataUrl, imageUrl }) => {
       const response = await draftImageMutation.mutateAsync({
-        url: "/foods/analyze-meal-image",
+        url: nutritionFoodsPath("analyze-meal-image"),
         attributes: {
           ...imagePayload({ imageDataUrl, imageUrl }),
           mode: "ai",
@@ -604,7 +622,7 @@ export const useFoodScan = () => {
     },
     scanMealText: async ({ text, mode = "text" }) => {
       const response = await textMutation.mutateAsync({
-        url: "/foods/scan-meal-text",
+        url: nutritionFoodsPath("scan-meal-text"),
         attributes: {
           text,
           mode,
@@ -617,7 +635,7 @@ export const useFoodScan = () => {
     },
     analyzeMealTextDraft: async ({ text, mode = "text" }) => {
       const response = await draftTextMutation.mutateAsync({
-        url: "/foods/analyze-meal-text",
+        url: nutritionFoodsPath("analyze-meal-text"),
         attributes: {
           text,
           mode,
@@ -633,7 +651,7 @@ export const useFoodScan = () => {
     },
     analyzeIngredient: async ({ name, grams }) => {
       const response = await ingredientMutation.mutateAsync({
-        url: "/foods/analyze-ingredient",
+        url: nutritionFoodsPath("analyze-ingredient"),
         attributes: {
           name,
           grams,
@@ -653,7 +671,7 @@ export const useFoodScan = () => {
       const results = await Promise.allSettled(
         map(ingredients, ({ name, grams }) =>
           batchIngredientsMutation.mutateAsync({
-            url: "/foods/analyze-ingredient",
+            url: nutritionFoodsPath("analyze-ingredient"),
             attributes: { name, grams },
           })),
       );
@@ -677,7 +695,7 @@ export const useFoodScan = () => {
       formData.append("file", file);
 
       const response = await uploadMutation.mutateAsync({
-        url: "/foods/upload-meal-capture",
+        url: nutritionFoodsPath("upload-meal-capture"),
         attributes: formData,
         config: {
           headers: {
@@ -694,7 +712,7 @@ export const useFoodScan = () => {
       formData.append("file", file);
 
       const response = await audioMutation.mutateAsync({
-        url: "/foods/transcribe-meal-audio",
+        url: nutritionFoodsPath("transcribe-meal-audio"),
         attributes: formData,
       });
       const payload = getResponsePayload(response);
@@ -719,7 +737,7 @@ export const useFoodAudioTranscriptHistory = (options = {}) => {
   const enabled = options.enabled ?? true;
   const queryClient = useQueryClient();
   const { data, ...query } = useGetQuery({
-    url: "/foods/audio-transcript-history",
+    url: nutritionFoodsPath("audio-transcript-history"),
     queryProps: {
       queryKey: FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY,
       enabled,
@@ -734,15 +752,13 @@ export const useFoodAudioTranscriptHistory = (options = {}) => {
   );
 
   const invalidateHistory = React.useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: FOODS_AUDIO_TRANSCRIPT_HISTORY_QUERY_KEY,
-    });
+    await invalidateNutritionAudioTranscriptHistory(queryClient);
   }, [queryClient]);
 
   const saveHistoryItem = React.useCallback(
     async (payload) => {
       await postMutation.mutateAsync({
-        url: "/foods/audio-transcript-history",
+        url: nutritionFoodsPath("audio-transcript-history"),
         attributes: payload,
       });
       await invalidateHistory();
@@ -757,7 +773,7 @@ export const useFoodAudioTranscriptHistory = (options = {}) => {
       }
 
       await deleteMutation.mutateAsync({
-        url: `/foods/audio-transcript-history/${historyId}`,
+        url: nutritionFoodsPath(`audio-transcript-history/${historyId}`),
       });
       await invalidateHistory();
     },
@@ -766,7 +782,7 @@ export const useFoodAudioTranscriptHistory = (options = {}) => {
 
   const clearHistory = React.useCallback(async () => {
     await deleteMutation.mutateAsync({
-      url: "/foods/audio-transcript-history",
+      url: nutritionFoodsPath("audio-transcript-history"),
     });
     await invalidateHistory();
   }, [deleteMutation, invalidateHistory]);

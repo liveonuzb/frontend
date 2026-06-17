@@ -79,6 +79,21 @@ describe("auth store persistence", () => {
     });
   });
 
+  it("normalizes Date expiresAt inputs to ISO strings", () => {
+    useAuthStore.getState().setPendingVerification({
+      purpose: "VERIFY_ACCOUNT",
+      phone: "+998901234567",
+      expiresAt: new Date("2026-05-19T10:05:00.000Z"),
+    });
+
+    expect(useAuthStore.getState().pendingVerification).toMatchObject({
+      expiresAt: "2026-05-19T10:05:00.000Z",
+    });
+    expect(readPersistedAuthState().pendingVerification).toMatchObject({
+      expiresAt: "2026-05-19T10:05:00.000Z",
+    });
+  });
+
   it("rejects incomplete auth success payloads", () => {
     const result = useAuthStore.getState().completeAuthentication({
       twoFactorRequired: true,

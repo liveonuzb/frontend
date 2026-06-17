@@ -9,7 +9,7 @@ const PROFILE_TAB_REGISTRY = [
   { id: "notifications" },
   { id: "privacy" },
   { id: "security" },
-  { id: "premium" },
+  { id: "friends" },
   { id: "referral" },
 ];
 
@@ -18,7 +18,7 @@ export const PROFILE_TAB_IDS = map(PROFILE_TAB_REGISTRY, ({ id }) => id);
 const PROFILE_TAB_ID_SET = new Set(PROFILE_TAB_IDS);
 export const PROFILE_NESTED_DRAWER_TAB_IDS = [
   "security",
-  "premium",
+  "friends",
   "referral",
 ];
 const PROFILE_NESTED_DRAWER_TAB_ID_SET = new Set(

@@ -57,6 +57,7 @@ export const normalizeDateKey = (date) => {
 export const normalizeMealItem = (item = {}) => ({
   id: item.id,
   savedMealId: item.savedMealId ?? null,
+  catalogFoodId: item.catalogFoodId ?? item.foodId ?? null,
   source: item.source ?? null,
   name: item.name ?? "",
   barcode: item.barcode ?? null,

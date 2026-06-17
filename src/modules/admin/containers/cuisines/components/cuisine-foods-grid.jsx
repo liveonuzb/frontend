@@ -23,7 +23,7 @@ import { getErrorMessage, resolveLabel } from "./utils.jsx";
 
 const CuisineFoodsGrid = ({ canManage, cuisineId, currentLanguage }) => {
   const { data, isLoading, isFetching } = useGetQuery({
-    url: `/admin/cuisines/${cuisineId}/foods`,
+    url: `/admin/nutrition/cuisines/${cuisineId}/foods`,
     queryProps: {
       queryKey: ["admin", "cuisine-foods", cuisineId],
       enabled: Boolean(cuisineId),
@@ -149,7 +149,7 @@ const CuisineFoodsGrid = ({ canManage, cuisineId, currentLanguage }) => {
       ordered.splice(newIndex, 0, movedFood);
       try {
         await reorderMutation.mutateAsync({
-          url: `/admin/cuisines/${cuisineId}/foods/reorder`,
+          url: `/admin/nutrition/cuisines/${cuisineId}/foods/reorder`,
           attributes: {
             movedId: toString(movedFood.id),
             prevId: ordered[newIndex - 1]

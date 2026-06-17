@@ -107,7 +107,7 @@ export default function WeightWidget({
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}
       className={cn(
-        "group/card relative h-full overflow-hidden border border-border/60 py-3 ring-0 transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        "group/card relative h-full overflow-hidden border border-border/60 py-3 ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
         interactive && "cursor-pointer",
       )}
       onClick={handleOpen}

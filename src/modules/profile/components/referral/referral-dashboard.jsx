@@ -42,6 +42,7 @@ import { useGetQuery, usePatchQuery, usePostQuery } from "@/hooks/api";
 import { useTelegram } from "@/hooks/use-telegram";
 import { getApiResponseData } from "@/lib/api-response";
 import { useAuthStore } from "@/store";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -456,6 +457,31 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     const [withdrawOpen, setWithdrawOpen] = useState(false);
     const [showWithdrawals, setShowWithdrawals] = useState(false);
     const [xpOffset, setXpOffset] = useState(0);
+    const {
+        activeProfileDrawer,
+        closeProfileDrawer,
+        openProfileDrawer,
+    } = useProfileOverlay();
+    const isQrOpen = showQR || activeProfileDrawer === "qr";
+    const isWithdrawOpen = withdrawOpen || activeProfileDrawer === "withdraw";
+    const handleQrOpenChange = useCallback((nextOpen) => {
+        setShowQR(nextOpen);
+        if (nextOpen) {
+            openProfileDrawer("qr", "referral");
+            return;
+        }
+
+        closeProfileDrawer();
+    }, [closeProfileDrawer, openProfileDrawer]);
+    const handleWithdrawOpenChange = useCallback((nextOpen) => {
+        setWithdrawOpen(nextOpen);
+        if (nextOpen) {
+            openProfileDrawer("withdraw", "referral");
+            return;
+        }
+
+        closeProfileDrawer();
+    }, [closeProfileDrawer, openProfileDrawer]);
 
     // -----------------------------------------------------------------------
     // API queries
@@ -596,8 +622,8 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
     return (
         <div className={containerClass}>
             {/* Dialogs */}
-            <QRDrawer open={showQR} onOpenChange={setShowQR} referralCode={referralCode} onCopyLink={handleCopyLink} />
-            <WithdrawalDialog open={withdrawOpen} onOpenChange={setWithdrawOpen} xpBalance={xpBalance} />
+            <QRDrawer open={isQrOpen} onOpenChange={handleQrOpenChange} referralCode={referralCode} onCopyLink={handleCopyLink} />
+            <WithdrawalDialog open={isWithdrawOpen} onOpenChange={handleWithdrawOpenChange} xpBalance={xpBalance} />
             {/* ============================================================= */}
             {/* HERO: Referral Code Card                                       */}
             {/* ============================================================= */}
@@ -659,7 +685,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
 
                             {/* Action buttons */}
                             <div className="flex gap-2 mt-3">
-                                <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg" onClick={() => setShowQR(true)}>
+                                <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg" onClick={() => handleQrOpenChange(true)}>
                                     <QrCodeIcon className="size-3.5" /> QR
                                 </Button>
                                 <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg flex-1" onClick={handleCopyLink}>
@@ -731,7 +757,7 @@ export const ReferralDashboard = ({ variant = "tab" }) => {
                             </div>
                             <Button
                                 className="h-11 px-6 gap-2 font-semibold shadow-md shadow-primary/15 sm:self-end"
-                                onClick={() => setWithdrawOpen(true)}
+                                onClick={() => handleWithdrawOpenChange(true)}
                                 disabled={xpBalance < MIN_WITHDRAWAL}
                             >
                                 <CreditCardIcon className="size-4" />

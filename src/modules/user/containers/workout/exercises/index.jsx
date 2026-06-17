@@ -153,8 +153,20 @@ const CustomExerciseDrawer = ({ open, onOpenChange, onSubmit, isPending }) => {
 
   React.useEffect(() => {
     if (open) {
-      setForm(defaultCustomExerciseForm);
+      let isCurrent = true;
+
+      queueMicrotask(() => {
+        if (isCurrent) {
+          setForm(defaultCustomExerciseForm);
+        }
+      });
+
+      return () => {
+        isCurrent = false;
+      };
     }
+
+    return undefined;
   }, [open]);
 
   const setField = (field, value) => {
@@ -604,22 +616,46 @@ const WorkoutExercisesPage = () => {
   }, [setBreadcrumbs, t]);
 
   React.useEffect(() => {
-    setExerciseCursor(null);
-    setPagedExercises([]);
+    let isCurrent = true;
+
+    queueMicrotask(() => {
+      if (!isCurrent) {
+        return;
+      }
+
+      setExerciseCursor(null);
+      setPagedExercises([]);
+    });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [categoryId, equipmentId, muscleId, normalizedDebouncedQuery, sort]);
 
   React.useEffect(() => {
     if (isExercisesLoading || isExercisesError) {
-      return;
+      return undefined;
     }
 
-    setPagedExercises((current) => {
-      const nextExercises = exerciseCursor
-        ? uniqBy([...current, ...exercises], "id")
-        : exercises;
+    let isCurrent = true;
 
-      return isEqual(current, nextExercises) ? current : nextExercises;
+    queueMicrotask(() => {
+      if (!isCurrent) {
+        return;
+      }
+
+      setPagedExercises((current) => {
+        const nextExercises = exerciseCursor
+          ? uniqBy([...current, ...exercises], "id")
+          : exercises;
+
+        return isEqual(current, nextExercises) ? current : nextExercises;
+      });
     });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [
     categoryId,
     equipmentId,

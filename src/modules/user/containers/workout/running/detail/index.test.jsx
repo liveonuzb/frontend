@@ -239,7 +239,7 @@ describe("RunningDetailPage", () => {
     );
   });
 
-  it("hydrates saved moment values after reload", () => {
+  it("hydrates saved moment values after reload", async () => {
     useRunningSessionDetail.mockReturnValue({
       isLoading: false,
       session: {
@@ -258,9 +258,11 @@ describe("RunningDetailPage", () => {
 
     renderPage();
 
-    expect(screen.getByPlaceholderText("Add a title")).toHaveValue(
-      "Saved morning run",
-    );
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Add a title")).toHaveValue(
+        "Saved morning run",
+      );
+    });
     expect(screen.getByPlaceholderText("Add text")).toHaveValue(
       "Kept after reload.",
     );

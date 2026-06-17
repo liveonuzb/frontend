@@ -23,7 +23,7 @@ const tagOptions = [
   "Glutensiz",
 ];
 
-const categoryOptions = ["Nonushta", "Tushlik", "Kechki ovqat", "Snack"];
+const categoryOptions = ["Nonushta", "Tushlik", "Kechki ovqat", "Tamaddi"];
 const difficultyOptions = ["Oson", "O'rtacha", "Qiyin"];
 
 const maxTimeOptions = [
@@ -68,8 +68,20 @@ const RecipeFilterDrawer = ({
 
   React.useEffect(() => {
     if (open) {
-      setDraft(filters);
+      let isCurrent = true;
+
+      queueMicrotask(() => {
+        if (isCurrent) {
+          setDraft(filters);
+        }
+      });
+
+      return () => {
+        isCurrent = false;
+      };
     }
+
+    return undefined;
   }, [filters, open]);
 
   const updateDraft = (patch) => {

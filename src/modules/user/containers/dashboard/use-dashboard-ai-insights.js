@@ -45,7 +45,8 @@ export default function useDashboardAiInsights(dateKey) {
     },
   });
   const dailyReportQuery = useGetQuery({
-    url: `/user/tracking/reports/daily?date=${dateKey}`,
+    url: "/user/nutrition/reports/daily",
+    params: { date: dateKey },
     queryProps: {
       queryKey: dailyReportQueryKey(dateKey),
       enabled: Boolean(dateKey),

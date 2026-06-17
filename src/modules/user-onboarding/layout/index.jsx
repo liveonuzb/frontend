@@ -25,6 +25,7 @@ import {
 } from "../lib/onboarding-footer-context";
 import { useDraftRestore } from "../lib/use-draft-restore";
 import { isMeaningfulUserDraftData } from "../lib/user-draft-data";
+import ProfileDrawer from "@/modules/user/layout/profile-drawer.jsx";
 
 const USER_STEP_SECTION_KEYS = {
   name: "profile",
@@ -467,6 +468,7 @@ const OnboardingLayoutInner = () => {
 const Index = () => (
   <OnboardingFooterProvider>
     <OnboardingLayoutInner />
+    <ProfileDrawer />
   </OnboardingFooterProvider>
 );
 

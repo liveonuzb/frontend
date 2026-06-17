@@ -24,6 +24,11 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
+const toStrictNumber = (value) => {
+  const normalized = lodashToNumber(value);
+  return Number.isFinite(normalized) ? normalized : null;
+};
+
 const getSliderMax = (food) => {
   const unit = food?.unit || "g";
   const isUnit = unit !== "g" && unit !== "ml";
@@ -111,7 +116,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
         }
 
         setStatus("error");
-        toast.error("Barcode bo'yicha ovqatni tekshirib bo'lmadi");
+        toast.error("Shtrix-kod bo'yicha ovqatni tekshirib bo'lmadi");
       }
     },
     [lookupFoodByBarcode],
@@ -141,9 +146,31 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
 
   const handleAddManualFood = async () => {
     const name = trim(manualFood.name);
+    const grams = toStrictNumber(manualFood.grams);
+    const cal = toStrictNumber(manualFood.cal);
+    const protein = toStrictNumber(manualFood.protein);
+    const carbs = toStrictNumber(manualFood.carbs);
+    const fat = toStrictNumber(manualFood.fat);
 
     if (!name) {
       toast.error("Ovqat nomini kiriting");
+      return;
+    }
+    if (grams == null || grams <= 0) {
+      toast.error("Miqdor 0 dan katta bo'lishi kerak");
+      return;
+    }
+    if (
+      cal == null ||
+      protein == null ||
+      carbs == null ||
+      fat == null ||
+      cal < 0 ||
+      protein < 0 ||
+      carbs < 0 ||
+      fat < 0
+    ) {
+      toast.error("Kaloriya va makro qiymatlar 0 yoki undan katta bo'lishi kerak");
       return;
     }
 
@@ -154,12 +181,12 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
         barcode: scannedCode || null,
         source: "barcode-manual",
         qty: 1,
-        grams: Math.max(1, toNumber(manualFood.grams, 100)),
+        grams,
         unit: manualFood.unit || "g",
-        cal: Math.max(0, Math.round(toNumber(manualFood.cal))),
-        protein: Math.max(0, toNumber(manualFood.protein)),
-        carbs: Math.max(0, toNumber(manualFood.carbs)),
-        fat: Math.max(0, toNumber(manualFood.fat)),
+        cal: Math.round(cal),
+        protein,
+        carbs,
+        fat,
         addedFromPlan: false,
       });
       toast.success(`${name} qo'shildi!`);
@@ -204,7 +231,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
                 <Loader2Icon className="size-5 animate-spin text-primary" />
               </div>
               <div>
-                <p className="text-sm font-black">Barcode tekshirilmoqda</p>
+                <p className="text-sm font-black">Shtrix-kod tekshirilmoqda</p>
                 <p className="text-xs text-muted-foreground">{scannedCode}</p>
               </div>
             </div>
@@ -301,7 +328,7 @@ const BarcodeAddDrawer = ({ dateKey, mealType, onClose }) => {
               </div>
               <h3 className="text-lg font-black">Ovqatni qo'l bilan kiriting</h3>
               <p className="text-xs font-semibold text-muted-foreground">
-                Barcode: {scannedCode || "noma'lum"}
+                Shtrix-kod: {scannedCode || "noma'lum"}
               </p>
             </div>
 

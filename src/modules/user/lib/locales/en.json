@@ -67,11 +67,55 @@
       "audioAdd": "Voice",
       "textAdd": "Text",
       "nav": {
+        "ariaLabel": "Nutrition sections",
         "overview": "Overview",
         "plans": "Plans",
         "recipes": "Recipes",
         "history": "History",
         "report": "Report"
+      },
+      "overview": {
+        "title": "Overview",
+        "todayTracking": "Today's tracking",
+        "selectedDay": "Selected day",
+        "pickDate": "Pick date: {{date}}",
+        "dateShortcuts": "Date shortcuts"
+      },
+      "plansPage": {
+        "popularTemplates": "Popular templates",
+        "viewAll": "View all",
+        "templatesLoading": "Loading templates...",
+        "noTemplates": "No admin templates yet.",
+        "myPlans": "My plans",
+        "statusFilter": "Plan statuses",
+        "filters": {
+          "all": "All",
+          "active": "Active",
+          "draft": "Draft",
+          "paused": "Paused",
+          "archived": "Archived"
+        }
+      },
+      "historyPage": {
+        "filter": "Filter",
+        "allMeals": "All sections",
+        "allSources": "All sources"
+      },
+      "reportPage": {
+        "title": "Report",
+        "description": "Track calories, macros, water, and meal logging habits through trends.",
+        "aiTitle": "AI recommendation",
+        "aiDescription": "Use calorie, water, and macro trends from this report to build a sharper plan for next week.",
+        "viewPlans": "View plans",
+        "scopeTitle": "Report scope",
+        "scopeDescription": "Data is calculated from logged meals, water logs, and goals.",
+        "quickCheckTitle": "Quick check",
+        "quickGoal": "Goal adherence",
+        "quickMacro": "Macro balance",
+        "quickTrends": "Trend insights",
+        "compare": "Compare",
+        "export": "Export",
+        "footerNote": "Report data is calculated from logged meals and goals. The latest update refreshes when the selected date range is reloaded."
       },
       "recipes": {
         "common": {
@@ -88,10 +132,18 @@
         },
         "page": {
           "badge": "Recipes",
+          "headerTitle": "Today's recipes",
           "title": "Recipes for today's meals",
+          "description": "Discover healthy and tasty recipes",
           "selectRecipe": "Select a recipe",
           "empty": "No recipes found",
           "totalCount": "{{count}} recipes"
+        },
+        "tabs": {
+          "explore": "Explore",
+          "mine": "My recipes",
+          "ai": "AI From Image",
+          "favorites": "Favorites"
         },
         "search": {
           "label": "Search recipes",
@@ -113,6 +165,7 @@
           "featuredAria": "Featured recipes",
           "featured": "Featured",
           "savedOnly": "Saved",
+          "pantryOnly": "In pantry",
           "clearAria": "Clear filters",
           "clear": "Clear",
           "apply": "Apply filters",
@@ -152,8 +205,28 @@
           "addToMealLog": "Add to today's log",
           "addToMealPlan": "Add to plan",
           "createShoppingList": "Create shopping list",
+          "create": "Create recipe",
+          "add": "Add",
           "save": "Save",
           "saved": "Saved"
+        },
+        "empty": {
+          "explore": {
+            "title": "No recipes found",
+            "description": "Create your first recipe"
+          },
+          "filtered": {
+            "title": "No recipes found",
+            "description": "Adjust filters or create a new recipe"
+          },
+          "mine": {
+            "title": "No recipes found",
+            "description": "Create your first recipe"
+          },
+          "favorites": {
+            "title": "No favorite recipes found",
+            "description": "Create your first recipe"
+          }
         },
         "card": {
           "ingredientsCount": "{{count}} ingredients",

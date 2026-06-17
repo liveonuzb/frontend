@@ -293,6 +293,52 @@ const Index = () => {
       description: "Nutrition report exportlari",
     },
   ];
+  const fallbackNutritionFunnelCards = [
+    {
+      key: "mealLogged",
+      label: "Meal logged",
+      value: nutrition.mealLogs ?? 0,
+      conversionRate: nutrition.mealLogs ? 100 : 0,
+    },
+    {
+      key: "scanReviewed",
+      label: "AI scan reviewed",
+      value: nutritionEvents.scanReviewed ?? 0,
+      conversionRate: nutrition.scanReviewRate ?? 0,
+    },
+    {
+      key: "planIntent",
+      label: "Plan intent",
+      value:
+        (nutritionEvents.templateApplied ?? 0) +
+        (nutritionEvents.aiPlanGenerated ?? 0),
+      conversionRate: 0,
+    },
+    {
+      key: "planActivated",
+      label: "Plan activated",
+      value: nutrition.activeMealPlans ?? 0,
+      conversionRate: 0,
+    },
+    {
+      key: "shoppingListGenerated",
+      label: "Shopping list",
+      value: nutrition.shoppingListsGenerated ?? 0,
+      conversionRate: 0,
+    },
+    {
+      key: "reportExported",
+      label: "Report exported",
+      value: nutritionEvents.reportExported ?? 0,
+      conversionRate: 0,
+    },
+  ];
+  const nutritionFunnelCards =
+    Array.isArray(nutrition.funnel) && nutrition.funnel.length
+      ? nutrition.funnel
+      : fallbackNutritionFunnelCards;
+  const reportExportFunnelStep =
+    nutritionFunnelCards[nutritionFunnelCards.length - 1] ?? {};
   const catalogQualityCards = [
     {
       label: "Missing translations",
@@ -769,6 +815,65 @@ const Index = () => {
                 </p>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* Nutrition Product Funnel */}
+        <Card className={dashboardCardClassName}>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUpIcon className="size-4" />
+                Nutrition product funnel
+              </CardTitle>
+              <CardDescription>
+                So'nggi {nutrition.rangeDays ?? 30} kunlik log, plan,
+                shopping va report konversiyalari
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">
+              Report export {reportExportFunnelStep.conversionRate ?? 0}%
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {map(nutritionFunnelCards, (item) => {
+              const conversionRate = Math.max(
+                0,
+                Math.min(100, Number(item.conversionRate ?? 0)),
+              );
+
+              return (
+                <div
+                  key={item.key ?? item.label}
+                  className="grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-4 md:grid-cols-[minmax(150px,0.8fr)_minmax(0,1.5fr)_96px] md:items-center"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {isLoading ? "..." : item.value ?? 0} event
+                    </p>
+                  </div>
+                  <div
+                    aria-label={`${item.label} conversion`}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={conversionRate}
+                    className="h-2 overflow-hidden rounded-full bg-background"
+                    role="progressbar"
+                  >
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${conversionRate}%` }}
+                    />
+                  </div>
+                  <p className="text-right text-sm font-semibold tabular-nums">
+                    {isLoading ? "..." : `${conversionRate}%`}
+                  </p>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 

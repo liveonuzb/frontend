@@ -152,25 +152,31 @@ const RunningDetailPage = () => {
       feelingLevel: toNumber(get(session, "feeling.level", 0)) || 0,
       imageUrl: get(session, "moments.imageUrl", null),
     };
-  }, [
-    session?.feeling?.level,
-    session?.moments?.imageUrl,
-    session?.moments?.text,
-    session?.moments?.title,
-    session?.workoutSessionId,
-  ]);
+  }, [session]);
 
   React.useEffect(() => {
     if (!sessionDetailsSnapshot) {
       return;
     }
 
-    setDetails({
-      momentTitle: sessionDetailsSnapshot.momentTitle,
-      momentText: sessionDetailsSnapshot.momentText,
-      feelingLevel: sessionDetailsSnapshot.feelingLevel,
+    let isCurrent = true;
+
+    queueMicrotask(() => {
+      if (!isCurrent) {
+        return;
+      }
+
+      setDetails({
+        momentTitle: sessionDetailsSnapshot.momentTitle,
+        momentText: sessionDetailsSnapshot.momentText,
+        feelingLevel: sessionDetailsSnapshot.feelingLevel,
+      });
+      setImageUrl(sessionDetailsSnapshot.imageUrl);
     });
-    setImageUrl(sessionDetailsSnapshot.imageUrl);
+
+    return () => {
+      isCurrent = false;
+    };
   }, [sessionDetailsSnapshot]);
 
   const saveDetails = React.useCallback(

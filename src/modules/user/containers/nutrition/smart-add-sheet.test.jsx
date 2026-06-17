@@ -183,8 +183,30 @@ describe("SmartAddSheet", () => {
       screen.getByRole("button", { name: "Saqlangan taomlar" }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("quick-add-list")).not.toBeInTheDocument();
-    expect(screen.getByTestId("method-action-list")).toHaveClass("space-y-2");
+    expect(screen.getByTestId("method-action-list")).toHaveClass(
+      "grid",
+      "grid-cols-2",
+      "gap-2.5",
+    );
+    expect(screen.getByTestId("method-action-list")).not.toHaveClass(
+      "space-y-2",
+    );
     expect(screen.getByTestId("method-action-list").children).toHaveLength(4);
+    expect(screen.getByRole("button", { name: "Kamera" })).toHaveClass(
+      "aspect-[1.55]",
+      "flex-col",
+      "justify-center",
+      "rounded-[1.5rem]",
+    );
+    expect(screen.getByRole("button", { name: "Kamera" })).not.toHaveClass(
+      "justify-start",
+    );
+    expect(screen.getByTestId("saved-meals-action-list")).toHaveClass(
+      "mt-4",
+      "overflow-hidden",
+      "rounded-[1.5rem]",
+      "bg-muted/45",
+    );
   });
 
   it("keeps add actions disabled when logging is unavailable", () => {

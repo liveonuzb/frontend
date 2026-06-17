@@ -4,6 +4,8 @@ import map from "lodash/map";
 import toUpper from "lodash/toUpper";
 import { CheckCircle2Icon, LoaderCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
   DrawerBody,
@@ -16,6 +18,50 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+
+const dietaryTagOptions = [
+  { value: "halal", label: "Halal" },
+  { value: "lactose-free", label: "Lactose free" },
+  { value: "diabetic-friendly", label: "Diabetic friendly" },
+  { value: "gluten-free", label: "Gluten free" },
+];
+
+const allergenTagOptions = [
+  { value: "gluten", label: "Gluten" },
+  { value: "lactose", label: "Lactose" },
+  { value: "nuts", label: "Nuts" },
+  { value: "seafood", label: "Seafood" },
+];
+
+const toggleArrayValue = (values = [], value, checked) =>
+  checked
+    ? Array.from(new Set([...values, value]))
+    : values.filter((item) => item !== value);
+
+const TagCheckboxGroup = ({ label, options, values = [], onChange }) => (
+  <div className="flex flex-col gap-2 rounded-2xl border px-4 py-3">
+    <Label>{label}</Label>
+    <div className="flex flex-wrap gap-2">
+      {map(options, (option) => {
+        const checked = values.includes(option.value);
+        return (
+          <label
+            key={option.value}
+            className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+          >
+            <Checkbox
+              checked={checked}
+              onCheckedChange={(nextChecked) =>
+                onChange(toggleArrayValue(values, option.value, Boolean(nextChecked)))
+              }
+            />
+            <span>{option.label}</span>
+          </label>
+        );
+      })}
+    </div>
+  </div>
+);
 
 export const LocalizedCatalogDrawers = ({
   activeLanguages,
@@ -34,6 +80,7 @@ export const LocalizedCatalogDrawers = ({
   setForm,
   setTranslationForm,
   singularLabel,
+  showNutritionTagMapping,
   translationForm,
   translationsDrawerOpen,
 }) => (
@@ -128,6 +175,51 @@ export const LocalizedCatalogDrawers = ({
                   }
                 />
               </div>
+
+              {showNutritionTagMapping ? (
+                <>
+                  <div className="rounded-2xl border px-4 py-3 text-sm">
+                    <div className="flex flex-wrap gap-2">
+                      {map(get(form, "dietaryTags", []), (tag) => (
+                        <Badge key={tag} variant="outline">
+                          {tag}
+                        </Badge>
+                      ))}
+                      {map(get(form, "allergenTags", []), (tag) => (
+                        <Badge key={tag} variant="destructive">
+                          avoid {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Mapping meal plan compatibility va recipe filters uchun
+                      ishlatiladi.
+                    </p>
+                  </div>
+                  <TagCheckboxGroup
+                    label="Dietary tags"
+                    options={dietaryTagOptions}
+                    values={get(form, "dietaryTags", [])}
+                    onChange={(nextValues) =>
+                      setForm((current) => ({
+                        ...current,
+                        dietaryTags: nextValues,
+                      }))
+                    }
+                  />
+                  <TagCheckboxGroup
+                    label="Avoid allergen tags"
+                    options={allergenTagOptions}
+                    values={get(form, "allergenTags", [])}
+                    onChange={(nextValues) =>
+                      setForm((current) => ({
+                        ...current,
+                        allergenTags: nextValues,
+                      }))
+                    }
+                  />
+                </>
+              ) : null}
             </>
           )}
         </DrawerBody>

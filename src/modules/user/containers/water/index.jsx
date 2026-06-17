@@ -7,6 +7,10 @@ import {
   useDailyTrackingActions,
   useDailyTrackingDay,
 } from "@/hooks/app/use-daily-tracking";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { useGetQuery } from "@/hooks/api";
 import {
   PlusIcon,
@@ -36,6 +40,11 @@ import gt from "lodash/gt";
 import gte from "lodash/gte";
 import lt from "lodash/lt";
 import { TrackingPageLayout } from "@/components/tracking-page-shell";
+import {
+  getUserAccentCardClassName,
+  userCardClassName,
+} from "@/modules/user/lib/card-styles";
+import { cn } from "@/lib/utils";
 
 const formatWaterDateLabel = (date) =>
   date.toLocaleDateString("uz-UZ", {
@@ -58,7 +67,7 @@ const Index = () => {
   const { dayData } = useDailyTrackingDay(dateKey);
   const { data: hydrationInsightData, isLoading: isInsightLoading } =
     useGetQuery({
-      url: "/daily-tracking/water/insight",
+      url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, "water/insight"),
       params: { date: dateKey, days: 7 },
       queryProps: {
         queryKey: ["water", "insight", dateKey, 7],
@@ -174,40 +183,51 @@ const Index = () => {
             {cupSize} ml qo'shish
           </Button>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Card>
-              <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
-                <div className="mb-1 flex size-8 items-center justify-center rounded-full bg-orange-500/10 text-orange-500">
-                  <FlameIcon className="size-4" />
+          <div data-testid="water-stats-row" className="grid grid-cols-3 gap-2">
+            <Card
+              data-testid="water-stat-card"
+              className={cn(userCardClassName, "bg-card/95")}
+            >
+              <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">
+                <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <FlameIcon className="size-3.5" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-[11px] font-medium leading-tight text-muted-foreground">
                   Progress
                 </span>
-                <span className="text-lg font-bold">{hydrationRate}%</span>
+                <span className="text-base font-bold leading-tight">
+                  {hydrationRate}%
+                </span>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
-                <div className="mb-1 flex size-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
-                  <ActivityIcon className="size-4" />
+            <Card
+              data-testid="water-stat-card"
+              className={cn(userCardClassName, "bg-card/95")}
+            >
+              <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">
+                <div className="flex size-7 items-center justify-center rounded-full bg-info/10 text-info">
+                  <ActivityIcon className="size-3.5" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-[11px] font-medium leading-tight text-muted-foreground">
                   Ichilgan
                 </span>
-                <span className="text-lg font-bold">
+                <span className="text-base font-bold leading-tight">
                   {formatStat(currentMl)} ml
                 </span>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
-                <div className="mb-1 flex size-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-                  <AwardIcon className="size-4" />
+            <Card
+              data-testid="water-stat-card"
+              className={cn(userCardClassName, "bg-card/95")}
+            >
+              <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">
+                <div className="flex size-7 items-center justify-center rounded-full bg-success/10 text-success">
+                  <AwardIcon className="size-3.5" />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-[11px] font-medium leading-tight text-muted-foreground">
                   Holat
                 </span>
-                <span className="text-lg font-bold">
+                <span className="whitespace-nowrap text-sm font-bold leading-tight">
                   {goalHit ? "Bajarildi" : "Jarayonda"}
                 </span>
               </CardContent>
@@ -218,14 +238,16 @@ const Index = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex gap-3 rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10 p-4"
+            className={getUserAccentCardClassName(
+              "flex gap-3 border border-primary/15 bg-primary/5 p-4",
+            )}
           >
-            <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-md">
+            <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <SparklesIcon className="size-4" />
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-xs font-bold uppercase tracking-wider text-transparent dark:from-blue-400 dark:to-purple-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
                   AI Hydration
                 </span>
                 {isPremiumInsight ? (

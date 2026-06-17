@@ -241,9 +241,79 @@ describe("RunMapPanel", () => {
     );
     expect(mockLoadMapProvider).toHaveBeenCalledWith("maplibre");
     expect(screen.getByText("92")).toBeInTheDocument();
+    expect(screen.getByText("Accepted: 2 · Filtered: 0")).toBeInTheDocument();
 
     screen.getByRole("button", { name: /expand route preview/i }).click();
     expect(onExpand).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows filtered GPS point counts in the route quality card", async () => {
+    render(
+      <RunMapPanel
+        title={null}
+        variant="preview"
+        qualityScore={0.45}
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+            accuracy: 8,
+            sourceTimestamp: "2026-05-12T10:00:00.000Z",
+          },
+          {
+            sequence: 2,
+            latitude: 41.320069,
+            longitude: 69.240562,
+            accuracy: 160,
+            sourceTimestamp: "2026-05-12T10:10:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "1",
+    );
+    expect(screen.getByText("45")).toBeInTheDocument();
+    expect(screen.getByText("Accepted: 1 · Filtered: 1")).toBeInTheDocument();
+  });
+
+  it("serializes point latitude and longitude into MapLibre longitude-latitude coordinates", async () => {
+    render(
+      <RunMapPanel
+        title={null}
+        variant="preview"
+        points={[
+          {
+            sequence: 1,
+            latitude: 41.311081,
+            longitude: 69.240562,
+            sourceTimestamp: "2026-05-12T10:00:00.000Z",
+          },
+          {
+            sequence: 2,
+            latitude: 41.320069,
+            longitude: 69.240562,
+            sourceTimestamp: "2026-05-12T10:10:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    expect(await screen.findByTestId("maplibre-map")).toHaveAttribute(
+      "data-coordinate-count",
+      "2",
+    );
+    await waitFor(() => expect(mapInstances).toHaveLength(1));
+
+    const routeSource = mapInstances[0].getSource("liveon-running-route");
+    await waitFor(() => expect(routeSource.data.features).toHaveLength(1));
+    expect(routeSource.data.features[0].geometry.coordinates).toEqual([
+      [69.240562, 41.311081],
+      [69.240562, 41.320069],
+    ]);
   });
 
   it("prefers the cleaned route polyline over raw filtered points for completed previews", async () => {

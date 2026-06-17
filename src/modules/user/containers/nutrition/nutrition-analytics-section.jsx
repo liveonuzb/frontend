@@ -1,12 +1,15 @@
 import React from "react";
-import map from "lodash/map";
-import filter from "lodash/filter";
-import includes from "lodash/includes";
-import isArray from "lodash/isArray";
-import orderBy from "lodash/orderBy";
-import reduce from "lodash/reduce";
-import toNumber from "lodash/toNumber";
-import find from "lodash/find";
+import {
+  filter,
+  find,
+  includes,
+  isArray,
+  map,
+  orderBy,
+  reduce,
+  some,
+  toNumber,
+} from "lodash";
 import {
   BarChart,
   Bar,
@@ -30,13 +33,42 @@ import {
   DropletsIcon,
   DownloadIcon,
   FlameIcon,
+  Loader2Icon,
+  SparklesIcon,
   TargetIcon,
   TrophyIcon,
 } from "lucide-react";
 import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api.js";
+import {
+  NUTRITION_REPORTS_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
+import {
+  getNutritionHealthReportComparisonQueryKey,
+  getNutritionHealthReportQueryKey,
+} from "@/hooks/app/nutrition-query-keys";
+import {
+  buildNutritionReportChartData,
+  buildNutritionReportComparisonChartData,
+  buildNutritionReportSourceChartData,
+  formatNutritionReportDay,
+  getNutritionReportAverageCalories,
+} from "./nutrition-report-chart-data.js";
+import {
+  getAiAccessDisabledProps,
+  getAiAccessStatus,
+  isAiAccessLimitError,
+  useAiAccessStatus,
+} from "@/hooks/app/use-ai-access";
+import { useGenerateUserAiReport } from "@/hooks/app/use-user-ai-reports";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import {
+  getUserSurfaceClassName,
+  userCardClassName,
+  userSurfaceClassName,
+} from "@/modules/user/lib/card-styles";
 import { SOURCE_META } from "./source-meta.js";
 import { toast } from "sonner";
 
@@ -44,6 +76,7 @@ const PERIOD_OPTIONS = [
   { value: 7, label: "7 kun" },
   { value: 14, label: "14 kun" },
   { value: 30, label: "30 kun" },
+  { value: 90, label: "90 kun" },
 ];
 
 export const NUTRITION_REPORT_EXPORT_EVENT = "nutrition-report-export";
@@ -57,42 +90,77 @@ const MACRO_SERIES = [
 ];
 
 const TREND_CARD_SERIES = [
-  { key: "Oqsil (g)", label: "Protein", unit: "g", color: "#ef4444" },
-  { key: "Uglevod (g)", label: "Carbs", unit: "g", color: "#f59e0b" },
-  { key: "Yog' (g)", label: "Fat", unit: "g", color: "#3b82f6" },
-  { key: "Suv (ml)", label: "Water", unit: "ml", color: "#06b6d4" },
+  { key: "Kaloriya", label: "Kaloriya", unit: "kcal", color: "#f97316" },
+  { key: "Oqsil (g)", label: "Oqsil", unit: "g", color: "#ef4444" },
+  { key: "Uglevod (g)", label: "Uglevod", unit: "g", color: "#f59e0b" },
+  { key: "Yog' (g)", label: "Yog'", unit: "g", color: "#3b82f6" },
+  { key: "Fiber (g)", label: "Fiber", unit: "g", color: "#22c55e" },
+  { key: "Suv (ml)", label: "Suv", unit: "ml", color: "#06b6d4" },
+  { key: "Ovqat soni", label: "Ovqat soni", unit: "ta", color: "#8b5cf6" },
 ];
 
 const SOURCE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#64748b"];
 const EMPTY_ARRAY = [];
 const EMPTY_OBJECT = {};
 const AXIS_TICK = { fontSize: 10, fill: "hsl(var(--muted-foreground))" };
+const X_AXIS_PROPS = {
+  tick: AXIS_TICK,
+  axisLine: false,
+  tickLine: false,
+  minTickGap: 8,
+  interval: "preserveStartEnd",
+};
+const Y_AXIS_PROPS = { tick: AXIS_TICK, axisLine: false, tickLine: false };
 const GRID_STROKE = "hsl(var(--border))";
 const CALORIE_CHART_MARGIN = { top: 4, right: 4, left: -24, bottom: 0 };
 const MACRO_CHART_MARGIN = { top: 4, right: 8, left: -24, bottom: 0 };
 const REPORT_CARD_CLASS =
-  "border-primary/10 bg-card/95 shadow-sm shadow-primary/5";
+  cn(userCardClassName, "border border-primary/10 bg-card/95");
 const REPORT_PANEL_CLASS =
-  "border-primary/10 bg-background/60 shadow-sm shadow-primary/5";
+  cn(userSurfaceClassName, "border border-border/40 bg-muted/30");
 const REPORT_CONTROL_FOCUS_CLASS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const getSourceLabel = (source) =>
   SOURCE_META[source]?.label || SOURCE_META.manual.label;
 
+const getAiReportPeriodForNutritionDays = (days) => {
+  const normalizedDays = toNumber(days || 7);
+
+  if (normalizedDays <= 7) return "weekly";
+  if (normalizedDays <= 30) return "monthly";
+  if (normalizedDays <= 90) return "three_months";
+  if (normalizedDays <= 180) return "six_months";
+  return "yearly";
+};
+
+const getAiReportPeriodLabel = (period) => {
+  if (period === "weekly") return "7 kun";
+  if (period === "monthly") return "30 kun";
+  if (period === "three_months") return "90 kun";
+  if (period === "six_months") return "180 kun";
+  return "1 yil";
+};
+
 const toDateKey = (date) => date.toISOString().slice(0, 10);
+
+const dateKeyToUtcDate = (dateKey) => {
+  const [year, month, day] = String(dateKey || "")
+    .split("-")
+    .map((part) => Number(part));
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  return new Date(Date.UTC(year, month - 1, day));
+};
 
 const getDefaultCustomRange = () => {
   const end = new Date();
   const start = new Date(end);
   start.setDate(start.getDate() - 6);
   return { start: toDateKey(start), end: toDateKey(end) };
-};
-
-const formatDay = (dateStr) => {
-  if (!dateStr) return "";
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("uz-UZ", { month: "short", day: "numeric" });
 };
 
 const downloadBlob = (filename, blob) => {
@@ -153,15 +221,30 @@ const getWeekComparisonRanges = () => {
   };
 };
 
-const WEEKDAY_LABELS = ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"];
+const getPreviousPeriodRange = (period = {}) => {
+  if (!period.startDate || !period.endDate) {
+    return null;
+  }
 
-const averageCalories = (items = []) => {
-  const logged = filter(items, (item) => toNumber(item.calories || 0) > 0);
-  if (logged.length === 0) return 0;
-  return Math.round(
-    reduce(logged, (sum, item) => sum + toNumber(item.calories || 0), 0) /
-      logged.length,
+  const start = dateKeyToUtcDate(period.startDate);
+  const end = dateKeyToUtcDate(period.endDate);
+  if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null;
+  }
+
+  const daysCount = Math.max(
+    1,
+    Math.round((end.getTime() - start.getTime()) / 86400000) + 1,
   );
+  const previousEnd = new Date(start);
+  previousEnd.setDate(previousEnd.getDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setDate(previousStart.getDate() - (daysCount - 1));
+
+  return {
+    startDate: toDateKey(previousStart),
+    endDate: toDateKey(previousEnd),
+  };
 };
 
 const formatSignedCalories = (value) => {
@@ -192,6 +275,25 @@ const getGoalPercent = (value, periodDays) => {
 
   return Math.min(100, Math.round(((toNumber(value) || 0) / daysCount) * 100));
 };
+
+const hasDailyNutritionValue = (entry) =>
+  some(
+    [
+      entry?.calories,
+      entry?.protein,
+      entry?.carbs,
+      entry?.fat,
+      entry?.fiber,
+      entry?.waterMl,
+      entry?.mealCount,
+    ],
+    (value) => toNumber(value || 0) > 0,
+  );
+
+const hasChartMetricValue = (items, keys) =>
+  some(items, (entry) =>
+    some(keys, (key) => toNumber(entry?.[key] || 0) > 0),
+  );
 
 const HighlightCard = React.memo(({ icon: Icon, label, title, description, tone }) => (
   <div className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}>
@@ -265,7 +367,9 @@ const PeriodSummaryPanel = React.memo(({ period, periodDays, summary, goals }) =
   const waterGoalPercent = getGoalPercent(waterGoalMet, periodDays);
   const periodRange =
     period.startDate && period.endDate
-      ? `${formatDay(period.startDate)} - ${formatDay(period.endDate)}`
+      ? `${formatNutritionReportDay(period.startDate) || period.startDate} - ${
+          formatNutritionReportDay(period.endDate) || period.endDate
+        }`
       : `${periodDays} kun`;
 
   return (
@@ -413,6 +517,166 @@ const PlanAdherencePanel = React.memo(({ planAdherence }) => {
 });
 PlanAdherencePanel.displayName = "PlanAdherencePanel";
 
+const GoalAdherenceGrid = React.memo(({ summary, periodDays }) => {
+  const items = [
+    {
+      label: "Kuzatilgan kunlar",
+      value: summary.daysTracked ?? 0,
+      total: periodDays,
+      tone: "text-primary",
+    },
+    {
+      label: "Kaloriya maqsadi",
+      value: summary.caloriesGoalMet ?? 0,
+      total: periodDays,
+      tone: "text-orange-500",
+    },
+    {
+      label: "Suv maqsadi",
+      value: summary.waterGoalMet ?? 0,
+      total: periodDays,
+      tone: "text-sky-500",
+    },
+    {
+      label: "Makro diapazon",
+      value: summary.macroRangeMet ?? 0,
+      total: periodDays,
+      tone: "text-emerald-500",
+    },
+  ];
+
+  return (
+    <section
+      className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      aria-label="Maqsadga amal qilish"
+    >
+      {map(items, (item) => {
+        const percent = getGoalPercent(item.value, item.total);
+
+        return (
+          <div
+            key={item.label}
+            className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-bold text-muted-foreground">
+                {item.label}
+              </p>
+              <p className={cn("text-lg font-black", item.tone)}>
+                {item.value}/{item.total}
+              </p>
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full bg-current", item.tone)}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] font-semibold text-muted-foreground">
+              {percent}% bajarilgan
+            </p>
+          </div>
+        );
+      })}
+    </section>
+  );
+});
+GoalAdherenceGrid.displayName = "GoalAdherenceGrid";
+
+const InsightCards = React.memo(({ insights }) => {
+  if (!isArray(insights) || insights.length === 0) return null;
+
+  const toneMap = {
+    success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    warning: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
+    info: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  };
+
+  return (
+    <section
+      className="grid gap-3 lg:grid-cols-2"
+      aria-label="Deterministik tavsiyalar"
+    >
+      {map(insights, (insight) => (
+        <div
+          key={insight.id || insight.title}
+          className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}
+        >
+          <div className="flex items-start gap-3">
+            <span
+              className={cn(
+                "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full",
+                toneMap[insight.severity] || toneMap.info,
+              )}
+            >
+              <CheckCircle2Icon className="size-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-black">{insight.title}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {insight.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+});
+InsightCards.displayName = "InsightCards";
+
+const AiInsightAddOnCard = React.memo(
+  ({ accessStatus, disabledProps, isPending, periodLabel, onGenerate }) => (
+    <section
+      aria-label="AI insight add-on"
+      className={cn(
+        "flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between",
+        REPORT_PANEL_CLASS,
+      )}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+            <SparklesIcon className="size-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-black">AI insight add-on</p>
+            <p className="text-xs font-semibold text-muted-foreground">
+              {accessStatus.label} · {periodLabel}
+            </p>
+          </div>
+        </div>
+        <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground">
+          Deterministik kartalardan tashqari, saqlanadigan AI report yarating.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onGenerate}
+        disabled={isPending || disabledProps.disabled}
+        aria-disabled={isPending || disabledProps["aria-disabled"]}
+        title={disabledProps.title}
+        className={cn(
+          "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-colors",
+          REPORT_CONTROL_FOCUS_CLASS,
+          isPending || disabledProps.disabled
+            ? "cursor-not-allowed border-border bg-muted text-muted-foreground"
+            : "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
+        )}
+        aria-label="AI insight yaratish"
+      >
+        {isPending ? (
+          <Loader2Icon className="size-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <SparklesIcon className="size-3.5" aria-hidden="true" />
+        )}
+        {isPending ? "Yaratilmoqda..." : "AI insight yaratish"}
+      </button>
+    </section>
+  ),
+);
+AiInsightAddOnCard.displayName = "AiInsightAddOnCard";
+
 const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
   if (sourceChartData.length === 0) return null;
 
@@ -479,7 +743,12 @@ const SourceBreakdownChart = React.memo(({ sourceChartData, topSource }) => {
 SourceBreakdownChart.displayName = "SourceBreakdownChart";
 
 const CalorieBarChart = React.memo(({ chartData, calorieGoal }) => {
-  if (chartData.length === 0) return null;
+  const hasCalories = React.useMemo(
+    () => hasChartMetricValue(chartData, ["Kaloriya"]),
+    [chartData],
+  );
+
+  if (!hasCalories) return null;
 
   return (
     <div className="space-y-2">
@@ -494,13 +763,8 @@ const CalorieBarChart = React.memo(({ chartData, calorieGoal }) => {
               vertical={false}
               stroke={GRID_STROKE}
             />
-            <XAxis
-              dataKey="date"
-              tick={AXIS_TICK}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <XAxis dataKey="date" {...X_AXIS_PROPS} />
+            <YAxis {...Y_AXIS_PROPS} />
             {calorieGoal > 0 ? (
               <ReferenceLine
                 y={calorieGoal}
@@ -530,15 +794,32 @@ const CalorieBarChart = React.memo(({ chartData, calorieGoal }) => {
 CalorieBarChart.displayName = "CalorieBarChart";
 
 const WeekComparisonChart = React.memo(
-  ({ comparisonChartData, averageCaloriesDelta }) => (
-    <div className={cn("space-y-3 rounded-2xl border p-4", REPORT_PANEL_CLASS)}>
+  ({
+    comparisonChartData,
+    averageCaloriesDelta,
+    title = "Bu hafta vs o'tgan hafta",
+    description = "Kunlik kaloriya ustma-ust solishtirildi",
+    currentLabel = "Bu hafta",
+    previousLabel = "O'tgan hafta",
+  }) => {
+    const hasComparisonValues = React.useMemo(
+      () => hasChartMetricValue(comparisonChartData, [currentLabel, previousLabel]),
+      [comparisonChartData, currentLabel, previousLabel],
+    );
+
+    if (!hasComparisonValues) {
+      return null;
+    }
+
+    return (
+      <div className={cn("space-y-3 rounded-2xl border p-4", REPORT_PANEL_CLASS)}>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold text-foreground">
-            Bu hafta vs o'tgan hafta
+            {title}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Kunlik kaloriya ustma-ust solishtirildi
+            {description}
           </p>
         </div>
         <span
@@ -565,22 +846,17 @@ const WeekComparisonChart = React.memo(
               vertical={false}
               stroke={GRID_STROKE}
             />
-            <XAxis
-              dataKey="date"
-              tick={AXIS_TICK}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <XAxis dataKey="date" {...X_AXIS_PROPS} />
+            <YAxis {...Y_AXIS_PROPS} />
             <RechartsTooltip content={<CustomTooltip />} />
             <Bar
-              dataKey="O'tgan hafta"
+              dataKey={previousLabel}
               fill="#94a3b8"
               radius={[5, 5, 0, 0]}
               opacity={0.7}
             />
             <Bar
-              dataKey="Bu hafta"
+              dataKey={currentLabel}
               fill="hsl(var(--primary))"
               radius={[5, 5, 0, 0]}
               opacity={0.9}
@@ -588,8 +864,9 @@ const WeekComparisonChart = React.memo(
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
-  ),
+      </div>
+    );
+  },
 );
 WeekComparisonChart.displayName = "WeekComparisonChart";
 
@@ -599,8 +876,16 @@ const MacroTrendChart = React.memo(
       () => filter(MACRO_SERIES, (macro) => includes(activeMacros, macro.key)),
       [activeMacros],
     );
+    const hasVisibleMacroData = React.useMemo(
+      () =>
+        hasChartMetricValue(
+          chartData,
+          map(visibleMacros, (macro) => macro.key),
+        ),
+      [chartData, visibleMacros],
+    );
 
-    if (chartData.length === 0) return null;
+    if (!hasVisibleMacroData) return null;
 
     return (
       <div className="space-y-3">
@@ -638,13 +923,8 @@ const MacroTrendChart = React.memo(
                 vertical={false}
                 stroke={GRID_STROKE}
               />
-              <XAxis
-                dataKey="date"
-                tick={AXIS_TICK}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" {...X_AXIS_PROPS} />
+              <YAxis {...Y_AXIS_PROPS} />
               {map(visibleMacros, (macro) =>
                 goals[macro.goalKey] > 0 ? (
                   <ReferenceLine
@@ -682,12 +962,11 @@ const MacroTrendChart = React.memo(
 MacroTrendChart.displayName = "MacroTrendChart";
 
 const MacroTrendCards = React.memo(({ chartData }) => {
-  if (chartData.length === 0) return null;
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {map(TREND_CARD_SERIES, (item) => {
+  const trendCards = React.useMemo(
+    () =>
+      map(TREND_CARD_SERIES, (item) => {
         const values = map(chartData, (entry) => toNumber(entry[item.key] || 0));
+        const hasValues = some(values, (value) => value > 0);
         const first = find(values, (value) => value > 0) || 0;
         const last = find([...values].reverse(), (value) => value > 0) || 0;
         const delta =
@@ -696,7 +975,20 @@ const MacroTrendCards = React.memo(({ chartData }) => {
           ? Math.round(reduce(values, (sum, value) => sum + value, 0) / values.length)
           : 0;
 
-        return (
+        return { ...item, average, delta, hasValues };
+      }),
+    [chartData],
+  );
+  const visibleTrendCards = React.useMemo(
+    () => filter(trendCards, (item) => item.hasValues),
+    [trendCards],
+  );
+
+  if (visibleTrendCards.length === 0) return null;
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {map(visibleTrendCards, (item) => (
           <div key={item.key} className={cn("rounded-2xl border px-4 py-3", REPORT_CARD_CLASS)}>
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -704,7 +996,7 @@ const MacroTrendCards = React.memo(({ chartData }) => {
                   {item.label}
                 </p>
                 <p className="mt-1 text-lg font-black">
-                  {average}
+                  {item.average}
                   <span className="ml-1 text-xs text-muted-foreground">
                     {item.unit}
                   </span>
@@ -713,13 +1005,13 @@ const MacroTrendCards = React.memo(({ chartData }) => {
               <span
                 className={cn(
                   "rounded-full px-2 py-1 text-xs font-bold",
-                  delta >= 0
+                  item.delta >= 0
                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                     : "bg-red-500/10 text-red-700 dark:text-red-300",
                 )}
               >
-                {delta >= 0 ? "+" : ""}
-                {delta}%
+                {item.delta >= 0 ? "+" : ""}
+                {item.delta}%
               </span>
             </div>
             <div className="mt-3 h-16">
@@ -737,18 +1029,55 @@ const MacroTrendCards = React.memo(({ chartData }) => {
               </ResponsiveContainer>
             </div>
           </div>
-        );
-      })}
+        ))}
     </div>
   );
 });
 MacroTrendCards.displayName = "MacroTrendCards";
 
+const ReportEmptyState = React.memo(({ periodDays }) => (
+  <div
+    className={cn("p-6 text-center sm:p-8", REPORT_CARD_CLASS)}
+    aria-label="Hisobot bo'sh holati"
+  >
+    <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+      <BarChart3Icon className="size-6" aria-hidden="true" />
+    </div>
+    <h2 className="mt-4 text-lg font-black">Hisobot uchun ma'lumot yo'q</h2>
+    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+      Tanlangan {periodDays} kunlik davrda ovqat, makro yoki suv yozuvlari
+      topilmadi.
+    </p>
+    <div className="mx-auto mt-5 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+      <div className={cn("rounded-2xl border px-4 py-3", REPORT_PANEL_CLASS)}>
+        <p className="text-sm font-black">Ovqat logi yo'q</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          Kaloriya, makro va ovqat soni trendi ovqat yozuvlaridan tuziladi.
+        </p>
+      </div>
+      <div className={cn("rounded-2xl border px-4 py-3", REPORT_PANEL_CLASS)}>
+        <p className="text-sm font-black">Suv logi yo'q</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          Suv maqsadi va adherence uchun kunlik suv miqdori kerak.
+        </p>
+      </div>
+      <div className={cn("rounded-2xl border px-4 py-3", REPORT_PANEL_CLASS)}>
+        <p className="text-sm font-black">Boshlash</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          Bugungi ovqat yoki suv yozuvi qo'shilganda hisobot avtomatik
+          yangilanadi.
+        </p>
+      </div>
+    </div>
+  </div>
+));
+ReportEmptyState.displayName = "ReportEmptyState";
+
 const ChartSkeleton = () => (
   <div
     role="status"
     aria-label="Hisobot yuklanmoqda"
-    className="rounded-[28px] border bg-card p-5 shadow-sm sm:p-6 space-y-4"
+    className={getUserSurfaceClassName("space-y-4 p-5 sm:p-6")}
   >
     <Skeleton className="h-5 w-40 rounded-lg" />
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -762,10 +1091,13 @@ const ChartSkeleton = () => (
 
 export default function NutritionAnalyticsSection() {
   const { request } = useApi();
+  const { access: aiAccess } = useAiAccessStatus();
+  const generateAiReport = useGenerateUserAiReport();
   const [days, setDays] = React.useState(7);
   const [rangeMode, setRangeMode] = React.useState("preset");
   const [customRange, setCustomRange] = React.useState(getDefaultCustomRange);
   const [comparisonEnabled, setComparisonEnabled] = React.useState(false);
+  const [comparisonMode, setComparisonMode] = React.useState("week");
   const [activeMacros, setActiveMacros] = React.useState(() =>
     map(MACRO_SERIES, (item) => item.key),
   );
@@ -779,49 +1111,15 @@ export default function NutritionAnalyticsSection() {
     : { days };
 
   const { data, isLoading } = useGetQuery({
-    url: "/daily-tracking/reports/health",
+    url: nutritionApiPath(NUTRITION_REPORTS_API_ROOT, "summary"),
     params: reportParams,
     queryProps: {
-      queryKey: [
-        "daily-tracking",
-        "health-report",
+      queryKey: getNutritionHealthReportQueryKey(
         rangeMode,
         days,
         customRange.start,
         customRange.end,
-      ],
-    },
-  });
-
-  const comparisonRanges = React.useMemo(() => getWeekComparisonRanges(), []);
-  const { data: currentWeekData } = useGetQuery({
-    url: "/daily-tracking/reports/health",
-    params: comparisonRanges.current,
-    queryProps: {
-      queryKey: [
-        "daily-tracking",
-        "health-report",
-        "comparison",
-        "current",
-        comparisonRanges.current.startDate,
-        comparisonRanges.current.endDate,
-      ],
-      enabled: comparisonEnabled,
-    },
-  });
-  const { data: previousWeekData } = useGetQuery({
-    url: "/daily-tracking/reports/health",
-    params: comparisonRanges.previous,
-    queryProps: {
-      queryKey: [
-        "daily-tracking",
-        "health-report",
-        "comparison",
-        "previous",
-        comparisonRanges.previous.startDate,
-        comparisonRanges.previous.endDate,
-      ],
-      enabled: comparisonEnabled,
+      ),
     },
   });
 
@@ -830,39 +1128,101 @@ export default function NutritionAnalyticsSection() {
   const summary = report.summary ?? EMPTY_OBJECT;
   const goals = report.goals ?? EMPTY_OBJECT;
   const sourceBreakdown = report.sourceBreakdown ?? EMPTY_ARRAY;
+  const insights = report.insights ?? EMPTY_ARRAY;
   const period = report.period ?? EMPTY_OBJECT;
   const periodDays = period.days ?? days;
+  const aiAccessStatus = getAiAccessStatus({ access: aiAccess });
+  const aiAccessDisabledProps = getAiAccessDisabledProps({ access: aiAccess });
+  const aiReportPeriod = React.useMemo(
+    () => getAiReportPeriodForNutritionDays(periodDays),
+    [periodDays],
+  );
+  const aiReportPeriodLabel = React.useMemo(
+    () => getAiReportPeriodLabel(aiReportPeriod),
+    [aiReportPeriod],
+  );
+  const hasMeaningfulDailyData = React.useMemo(
+    () => some(daily, hasDailyNutritionValue),
+    [daily],
+  );
+  const comparisonRanges = React.useMemo(() => getWeekComparisonRanges(), []);
+  const previousPeriodRange = React.useMemo(
+    () => getPreviousPeriodRange(period),
+    [period],
+  );
+  const { data: currentWeekData } = useGetQuery({
+    url: nutritionApiPath(NUTRITION_REPORTS_API_ROOT, "summary"),
+    params: comparisonRanges.current,
+    queryProps: {
+      queryKey: getNutritionHealthReportComparisonQueryKey(
+        "current",
+        comparisonRanges.current.startDate,
+        comparisonRanges.current.endDate,
+      ),
+      enabled: comparisonEnabled && comparisonMode === "week",
+    },
+  });
+  const previousComparisonParams =
+    comparisonMode === "week" ? comparisonRanges.previous : previousPeriodRange;
+  const { data: previousComparisonData } = useGetQuery({
+    url: nutritionApiPath(NUTRITION_REPORTS_API_ROOT, "summary"),
+    params: previousComparisonParams || EMPTY_OBJECT,
+    queryProps: {
+      queryKey: getNutritionHealthReportComparisonQueryKey(
+        comparisonMode === "week" ? "previous" : "selected-previous",
+        previousComparisonParams?.startDate,
+        previousComparisonParams?.endDate,
+      ),
+      enabled: comparisonEnabled && Boolean(previousComparisonParams),
+    },
+  });
 
   const chartData = React.useMemo(
-    () =>
-      map(daily, (entry) => ({
-        date: formatDay(entry.date),
-        "Kaloriya": entry.calories,
-        "Oqsil (g)": entry.protein,
-        "Uglevod (g)": entry.carbs,
-        "Yog' (g)": entry.fat,
-        "Suv (ml)": entry.waterMl,
-      })),
+    () => buildNutritionReportChartData(daily),
     [daily],
   );
   const currentWeekDaily = currentWeekData?.data?.daily ?? EMPTY_ARRAY;
-  const previousWeekDaily = previousWeekData?.data?.daily ?? EMPTY_ARRAY;
+  const previousComparisonDaily =
+    previousComparisonData?.data?.daily ?? EMPTY_ARRAY;
+  const currentComparisonDaily =
+    comparisonMode === "period" ? daily : currentWeekDaily;
+  const comparisonLabels =
+    comparisonMode === "period"
+      ? {
+          current: "Tanlangan davr",
+          previous: "Oldingi davr",
+          title: "Tanlangan davr vs oldingi davr",
+          description: "Tanlangan sana oralig'i avvalgi teng davr bilan solishtirildi",
+        }
+      : {
+          current: "Bu hafta",
+          previous: "O'tgan hafta",
+          title: "Bu hafta vs o'tgan hafta",
+          description: "Kunlik kaloriya ustma-ust solishtirildi",
+        };
   const comparisonChartData = React.useMemo(
     () =>
-      map(WEEKDAY_LABELS, (label, index) => ({
-        date: label,
-        "Bu hafta": Math.round(currentWeekDaily[index]?.calories ?? 0),
-        "O'tgan hafta": Math.round(previousWeekDaily[index]?.calories ?? 0),
-      })),
-    [currentWeekDaily, previousWeekDaily],
+      buildNutritionReportComparisonChartData({
+        mode: comparisonMode,
+        currentDaily: currentComparisonDaily,
+        previousDaily: previousComparisonDaily,
+        labels: comparisonLabels,
+      }),
+    [
+      comparisonLabels.current,
+      comparisonLabels.previous,
+      comparisonMode,
+      currentComparisonDaily,
+      previousComparisonDaily,
+    ],
   );
   const currentWeekAverageCalories = React.useMemo(
-    () => averageCalories(currentWeekDaily),
-    [currentWeekDaily],
+    () => getNutritionReportAverageCalories(currentComparisonDaily),
+    [currentComparisonDaily],
   );
   const previousWeekAverageCalories = React.useMemo(
-    () => averageCalories(previousWeekDaily),
-    [previousWeekDaily],
+    () => getNutritionReportAverageCalories(previousComparisonDaily),
+    [previousComparisonDaily],
   );
   const averageCaloriesDelta = React.useMemo(
     () => currentWeekAverageCalories - previousWeekAverageCalories,
@@ -870,11 +1230,7 @@ export default function NutritionAnalyticsSection() {
   );
   const sourceChartData = React.useMemo(
     () =>
-      map(sourceBreakdown, (item) => ({
-        name: getSourceLabel(item.source),
-        value: item.count,
-        percent: item.percent,
-      })),
+      buildNutritionReportSourceChartData(sourceBreakdown, getSourceLabel),
     [sourceBreakdown],
   );
   const topSource = React.useMemo(
@@ -915,7 +1271,7 @@ export default function NutritionAnalyticsSection() {
               format,
             };
         const response = await request.get(
-          "/daily-tracking/reports/nutrition/export",
+          nutritionApiPath(NUTRITION_REPORTS_API_ROOT, "export"),
           {
             params,
             responseType: "blob",
@@ -953,6 +1309,21 @@ export default function NutritionAnalyticsSection() {
       request,
     ],
   );
+
+  const handleGenerateAiInsight = React.useCallback(async () => {
+    try {
+      const result = await generateAiReport.mutateAsync(aiReportPeriod);
+      toast.success(
+        result?.cached ? "Bugungi AI insight ochildi" : "AI insight report yaratildi",
+      );
+    } catch (error) {
+      toast.error(
+        isAiAccessLimitError(error)
+          ? "Bugungi AI limitingiz tugagan. Cached report bo'lsa ochish mumkin."
+          : "AI insight yaratib bo'lmadi",
+      );
+    }
+  }, [aiReportPeriod, generateAiReport]);
 
   const toggleMacro = React.useCallback((key) => {
     setActiveMacros((current) => {
@@ -994,25 +1365,12 @@ export default function NutritionAnalyticsSection() {
     return <ChartSkeleton />;
   }
 
-  if (daily.length === 0) {
-    return (
-      <div className={cn("rounded-[28px] border p-6 text-center sm:p-8", REPORT_CARD_CLASS)}>
-        <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-          <BarChart3Icon className="size-6" aria-hidden="true" />
-        </div>
-        <h2 className="mt-4 text-lg font-black">
-          Hisobot uchun ma'lumot yo'q
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-          Ovqat yoki suv yozsangiz, kaloriya, makro va suv trendlaringiz shu
-          yerda ko'rinadi.
-        </p>
-      </div>
-    );
+  if (!hasMeaningfulDailyData) {
+    return <ReportEmptyState periodDays={periodDays} />;
   }
 
   return (
-    <div className={cn("rounded-[28px] border p-5 sm:p-6 space-y-5", REPORT_CARD_CLASS)}>
+    <div className={cn("space-y-5 p-5 sm:p-6", REPORT_CARD_CLASS)}>
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -1093,6 +1451,29 @@ export default function NutritionAnalyticsSection() {
           >
             Hafta solishtirish
           </button>
+          {comparisonEnabled ? (
+            <div className="inline-flex rounded-xl border border-border p-0.5">
+              {map([
+                ["week", "Hafta"],
+                ["period", "Davr"],
+              ], ([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setComparisonMode(value)}
+                  className={cn(
+                    "rounded-lg px-2.5 py-0.5 text-xs font-medium transition-colors",
+                    REPORT_CONTROL_FOCUS_CLASS,
+                    comparisonMode === value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
       {rangeMode === "custom" ? (
@@ -1186,13 +1567,25 @@ export default function NutritionAnalyticsSection() {
         summary={summary}
         goals={goals}
       />
+      <GoalAdherenceGrid summary={summary} periodDays={periodDays} />
       <PlanAdherencePanel planAdherence={report.planAdherence} />
+      <InsightCards insights={insights} />
+      <AiInsightAddOnCard
+        accessStatus={aiAccessStatus}
+        disabledProps={aiAccessDisabledProps}
+        isPending={generateAiReport.isPending}
+        onGenerate={handleGenerateAiInsight}
+        periodLabel={aiReportPeriodLabel}
+      />
       {dayHighlights ? (
         <div className="grid gap-3 lg:grid-cols-3">
           <HighlightCard
             icon={TrophyIcon}
             label="Eng yaxshi kun"
-            title={formatDay(dayHighlights.best.date)}
+            title={
+              formatNutritionReportDay(dayHighlights.best.date) ||
+              dayHighlights.best.date
+            }
             description={`${Math.round(
               dayHighlights.best.calories,
             )} kcal, maqsaddan ${formatSignedCalories(dayHighlights.best.diff)}`}
@@ -1201,7 +1594,10 @@ export default function NutritionAnalyticsSection() {
           <HighlightCard
             icon={AlertTriangleIcon}
             label="Eng qiyin kun"
-            title={formatDay(dayHighlights.hardest.date)}
+            title={
+              formatNutritionReportDay(dayHighlights.hardest.date) ||
+              dayHighlights.hardest.date
+            }
             description={`${Math.round(
               dayHighlights.hardest.calories,
             )} kcal, maqsaddan ${formatSignedCalories(dayHighlights.hardest.diff)}`}
@@ -1229,6 +1625,10 @@ export default function NutritionAnalyticsSection() {
         <WeekComparisonChart
           comparisonChartData={comparisonChartData}
           averageCaloriesDelta={averageCaloriesDelta}
+          title={comparisonLabels.title}
+          description={comparisonLabels.description}
+          currentLabel={comparisonLabels.current}
+          previousLabel={comparisonLabels.previous}
         />
       ) : null}
       <MacroTrendChart

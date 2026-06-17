@@ -38,7 +38,7 @@ export default function RecentMealsDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
       <NutritionDrawerContent size="sm">
         <DrawerHeader className="pb-2 text-left">
-          <DrawerTitle className="sr-only">Recent meals</DrawerTitle>
+          <DrawerTitle className="sr-only">Oxirgi ovqatlar</DrawerTitle>
           <DrawerDescription className="sr-only">
             Oldingi taomni tanlab, tanlangan vaqtga copy qiling.
           </DrawerDescription>

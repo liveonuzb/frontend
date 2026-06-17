@@ -35,7 +35,7 @@ const TranslationPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading } = useGetQuery({
-    url: `/admin/cuisines/${id}`,
+    url: `/admin/nutrition/cuisines/${id}`,
     queryProps: {
       queryKey: ["admin", "cuisines", id],
       enabled: Boolean(id),
@@ -70,7 +70,7 @@ const TranslationPage = () => {
   const mutation = usePatchQuery({ queryKey: QUERY_KEY });
   const onSubmit = async (values) => {
     await mutation.mutateAsync({
-      url: `/admin/cuisines/${id}`,
+      url: `/admin/nutrition/cuisines/${id}`,
       attributes: {
         translations: values,
         name: trim(find(lodashValues(values), Boolean) || item?.name || ""),
@@ -139,6 +139,5 @@ const TranslationPage = () => {
 };
 
 export default TranslationPage;
-
 
 

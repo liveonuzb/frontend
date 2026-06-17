@@ -20,6 +20,7 @@ const RecipeDetailDrawer = ({
   onFavorite,
   onSave,
   onAdd,
+  onCreateShoppingList,
   onEdit,
   onStartCooking,
 }) => {
@@ -45,6 +46,7 @@ const RecipeDetailDrawer = ({
             onFavorite={onFavorite}
             onSave={onSave}
             onAddToMealPlan={onAdd}
+            onCreateShoppingList={onCreateShoppingList}
             onEdit={onEdit}
             onStartCooking={onStartCooking}
           />

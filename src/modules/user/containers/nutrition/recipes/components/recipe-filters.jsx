@@ -1,5 +1,11 @@
 import React from "react";
-import { HeartIcon, ListFilterIcon, SparklesIcon, XIcon } from "lucide-react";
+import {
+  HeartIcon,
+  ListFilterIcon,
+  PackageCheckIcon,
+  SparklesIcon,
+  XIcon,
+} from "lucide-react";
 import filter from "lodash/filter";
 import map from "lodash/map";
 import size from "lodash/size";
@@ -46,6 +52,7 @@ const emptyDraft = {
   maxCalories: "",
   featuredOnly: false,
   favoriteOnly: false,
+  pantryOnly: false,
 };
 
 const formatTagLabel = (value) =>
@@ -66,6 +73,7 @@ const getDraftFromProps = ({
   maxCalories,
   featuredOnly,
   favoriteOnly,
+  pantryOnly = false,
 }) => ({
   sort,
   categoryId,
@@ -79,6 +87,7 @@ const getDraftFromProps = ({
   maxCalories,
   featuredOnly,
   favoriteOnly,
+  pantryOnly,
 });
 
 const FilterField = ({ label, children }) => (
@@ -133,6 +142,7 @@ const RecipeFilters = ({
   maxCalories,
   featuredOnly,
   favoriteOnly,
+  pantryOnly,
   hasActiveFilters,
   activeFilterCount,
   categories,
@@ -152,6 +162,7 @@ const RecipeFilters = ({
   onMaxCaloriesChange,
   onFeaturedOnlyToggle,
   onFavoriteOnlyToggle,
+  onPantryOnlyToggle = () => {},
   onClearFilters,
 }) => {
   const rt = useRecipeTranslation();
@@ -171,6 +182,7 @@ const RecipeFilters = ({
         maxCalories,
         featuredOnly,
         favoriteOnly,
+        pantryOnly,
       }),
     [
       categoryId,
@@ -184,6 +196,7 @@ const RecipeFilters = ({
       maxTotalTimeMinutes,
       minCalories,
       minProtein,
+      pantryOnly,
       sort,
     ],
   );
@@ -206,6 +219,7 @@ const RecipeFilters = ({
             maxCalories,
             featuredOnly,
             favoriteOnly,
+            pantryOnly,
           ],
           Boolean,
         ),
@@ -222,6 +236,7 @@ const RecipeFilters = ({
       maxTotalTimeMinutes,
       minCalories,
       minProtein,
+      pantryOnly,
       sort,
     ],
   );
@@ -318,6 +333,9 @@ const RecipeFilters = ({
     if (draft.favoriteOnly !== favoriteOnly) {
       onFavoriteOnlyToggle();
     }
+    if (draft.pantryOnly !== pantryOnly) {
+      onPantryOnlyToggle();
+    }
     setOpen(false);
   }, [
     draft,
@@ -334,7 +352,9 @@ const RecipeFilters = ({
     onMaxTotalTimeMinutesChange,
     onMinCaloriesChange,
     onMinProteinChange,
+    onPantryOnlyToggle,
     onSortChange,
+    pantryOnly,
   ]);
 
   const handleClear = React.useCallback(() => {
@@ -471,7 +491,7 @@ const RecipeFilters = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <Button
                   type="button"
                   variant={draft.featuredOnly ? "default" : "outline"}
@@ -499,6 +519,20 @@ const RecipeFilters = ({
                     className={cn("size-4", draft.favoriteOnly && "fill-current")}
                   />
                   {rt("filters.savedOnly")}
+                </Button>
+                <Button
+                  type="button"
+                  variant={draft.pantryOnly ? "default" : "outline"}
+                  aria-pressed={draft.pantryOnly}
+                  aria-label={rt("filters.pantryOnly")}
+                  onClick={() =>
+                    updateDraft("pantryOnly", !draft.pantryOnly)
+                  }
+                >
+                  <PackageCheckIcon
+                    className={cn("size-4", draft.pantryOnly && "fill-current")}
+                  />
+                  {rt("filters.pantryOnly")}
                 </Button>
               </div>
             </div>

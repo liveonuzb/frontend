@@ -47,12 +47,6 @@
     "levelTitle": "Daraja",
     "completion": "Profil to'liqligi",
     "completionDesc": "Asosiy profil to'liq bo'lsa xabarlar, maxfiylik va referral bo'limlari aniqroq ishlaydi.",
-    "healthReport": {
-      "title": "AI health report",
-      "description": "Onboarding va sog'liq ma'lumotlaringizdan bir marta yig'ilgan wellness hisobotini ko'ring.",
-      "badge": "AI report",
-      "action": "Reportni ochish"
-    },
     "tabs": {
       "profile": "Profil",
       "general": "Til",
@@ -62,7 +56,8 @@
       "privacy": "Maxfiylik",
       "security": "Xavfsizlik",
       "premium": "Premium",
-      "referral": "Referallar"
+      "friends": "Do'stlar",
+      "referral": "Tavsiya"
     },
     "language": {
       "title": "Til",
@@ -331,8 +326,14 @@
       "activate": "Premium olish",
       "giftAction": "Sovg'a qilish",
       "planSelectorTitle": "Sizga mos tarifni tanlang",
-      "planSelectorDescription": "Tarifni tanlang, keyin to'lov yoki premium sovg'a qilishni davom ettiring.",
-      "historyTitle": "Obuna tarixi",
+      "planSelectorDescription": "Tarifni tanlang, keyin to'lovni davom ettiring.",
+      "billingTitle": "Billing",
+      "invoicesTitle": "Invoices",
+      "invoicesDescription": "To'lovlar va invoice yozuvlari alohida drawerda.",
+      "invoicesEmpty": "Invoice yozuvlari hali yo'q.",
+      "historyTitle": "Obunalar tarixi",
+      "historyDescription": "Premium obuna davrlari va holatlari alohida drawerda.",
+      "historyEmpty": "Obunalar tarixi hali yo'q.",
       "unlimited": "Cheksiz",
       "paymentsTitle": "So'nggi to'lovlar",
       "premiumPayment": "Premium to'lov",
@@ -401,6 +402,10 @@
       },
       "preparingCheckout": "Checkout tayyorlanmoqda...",
       "goToPayment": "To'lovga o'tish"
+    },
+    "friends": {
+      "description": "Do'stlar ro'yxati, so'rovlar va yangi tavsiyalar",
+      "value": "Do'stlar"
     },
     "referral": {
       "title": "Referallar",

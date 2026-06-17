@@ -25,6 +25,7 @@ import {
 
 import map from "lodash/map";
 import take from "lodash/take";
+import toNumber from "lodash/toNumber";
 
 const GOAL_FILTERS = [
   { value: "all", label: "Barchasi" },
@@ -39,6 +40,96 @@ const GOAL_LABELS = {
   gain_muscle: "Mushak olish",
   muscle: "Mushak olish",
   maintenance: "Balans",
+};
+
+const SELECT_FILTERS = [
+  {
+    key: "dietaryTag",
+    label: "Dietary tag",
+    options: [
+      { value: "all", label: "Barchasi" },
+      { value: "halal", label: "Halol" },
+      { value: "vegetarian", label: "Vegetarian" },
+      { value: "vegan", label: "Vegan" },
+      { value: "high_protein", label: "Oqsil yuqori" },
+      { value: "low_carb", label: "Uglevod past" },
+    ],
+  },
+  {
+    key: "budgetTier",
+    label: "Byudjet tier",
+    options: [
+      { value: "all", label: "Barchasi" },
+      { value: "low", label: "Tejamkor" },
+      { value: "budget", label: "Budget" },
+      { value: "medium", label: "O'rtacha" },
+      { value: "balanced", label: "Balans" },
+      { value: "premium", label: "Premium" },
+    ],
+  },
+  {
+    key: "durationDays",
+    label: "Davomiylik",
+    options: [
+      { value: "all", label: "Barchasi" },
+      { value: "7", label: "7 kun" },
+      { value: "30", label: "30 kun" },
+    ],
+  },
+  {
+    key: "mealCount",
+    label: "Mahal soni",
+    options: [
+      { value: "all", label: "Barchasi" },
+      { value: "3", label: "3 mahal" },
+      { value: "4", label: "4 mahal" },
+      { value: "5", label: "5 mahal" },
+    ],
+  },
+  {
+    key: "cuisine",
+    label: "Oshxona",
+    options: [
+      { value: "all", label: "Barchasi" },
+      { value: "uzbek", label: "O'zbek" },
+      { value: "asian", label: "Osiyo" },
+      { value: "european", label: "Yevropa" },
+      { value: "mediterranean", label: "Mediterranean" },
+    ],
+  },
+];
+
+const defaultFilters = {
+  dietaryTag: "all",
+  budgetTier: "all",
+  durationDays: "all",
+  mealCount: "all",
+  cuisine: "all",
+  maxCalories: "",
+};
+
+const buildTemplateQueryFilters = (goal, filters) => {
+  const durationDays = toNumber(filters.durationDays);
+  const mealCount = toNumber(filters.mealCount);
+  const maxCalories = toNumber(filters.maxCalories);
+
+  return {
+    goal,
+    ...(filters.dietaryTag !== "all"
+      ? { dietaryTag: filters.dietaryTag }
+      : {}),
+    ...(filters.budgetTier !== "all"
+      ? { budgetTier: filters.budgetTier }
+      : {}),
+    ...(Number.isFinite(durationDays) && durationDays > 0
+      ? { durationDays }
+      : {}),
+    ...(Number.isFinite(mealCount) && mealCount > 0 ? { mealCount } : {}),
+    ...(filters.cuisine !== "all" ? { cuisine: filters.cuisine } : {}),
+    ...(Number.isFinite(maxCalories) && maxCalories > 0
+      ? { maxCalories }
+      : {}),
+  };
 };
 
 const TemplateSkeleton = () => (
@@ -60,10 +151,15 @@ export default function TemplateLibraryDrawer({
   onSelectTemplate,
 }) {
   const [goal, setGoal] = React.useState("all");
+  const [filters, setFilters] = React.useState(defaultFilters);
   const [pendingTemplateId, setPendingTemplateId] = React.useState(null);
+  const queryFilters = React.useMemo(
+    () => buildTemplateQueryFilters(goal, filters),
+    [filters, goal],
+  );
   const { templates, isLoading, isFetching, isError, refetch } =
     useMealPlanTemplates({
-      goal,
+      ...queryFilters,
       enabled: open,
     });
   const isBusy = isLoading || isFetching;
@@ -112,6 +208,52 @@ export default function TemplateLibraryDrawer({
                 {filter.label}
               </Button>
             ))}
+          </div>
+
+          <div className="grid gap-2 rounded-2xl border bg-background/60 p-3 sm:grid-cols-2">
+            {map(SELECT_FILTERS, (filter) => (
+              <label
+                key={filter.key}
+                className="text-[11px] font-bold text-muted-foreground"
+              >
+                {filter.label}
+                <select
+                  aria-label={filter.label}
+                  className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground"
+                  value={filters[filter.key]}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      [filter.key]: event.target.value,
+                    }))
+                  }
+                >
+                  {map(filter.options, (option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+            <label className="text-[11px] font-bold text-muted-foreground">
+              Maksimal kaloriya
+              <input
+                aria-label="Maksimal kaloriya"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground"
+                inputMode="numeric"
+                min="0"
+                placeholder="Masalan, 2400"
+                type="number"
+                value={filters.maxCalories}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    maxCalories: event.target.value,
+                  }))
+                }
+              />
+            </label>
           </div>
 
           <div className="max-h-[55vh] space-y-3 overflow-y-auto pr-1">

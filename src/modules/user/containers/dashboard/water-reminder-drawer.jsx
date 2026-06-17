@@ -10,6 +10,10 @@ import {
   DrawerBody,
 } from "@/components/ui/drawer";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import { useAuthStore } from "@/store";
@@ -25,6 +29,7 @@ import useReminderTrigger from "./use-reminder-trigger.js";
 import filter from "lodash/filter";
 import map from "lodash/map";
 import split from "lodash/split";
+import uniq from "lodash/uniq";
 
 /* ─────────────────────────────────────────────
    WATER REMINDER DRAWER (Dashboard-only)
@@ -86,6 +91,7 @@ export default function WaterReminderDrawer() {
   const today = normalizeDateKey(new Date());
   const [open, setOpen] = useState(false);
   const [submittingMl, setSubmittingMl] = useState(null);
+  const [selectedMl, setSelectedMl] = useState(null);
 
   const {
     goals: {
@@ -102,9 +108,13 @@ export default function WaterReminderDrawer() {
   const preferredMl = customCupSize || cupSize || 250;
   const intervalMs = INTERVAL_MS[waterNotifInterval] ?? INTERVAL_MS["1 hour"];
 
+  React.useEffect(() => {
+    if (open) setSelectedMl(preferredMl);
+  }, [open, preferredMl]);
+
   // Today's daily-tracking — shared cache.
   const { data: dayResponse } = useGetQuery({
-    url: `/daily-tracking/${today}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, today),
     queryProps: {
       queryKey: getDashboardDayQueryKey(today),
       enabled: Boolean(userId),
@@ -166,7 +176,11 @@ export default function WaterReminderDrawer() {
 
   const progressPct =
     goalMl > 0 ? Math.min(100, Math.round((consumedMl / goalMl) * 100)) : 0;
-  const altCups = filter(ALT_CUP_SIZES, (v) => v !== preferredMl);
+  const cupOptions = filter(
+    uniq([preferredMl, ...ALT_CUP_SIZES]),
+    (value) => Number.isFinite(value) && value > 0,
+  );
+  const selectedAmountMl = selectedMl || preferredMl;
   const submitting = submittingMl != null;
 
   return (
@@ -175,75 +189,116 @@ export default function WaterReminderDrawer() {
       onOpenChange={(next) => (next ? setOpen(true) : close())}
       direction="bottom"
     >
-      <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm" data-water-reminder-drawer="true">
+      <DrawerContent
+        className="before:bg-[#f8fffb] data-[vaul-drawer-direction=bottom]:md:max-w-sm dark:before:bg-[#0e1713]"
+        data-water-reminder-drawer="true"
+      >
         <DrawerHeader className="text-center">
-          <div className="mx-auto mb-2 flex size-14 items-center justify-center rounded-2xl bg-sky-500/10">
-            <DropletIcon className="size-7 text-sky-500" />
+          <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-3xl bg-primary/10">
+            <DropletIcon className="size-8 text-primary" />
           </div>
-          <DrawerTitle>Suv ichish vaqti!</DrawerTitle>
-          <DrawerDescription>
+          <DrawerTitle className="text-xl font-bold">
+            Suv ichish vaqti!
+          </DrawerTitle>
+          <DrawerDescription className="text-base">
             {consumedMl}/{goalMl} ml — yana {remainingMl} ml qoldi
           </DrawerDescription>
         </DrawerHeader>
-        <DrawerBody className="space-y-5 pb-6">
-          {/* Progress bar */}
-          <div className="px-2">
+        <DrawerBody className="space-y-4 pb-6">
+          <div className="rounded-3xl border border-primary/10 bg-primary/5 p-4">
             <div className="mb-1.5 flex items-center justify-between text-xs text-muted-foreground">
               <span>Bugungi maqsad</span>
-              <span className="font-semibold text-sky-500">{progressPct}%</span>
+              <span className="font-semibold text-primary">{progressPct}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-sky-500/10">
+            <div className="h-2.5 overflow-hidden rounded-full bg-primary/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600 transition-all duration-500"
+                className="h-full rounded-full bg-primary transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
           </div>
 
-          {/* Primary CTA — preferred cup size */}
+          <div className="flex items-center justify-between rounded-3xl border bg-card/80 p-4 shadow-sm">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-muted-foreground">
+                Tanlangan idish
+              </p>
+              <p className="text-lg font-bold tabular-nums text-foreground">
+                {selectedAmountMl} ml
+              </p>
+            </div>
+            <div
+              className={cn("size-12 shrink-0", cupClass(selectedAmountMl))}
+              aria-hidden
+            />
+          </div>
+
+          <div
+            className="grid grid-cols-3 gap-3 water-cup"
+            data-testid="water-reminder-cup-options"
+          >
+            {map(cupOptions, (value) => {
+              const active = selectedAmountMl === value;
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedMl(value)}
+                  disabled={submitting}
+                  aria-pressed={active}
+                  className={cn(
+                    "flex aspect-square flex-col items-center justify-center gap-3 rounded-3xl border p-4 shadow-sm transition-all duration-300 group",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
+                    active
+                      ? "bg-primary/10 border-primary text-primary scale-105"
+                      : "bg-card border-transparent hover:border-border hover:bg-accent hover:scale-105",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "size-10 opacity-90 transition-opacity group-hover:opacity-100",
+                      cupClass(value),
+                    )}
+                    aria-hidden
+                  />
+                  <span
+                    className={cn(
+                      "text-sm font-semibold tabular-nums transition-colors",
+                      active
+                        ? "text-primary"
+                        : "text-muted-foreground group-hover:text-foreground",
+                    )}
+                  >
+                    {value} ml
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           <button
             type="button"
-            onClick={() => logWater(preferredMl)}
+            onClick={() => logWater(selectedAmountMl)}
             disabled={submitting}
             className={cn(
-              "flex w-full items-center justify-center gap-3 rounded-3xl bg-sky-500 px-5 py-4 text-white shadow-sm transition",
-              "hover:scale-[1.02] hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60",
+              "flex w-full items-center justify-center gap-3 rounded-3xl bg-primary px-5 py-4 text-primary-foreground shadow-sm transition-all duration-300",
+              "hover:scale-[1.02] hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60",
             )}
           >
             <div
               className={cn(
                 "size-9 brightness-0 invert",
-                cupClass(preferredMl),
+                cupClass(selectedAmountMl),
               )}
+              aria-hidden
             />
             <span className="text-base font-semibold">
-              + {preferredMl} ml ich
+              {submittingMl === selectedAmountMl
+                ? "Saqlanmoqda..."
+                : `+ ${selectedAmountMl} ml ich`}
             </span>
           </button>
-
-          {/* Alternative cup sizes */}
-          {altCups.length > 0 && (
-            <div className="grid grid-cols-3 gap-2 px-2">
-              {map(altCups, (value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => logWater(value)}
-                  disabled={submitting}
-                  className={cn(
-                    "flex flex-col items-center justify-center gap-1.5 rounded-2xl border bg-card p-3 transition",
-                    "hover:scale-105 hover:border-sky-500",
-                    "disabled:cursor-not-allowed disabled:opacity-60",
-                  )}
-                >
-                  <div className={cn("size-8", cupClass(value))} />
-                  <span className="text-[11px] font-semibold tabular-nums">
-                    {value} ml
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>

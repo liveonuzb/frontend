@@ -27,11 +27,10 @@ import RecipeCookingMode from "./components/recipe-cooking-mode.jsx";
 import RecipeImage from "./components/recipe-image.jsx";
 import NutritionSummary from "./components/nutrition-summary.jsx";
 import {
-  findMockRecipe,
   formatQuantity,
   getRecipeNutrition,
-} from "./recipe-mock-data.js";
-import { normalizeRecipeForUi } from "./recipe-ui-utils.js";
+  normalizeRecipeForUi,
+} from "./recipe-ui-utils.js";
 
 const CookingIngredientsDrawer = ({ open, recipe, onOpenChange }) => {
   const [checkedMap, setCheckedMap] = React.useState({});
@@ -101,13 +100,9 @@ const NutritionRecipeCookingPage = () => {
   const { slugOrId } = useParams();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { recipe: apiRecipe, isLoading } = useNutritionRecipeDetail(slugOrId);
-  const fallbackRecipe = React.useMemo(() => findMockRecipe(slugOrId), [slugOrId]);
   const recipe = React.useMemo(
-    () =>
-      apiRecipe || fallbackRecipe
-        ? normalizeRecipeForUi(apiRecipe || fallbackRecipe)
-        : null,
-    [apiRecipe, fallbackRecipe],
+    () => (apiRecipe ? normalizeRecipeForUi(apiRecipe) : null),
+    [apiRecipe],
   );
   const { addToMealLog, addToMealPlan, isUpdating } =
     useNutritionRecipeActions();
@@ -130,7 +125,7 @@ const NutritionRecipeCookingPage = () => {
     return () => setBreadcrumbs([]);
   }, [recipe?.title, setBreadcrumbs, slugOrId]);
 
-  if (isLoading && !fallbackRecipe) {
+  if (isLoading) {
     return (
       <NutritionLayout>
         <Card>
@@ -176,7 +171,7 @@ const NutritionRecipeCookingPage = () => {
                 <ChefHatIcon className="size-3" />
                 Cooking
               </Badge>
-              <Badge variant="outline">{recipe.totalTimeMinutes} min</Badge>
+              <Badge variant="outline">{recipe.totalTimeMinutes} daq</Badge>
               <Badge variant="outline">{instructions.length} qadam</Badge>
             </div>
             <div>

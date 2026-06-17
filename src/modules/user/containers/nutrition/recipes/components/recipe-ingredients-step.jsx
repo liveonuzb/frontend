@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import IngredientRow from "./ingredient-row.jsx";
 import NutritionSummary from "./nutrition-summary.jsx";
-import { getIngredientsNutrition } from "../recipe-mock-data.js";
+import { getIngredientsNutrition } from "../recipe-ui-utils.js";
 
 const summaryItems = [
   { key: "calories", label: "Kkal", unit: "" },
@@ -26,6 +26,7 @@ const summaryItems = [
 
 const RecipeIngredientsStep = ({
   ingredients,
+  issues = [],
   onIngredientChange,
   onIngredientAdd,
   onIngredientDelete,
@@ -37,6 +38,21 @@ const RecipeIngredientsStep = ({
 
   return (
     <div className="flex flex-col gap-5">
+      {issues.length ? (
+        <Card>
+          <CardContent className="flex flex-col gap-2 p-4">
+            <h3 className="text-sm font-semibold text-destructive">
+              Ingredientlarni tekshiring
+            </h3>
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+              {map(issues, (issue) => (
+                <p key={issue.id}>{issue.message}</p>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardContent className="p-0">
           <Table>

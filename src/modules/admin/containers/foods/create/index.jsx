@@ -46,6 +46,7 @@ import {
   DIETARY_TAG_OPTIONS,
 } from "@/modules/admin/lib/nutrition-tags.js";
 import { useAdminDrawerCloseNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
+import { resolveFoodCreateNutritionMode } from "./food-create-utils.js";
 import {
   NumberField,
   NumberFieldDecrement,
@@ -83,9 +84,6 @@ const NUTRITION_MODES = [
   { value: "manual", label: "Qo'lda kiritish" },
   { value: "recipe", label: "Recipe orqali" },
 ];
-
-export const resolveFoodCreateNutritionMode = (value) =>
-  value === "recipe" ? "recipe" : "manual";
 
 const resolveCategoryLabel = (translations, fallback, language) => {
   if (translations && typeof translations === "object") {
@@ -243,7 +241,7 @@ const FoodFormDrawer = ({
                       <MultipleDrawerPicker
                         value={field.value}
                         onChange={field.onChange}
-                        url="/admin/food-categories"
+                        url="/admin/nutrition/food-categories"
                         queryKey={FOOD_CATEGORIES_QUERY_KEY}
                         valueKey="id"
                         title="Kategoriyalarni tanlang"
@@ -279,7 +277,7 @@ const FoodFormDrawer = ({
                       <MultipleDrawerPicker
                         value={field.value}
                         onChange={field.onChange}
-                        url="/admin/cuisines"
+                        url="/admin/nutrition/cuisines"
                         queryKey={CUISINES_QUERY_KEY}
                         valueKey="id"
                         title="Oshxonalarni tanlang"

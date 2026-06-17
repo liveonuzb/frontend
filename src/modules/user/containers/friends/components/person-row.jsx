@@ -8,6 +8,7 @@ import toUpper from "lodash/toUpper";
 import trim from "lodash/trim";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { userInteractiveCardClassName } from "@/modules/user/lib/card-styles";
 
 const resolveInitials = (name) => {
   const parts = take(compact(split(trim(String(name ?? "")), /\s+/)), 2);
@@ -22,7 +23,8 @@ export default function PersonRow({ person, description, right, className }) {
   return (
     <div
       className={cn(
-        "relative flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background/70 p-3 transition-colors hover:bg-muted/30 sm:items-center",
+        userInteractiveCardClassName,
+        "relative flex w-full items-start gap-3 p-3 sm:items-center",
         className,
       )}
     >

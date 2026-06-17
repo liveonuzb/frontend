@@ -267,13 +267,21 @@ const OtpForm = () => {
   const isSubmitting = get(formState, "isSubmitting");
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (getSecondsUntil(get(pendingVerification, "expiresAt")) === 0) {
-      setCountdown(0);
-      return;
-    }
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (isCancelled) return;
 
-    startCountdown();
+      if (getSecondsUntil(get(pendingVerification, "expiresAt")) === 0) {
+        setCountdown(0);
+        return;
+      }
+
+      startCountdown();
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [pendingVerification, startCountdown]);
 
   return (

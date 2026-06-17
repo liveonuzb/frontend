@@ -1,7 +1,7 @@
 import React from "react";
 import map from "lodash/map";
 import { cn } from "@/lib/utils.js";
-import { formatNumber } from "../recipe-mock-data.js";
+import { formatNumber } from "../recipe-ui-utils.js";
 
 const defaultItems = [
   { key: "calories", label: "kkal", unit: "" },

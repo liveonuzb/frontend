@@ -1,5 +1,25 @@
 import React from "react";
-import { get, isArray, map, omitBy, trim, toNumber } from "lodash";
+import {
+  entries,
+  filter,
+  find,
+  floor,
+  forEach,
+  get,
+  includes,
+  isArray,
+  isFinite as isFiniteNumber,
+  isNil,
+  isPlainObject,
+  map,
+  max,
+  reduce,
+  some,
+  toLower,
+  toNumber,
+  trim,
+  uniq,
+} from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -8,54 +28,154 @@ import {
   usePostFileQuery,
   usePostQuery,
 } from "@/hooks/api";
+import { normalizeMealPlanShoppingList } from "@/hooks/app/use-meal-plan.js";
 import {
-  MEAL_PLAN_QUERY_KEY,
-  normalizeMealPlanShoppingList,
-} from "@/hooks/app/use-meal-plan.js";
+  NUTRITION_FOODS_QUICK_ADD_QUERY_KEY as SHARED_NUTRITION_FOODS_QUICK_ADD_QUERY_KEY,
+  MY_NUTRITION_RECIPES_QUERY_KEY as SHARED_MY_NUTRITION_RECIPES_QUERY_KEY,
+  NUTRITION_RECIPE_CATEGORIES_QUERY_KEY as SHARED_NUTRITION_RECIPE_CATEGORIES_QUERY_KEY,
+  NUTRITION_RECIPE_DETAIL_QUERY_KEY as SHARED_NUTRITION_RECIPE_DETAIL_QUERY_KEY,
+  NUTRITION_RECIPE_FILTERS_QUERY_KEY as SHARED_NUTRITION_RECIPE_FILTERS_QUERY_KEY,
+  NUTRITION_RECIPE_GALLERY_QUERY_KEY as SHARED_NUTRITION_RECIPE_GALLERY_QUERY_KEY,
+  NUTRITION_RECIPE_GENERATION_QUERY_KEY as SHARED_NUTRITION_RECIPE_GENERATION_QUERY_KEY,
+  NUTRITION_RECIPES_QUERY_KEY as SHARED_NUTRITION_RECIPES_QUERY_KEY,
+  getMyNutritionRecipesQueryKey as getSharedMyNutritionRecipesQueryKey,
+  getNutritionRecipeCategoriesQueryKey as getSharedNutritionRecipeCategoriesQueryKey,
+  getNutritionRecipeDetailQueryKey as getSharedNutritionRecipeDetailQueryKey,
+  getNutritionRecipeFiltersQueryKey as getSharedNutritionRecipeFiltersQueryKey,
+  getNutritionRecipeGalleryQueryKey as getSharedNutritionRecipeGalleryQueryKey,
+  getNutritionRecipesQueryKey as getSharedNutritionRecipesQueryKey,
+  invalidateNutritionDashboard,
+  invalidateNutritionMealMutationQueries,
+  invalidateNutritionMealPlans,
+  invalidateNutritionQuickAdd,
+  invalidateNutritionRecipes,
+} from "@/hooks/app/nutrition-query-keys";
 import { getApiResponseData } from "@/lib/api-response.js";
 import useLanguageStore from "@/store/language-store";
 
-export const NUTRITION_RECIPES_QUERY_KEY = ["user", "nutrition", "recipes"];
-export const NUTRITION_RECIPE_DETAIL_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipe",
-];
-export const NUTRITION_RECIPE_FILTERS_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipe-filters",
-];
-export const NUTRITION_RECIPE_CATEGORIES_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipe-categories",
-];
-export const MY_NUTRITION_RECIPES_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipes",
-  "mine",
-];
-export const NUTRITION_RECIPE_GALLERY_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipe-gallery",
-];
-export const NUTRITION_RECIPE_GENERATION_QUERY_KEY = [
-  "user",
-  "nutrition",
-  "recipe-generation",
-];
+export const NUTRITION_RECIPES_QUERY_KEY =
+  SHARED_NUTRITION_RECIPES_QUERY_KEY;
+export const NUTRITION_RECIPE_DETAIL_QUERY_KEY =
+  SHARED_NUTRITION_RECIPE_DETAIL_QUERY_KEY;
+export const NUTRITION_RECIPE_FILTERS_QUERY_KEY =
+  SHARED_NUTRITION_RECIPE_FILTERS_QUERY_KEY;
+export const NUTRITION_RECIPE_CATEGORIES_QUERY_KEY =
+  SHARED_NUTRITION_RECIPE_CATEGORIES_QUERY_KEY;
+export const MY_NUTRITION_RECIPES_QUERY_KEY =
+  SHARED_MY_NUTRITION_RECIPES_QUERY_KEY;
+export const NUTRITION_RECIPE_GALLERY_QUERY_KEY =
+  SHARED_NUTRITION_RECIPE_GALLERY_QUERY_KEY;
+export const NUTRITION_RECIPE_GENERATION_QUERY_KEY =
+  SHARED_NUTRITION_RECIPE_GENERATION_QUERY_KEY;
+export const NUTRITION_FOODS_QUICK_ADD_QUERY_KEY =
+  SHARED_NUTRITION_FOODS_QUICK_ADD_QUERY_KEY;
 export const NUTRITION_RECIPE_FILTERS_STALE_TIME = 5 * 60 * 1000;
+
+const RECIPE_INTEGER_FILTER_KEYS = [
+  "page",
+  "pageSize",
+  "categoryId",
+  "cuisineId",
+];
+const RECIPE_NUMBER_FILTER_KEYS = [
+  "maxTotalTimeMinutes",
+  "minProtein",
+  "minCalories",
+  "maxCalories",
+];
+const RECIPE_BOOLEAN_FILTER_KEYS = ["featuredOnly", "favoriteOnly"];
+
+const isBlankString = (value) =>
+  typeof value === "string" && trim(value).length === 0;
+
+const hasFilterValue = (value) => !isNil(value) && !isBlankString(value);
 
 const toFiniteNumber = (value, fallback = 0) => {
   const number = toNumber(value);
-  return Number.isFinite(number) ? number : fallback;
+  return isFiniteNumber(number) ? number : fallback;
 };
 
+const toPositiveFilterNumber = (value, { integer = false } = {}) => {
+  if (!hasFilterValue(value)) {
+    return null;
+  }
+
+  const number = toNumber(value);
+
+  if (!isFiniteNumber(number) || number <= 0) {
+    return null;
+  }
+
+  return integer ? floor(number) : number;
+};
+
+const normalizeFilterBoolean = (value) => {
+  if (value === true || value === 1) {
+    return true;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  return includes(["true", "1", "yes"], toLower(trim(value))) ? true : null;
+};
+
+const normalizeFilterString = (value) => {
+  if (!hasFilterValue(value)) {
+    return null;
+  }
+
+  return typeof value === "string" ? trim(value) : value;
+};
+
+const normalizeRecipeQueryFilters = (filters = {}) =>
+  reduce(
+    entries(filters),
+    (result, [key, value]) => {
+      if (includes(RECIPE_INTEGER_FILTER_KEYS, key)) {
+        const normalized = toPositiveFilterNumber(value, { integer: true });
+
+        if (!isNil(normalized)) {
+          result[key] = normalized;
+        }
+
+        return result;
+      }
+
+      if (includes(RECIPE_NUMBER_FILTER_KEYS, key)) {
+        const normalized = toPositiveFilterNumber(value);
+
+        if (!isNil(normalized)) {
+          result[key] = normalized;
+        }
+
+        return result;
+      }
+
+      if (includes(RECIPE_BOOLEAN_FILTER_KEYS, key)) {
+        const normalized = normalizeFilterBoolean(value);
+
+        if (!isNil(normalized)) {
+          result[key] = normalized;
+        }
+
+        return result;
+      }
+
+      const normalized = normalizeFilterString(value);
+
+      if (hasFilterValue(normalized)) {
+        result[key] = normalized;
+      }
+
+      return result;
+    },
+    {},
+  );
+
 const resolveLabel = (translations, fallback, language) => {
-  if (translations && typeof translations === "object") {
+  if (isPlainObject(translations)) {
     const direct = translations[language];
 
     if (typeof direct === "string" && trim(direct)) {
@@ -67,60 +187,72 @@ const resolveLabel = (translations, fallback, language) => {
     }
   }
 
-  return fallback || "";
+  return typeof fallback === "string" ? trim(fallback) : fallback || "";
 };
 
-const compactParams = (params = {}) =>
-  omitBy(
-    params,
-    (value) => value === "" || value === null || value === undefined,
+export const getNutritionRecipesQueryKey = getSharedNutritionRecipesQueryKey;
+export const getNutritionRecipeDetailQueryKey =
+  getSharedNutritionRecipeDetailQueryKey;
+export const getNutritionRecipeFiltersQueryKey =
+  getSharedNutritionRecipeFiltersQueryKey;
+export const getNutritionRecipeCategoriesQueryKey =
+  getSharedNutritionRecipeCategoriesQueryKey;
+export const getMyNutritionRecipesQueryKey =
+  getSharedMyNutritionRecipesQueryKey;
+export const getNutritionRecipeGalleryQueryKey =
+  getSharedNutritionRecipeGalleryQueryKey;
+
+const normalizeFilterOption = (option = {}, language = "uz") => {
+  if (!isPlainObject(option)) {
+    return null;
+  }
+
+  const id = toPositiveFilterNumber(option.id, { integer: true });
+  const label = resolveLabel(
+    option.translations,
+    option.label || option.name,
+    language,
   );
 
-export const getNutritionRecipesQueryKey = (filters = {}, language = "uz") => [
-  ...NUTRITION_RECIPES_QUERY_KEY,
-  language,
-  compactParams(filters),
-];
+  if (isNil(id) || !hasFilterValue(label)) {
+    return null;
+  }
 
-export const getNutritionRecipeDetailQueryKey = (id, language = "uz") => [
-  ...NUTRITION_RECIPE_DETAIL_QUERY_KEY,
-  language,
-  id || null,
-];
+  return {
+    ...option,
+    id,
+    label,
+  };
+};
 
-export const getNutritionRecipeFiltersQueryKey = (language = "uz") => [
-  ...NUTRITION_RECIPE_FILTERS_QUERY_KEY,
-  language,
-];
+const normalizeTagFilterValue = (option) => {
+  if (typeof option === "string") {
+    return normalizeFilterString(option);
+  }
 
-export const getNutritionRecipeCategoriesQueryKey = (language = "uz") => [
-  ...NUTRITION_RECIPE_CATEGORIES_QUERY_KEY,
-  language,
-];
+  if (!isPlainObject(option)) {
+    return null;
+  }
 
-export const getMyNutritionRecipesQueryKey = (filters = {}, language = "uz") => [
-  ...MY_NUTRITION_RECIPES_QUERY_KEY,
-  language,
-  compactParams(filters),
-];
+  const candidate = find(
+    [option.value, option.key, option.slug, option.name, option.label],
+    (value) => typeof value === "string" && Boolean(trim(value)),
+  );
 
-export const getNutritionRecipeGalleryQueryKey = (language = "uz") => [
-  ...NUTRITION_RECIPE_GALLERY_QUERY_KEY,
-  language,
-];
+  return candidate ? trim(candidate) : null;
+};
 
-const normalizeFilterOption = (option = {}, language = "uz") => ({
-  ...option,
-  id: toFiniteNumber(option.id, option.id),
-  label: resolveLabel(option.translations, option.name, language),
-});
+const normalizeTagFilterValues = (items) =>
+  isArray(items)
+    ? uniq(filter(map(items, normalizeTagFilterValue), Boolean))
+    : [];
 
 export const normalizeNutritionRecipe = (recipe = {}, language = "uz") => {
   const catalogFoodId = toFiniteNumber(
     recipe.catalogFoodId ?? recipe.foodId ?? recipe.id,
     null,
   );
-  const servingSize = Math.max(1, toFiniteNumber(recipe.servingSize, 100));
+  const servingSize = max([1, toFiniteNumber(recipe.servingSize, 100)]);
   const servingUnit = recipe.servingUnit || "g";
   const ingredients = isArray(recipe.ingredients)
     ? map(recipe.ingredients, (ingredient) => ({
@@ -202,6 +334,28 @@ const getResponsePayload = (response, fallback = {}) =>
 const isCacheObject = (value) =>
   Boolean(value) && typeof value === "object" && !isArray(value);
 
+const getQueryKeyParams = (queryKey) => {
+  if (!isArray(queryKey)) {
+    return {};
+  }
+
+  const maybeParams = queryKey[queryKey.length - 1];
+
+  return isCacheObject(maybeParams) ? maybeParams : {};
+};
+
+const isFavoriteOnlyRecipeQuery = (queryKey) => {
+  const favoriteOnly = get(getQueryKeyParams(queryKey), "favoriteOnly", false);
+
+  return favoriteOnly === true || favoriteOnly === "true";
+};
+
+const FAVORITE_CACHE_QUERY_KEYS = [
+  NUTRITION_RECIPES_QUERY_KEY,
+  NUTRITION_RECIPE_DETAIL_QUERY_KEY,
+  NUTRITION_FOODS_QUICK_ADD_QUERY_KEY,
+];
+
 const matchesRecipeCacheId = (recipe = {}, recipeId) => {
   const targetText = String(recipeId ?? "");
   const targetWithoutPrefix = targetText.replace(/^recipe-/, "");
@@ -211,7 +365,7 @@ const matchesRecipeCacheId = (recipe = {}, recipeId) => {
   );
   const candidateValues = [recipe.catalogFoodId, recipe.foodId, recipe.id];
 
-  return candidateValues.some((candidate) => {
+  return some(candidateValues, (candidate) => {
     if (candidate === null || candidate === undefined) {
       return false;
     }
@@ -228,6 +382,17 @@ const matchesRecipeCacheId = (recipe = {}, recipeId) => {
   });
 };
 
+const getRecipeMutationId = (recipeOrId) => {
+  const candidate =
+    recipeOrId && typeof recipeOrId === "object"
+      ? recipeOrId.catalogFoodId ?? recipeOrId.foodId ?? recipeOrId.id
+      : recipeOrId;
+  const normalized = String(candidate ?? "").replace(/^recipe-/, "");
+  const numericId = toNumber(normalized);
+
+  return isFiniteNumber(numericId) && numericId > 0 ? numericId : "";
+};
+
 const updateRecipeFavorite = (recipe, recipeId, isFavorite) => {
   if (!isCacheObject(recipe) || !matchesRecipeCacheId(recipe, recipeId)) {
     return recipe;
@@ -239,7 +404,34 @@ const updateRecipeFavorite = (recipe, recipeId, isFavorite) => {
   };
 };
 
-const updateRecipeFavoritePayload = (payload, recipeId, isFavorite) => {
+const updateRecipeFavoriteItems = (
+  items,
+  recipeId,
+  isFavorite,
+  { removeWhenUnfavorited = false } = {},
+) => {
+  if (!isArray(items)) {
+    return items;
+  }
+
+  if (removeWhenUnfavorited && !isFavorite) {
+    return filter(
+      items,
+      (recipe) => !matchesRecipeCacheId(recipe, recipeId),
+    );
+  }
+
+  return map(items, (recipe) =>
+    updateRecipeFavorite(recipe, recipeId, isFavorite),
+  );
+};
+
+const updateRecipeFavoritePayload = (
+  payload,
+  recipeId,
+  isFavorite,
+  { removeRecipesWhenUnfavorited = false } = {},
+) => {
   if (!isCacheObject(payload)) {
     return payload;
   }
@@ -249,9 +441,30 @@ const updateRecipeFavoritePayload = (payload, recipeId, isFavorite) => {
   if (isArray(payload.recipes)) {
     nextPayload = {
       ...nextPayload,
-      recipes: map(payload.recipes, (recipe) =>
-        updateRecipeFavorite(recipe, recipeId, isFavorite),
+      recipes: updateRecipeFavoriteItems(payload.recipes, recipeId, isFavorite, {
+        removeWhenUnfavorited: removeRecipesWhenUnfavorited,
+      }),
+    };
+  }
+
+  if (isArray(payload.favorites)) {
+    nextPayload = {
+      ...nextPayload,
+      favorites: updateRecipeFavoriteItems(
+        payload.favorites,
+        recipeId,
+        isFavorite,
+        {
+          removeWhenUnfavorited: true,
+        },
       ),
+    };
+  }
+
+  if (isArray(payload.recent)) {
+    nextPayload = {
+      ...nextPayload,
+      recent: updateRecipeFavoriteItems(payload.recent, recipeId, isFavorite),
     };
   }
 
@@ -265,7 +478,18 @@ const updateRecipeFavoritePayload = (payload, recipeId, isFavorite) => {
   return nextPayload;
 };
 
-const updateRecipeFavoriteCache = (cacheValue, recipeId, isFavorite) => {
+const updateRecipeFavoriteCache = (
+  cacheValue,
+  recipeId,
+  isFavorite,
+  options = {},
+) => {
+  if (isArray(cacheValue)) {
+    return updateRecipeFavoriteItems(cacheValue, recipeId, isFavorite, {
+      removeWhenUnfavorited: options.removeRecipesWhenUnfavorited,
+    });
+  }
+
   if (!isCacheObject(cacheValue)) {
     return cacheValue;
   }
@@ -277,7 +501,12 @@ const updateRecipeFavoriteCache = (cacheValue, recipeId, isFavorite) => {
       ...cacheValue,
       data: {
         ...cacheValue.data,
-        data: updateRecipeFavoritePayload(wrappedPayload, recipeId, isFavorite),
+        data: updateRecipeFavoritePayload(
+          wrappedPayload,
+          recipeId,
+          isFavorite,
+          options,
+        ),
       },
     };
   }
@@ -287,11 +516,28 @@ const updateRecipeFavoriteCache = (cacheValue, recipeId, isFavorite) => {
   if (isCacheObject(directPayload)) {
     return {
       ...cacheValue,
-      data: updateRecipeFavoritePayload(directPayload, recipeId, isFavorite),
+      data: updateRecipeFavoritePayload(
+        directPayload,
+        recipeId,
+        isFavorite,
+        options,
+      ),
     };
   }
 
-  return updateRecipeFavoritePayload(cacheValue, recipeId, isFavorite);
+  return updateRecipeFavoritePayload(cacheValue, recipeId, isFavorite, options);
+};
+
+const getFavoriteCacheSnapshots = (queryClient) => {
+  const snapshotsByKey = new Map();
+
+  forEach(FAVORITE_CACHE_QUERY_KEYS, (queryKey) => {
+    forEach(queryClient.getQueriesData({ queryKey }), (snapshot) => {
+      snapshotsByKey.set(snapshot[0], snapshot);
+    });
+  });
+
+  return [...snapshotsByKey.values()];
 };
 
 export const useNutritionRecipeFilters = (options = {}) => {
@@ -309,15 +555,21 @@ export const useNutritionRecipeFilters = (options = {}) => {
 
   const categories = React.useMemo(
     () =>
-      map(get(payload, "categories", []), (option) =>
-        normalizeFilterOption(option, currentLanguage),
+      filter(
+        map(get(payload, "categories", []), (option) =>
+          normalizeFilterOption(option, currentLanguage),
+        ),
+        Boolean,
       ),
     [currentLanguage, payload],
   );
   const cuisines = React.useMemo(
     () =>
-      map(get(payload, "cuisines", []), (option) =>
-        normalizeFilterOption(option, currentLanguage),
+      filter(
+        map(get(payload, "cuisines", []), (option) =>
+          normalizeFilterOption(option, currentLanguage),
+        ),
+        Boolean,
       ),
     [currentLanguage, payload],
   );
@@ -326,8 +578,8 @@ export const useNutritionRecipeFilters = (options = {}) => {
     ...query,
     categories,
     cuisines,
-    dietaryTags: get(payload, "dietaryTags", []),
-    allergenTags: get(payload, "allergenTags", []),
+    dietaryTags: normalizeTagFilterValues(get(payload, "dietaryTags", [])),
+    allergenTags: normalizeTagFilterValues(get(payload, "allergenTags", [])),
   };
 };
 
@@ -335,7 +587,7 @@ export const useNutritionRecipeCategories = (options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const enabled = options.enabled ?? true;
   const { data, ...query } = useGetQuery({
-    url: "/user/nutrition/recipe-categories",
+    url: "/user/nutrition/recipes/categories",
     queryProps: {
       queryKey: getNutritionRecipeCategoriesQueryKey(currentLanguage),
       enabled,
@@ -345,8 +597,11 @@ export const useNutritionRecipeCategories = (options = {}) => {
   const payload = React.useMemo(() => getResponsePayload(data), [data]);
   const categories = React.useMemo(
     () =>
-      map(get(payload, "categories", []), (option) =>
-        normalizeFilterOption(option, currentLanguage),
+      filter(
+        map(get(payload, "categories", []), (option) =>
+          normalizeFilterOption(option, currentLanguage),
+        ),
+        Boolean,
       ),
     [currentLanguage, payload],
   );
@@ -360,12 +615,15 @@ export const useNutritionRecipeCategories = (options = {}) => {
 export const useNutritionRecipes = (filters = {}, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const enabled = options.enabled ?? true;
-  const params = React.useMemo(() => compactParams(filters), [filters]);
+  const params = React.useMemo(
+    () => normalizeRecipeQueryFilters(filters),
+    [filters],
+  );
   const { data, ...query } = useGetQuery({
     url: "/user/nutrition/recipes",
     params,
     queryProps: {
-      queryKey: getNutritionRecipesQueryKey(filters, currentLanguage),
+      queryKey: getNutritionRecipesQueryKey(params, currentLanguage),
       enabled,
     },
   });
@@ -394,11 +652,26 @@ export const useNutritionRecipes = (filters = {}, options = {}) => {
   const activeFilters = React.useMemo(
     () =>
       isArray(get(payload, "activeFilters"))
-        ? map(get(payload, "activeFilters"), (filter) => ({
-            key: filter.key,
-            label: filter.label || filter.key,
-            value: filter.value,
-          }))
+        ? filter(
+            map(get(payload, "activeFilters"), (activeFilter) => {
+              if (!isPlainObject(activeFilter)) {
+                return null;
+              }
+
+              const key = normalizeFilterString(activeFilter.key);
+
+              if (!key) {
+                return null;
+              }
+
+              return {
+                key,
+                label: normalizeFilterString(activeFilter.label) || key,
+                value: activeFilter.value,
+              };
+            }),
+            Boolean,
+          )
         : [],
     [payload],
   );
@@ -414,12 +687,15 @@ export const useNutritionRecipes = (filters = {}, options = {}) => {
 export const useMyNutritionRecipes = (filters = {}, options = {}) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const enabled = options.enabled ?? true;
-  const params = React.useMemo(() => compactParams(filters), [filters]);
+  const params = React.useMemo(
+    () => normalizeRecipeQueryFilters(filters),
+    [filters],
+  );
   const { data, ...query } = useGetQuery({
     url: "/user/nutrition/recipes/mine",
     params,
     queryProps: {
-      queryKey: getMyNutritionRecipesQueryKey(filters, currentLanguage),
+      queryKey: getMyNutritionRecipesQueryKey(params, currentLanguage),
       enabled,
     },
   });
@@ -503,44 +779,36 @@ export const useNutritionRecipeActions = () => {
   const deleteMutation = useDeleteQuery();
 
   const invalidateRecipes = React.useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: NUTRITION_RECIPES_QUERY_KEY,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY,
-      }),
-    ]);
+    await invalidateNutritionRecipes(queryClient);
   }, [queryClient]);
+
+  const invalidateFavoriteDomains = React.useCallback(async () => {
+    await Promise.all([
+      invalidateRecipes(),
+      invalidateNutritionQuickAdd(queryClient),
+      invalidateNutritionDashboard(queryClient),
+    ]);
+  }, [invalidateRecipes, queryClient]);
 
   const setOptimisticFavorite = React.useCallback(
     async (recipeId, isFavorite) => {
-      await Promise.all([
-        queryClient.cancelQueries({ queryKey: NUTRITION_RECIPES_QUERY_KEY }),
-        queryClient.cancelQueries({
-          queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY,
-        }),
-      ]);
-
-      const snapshots = [
-        ...queryClient.getQueriesData({
-          queryKey: NUTRITION_RECIPES_QUERY_KEY,
-        }),
-        ...queryClient.getQueriesData({
-          queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY,
-        }),
-      ];
-      const updateFavorite = (cacheValue) =>
-        updateRecipeFavoriteCache(cacheValue, recipeId, isFavorite);
-
-      queryClient.setQueriesData(
-        { queryKey: NUTRITION_RECIPES_QUERY_KEY },
-        updateFavorite,
+      await Promise.all(
+        map(FAVORITE_CACHE_QUERY_KEYS, (queryKey) =>
+          queryClient.cancelQueries({ queryKey }),
+        ),
       );
-      queryClient.setQueriesData(
-        { queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY },
-        updateFavorite,
-      );
+
+      const snapshots = getFavoriteCacheSnapshots(queryClient);
+
+      forEach(snapshots, ([queryKey, cacheValue]) => {
+        queryClient.setQueryData(
+          queryKey,
+          updateRecipeFavoriteCache(cacheValue, recipeId, isFavorite, {
+            removeRecipesWhenUnfavorited:
+              isFavoriteOnlyRecipeQuery(queryKey),
+          }),
+        );
+      });
 
       return snapshots;
     },
@@ -549,7 +817,7 @@ export const useNutritionRecipeActions = () => {
 
   const restoreSnapshots = React.useCallback(
     (snapshots) => {
-      snapshots.forEach(([queryKey, data]) => {
+      forEach(snapshots, ([queryKey, data]) => {
         queryClient.setQueryData(queryKey, data);
       });
     },
@@ -558,31 +826,48 @@ export const useNutritionRecipeActions = () => {
 
   const addFavorite = React.useCallback(
     async (recipeId) => {
-      const snapshots = await setOptimisticFavorite(recipeId, true);
+      const actionId = getRecipeMutationId(recipeId);
+
+      if (!actionId) {
+        return null;
+      }
+
+      const snapshots = await setOptimisticFavorite(actionId, true);
 
       try {
         const response = await postMutation.mutateAsync({
-          url: `/user/nutrition/recipes/${recipeId}/favorite`,
+          url: `/user/nutrition/recipes/${actionId}/favorite`,
         });
-        await invalidateRecipes();
+        await invalidateFavoriteDomains();
         return response;
       } catch (error) {
         restoreSnapshots(snapshots);
         throw error;
       }
     },
-    [invalidateRecipes, postMutation, restoreSnapshots, setOptimisticFavorite],
+    [
+      invalidateFavoriteDomains,
+      postMutation,
+      restoreSnapshots,
+      setOptimisticFavorite,
+    ],
   );
 
   const removeFavorite = React.useCallback(
     async (recipeId) => {
-      const snapshots = await setOptimisticFavorite(recipeId, false);
+      const actionId = getRecipeMutationId(recipeId);
+
+      if (!actionId) {
+        return null;
+      }
+
+      const snapshots = await setOptimisticFavorite(actionId, false);
 
       try {
         const response = await deleteMutation.mutateAsync({
-          url: `/user/nutrition/recipes/${recipeId}/favorite`,
+          url: `/user/nutrition/recipes/${actionId}/favorite`,
         });
-        await invalidateRecipes();
+        await invalidateFavoriteDomains();
         return response;
       } catch (error) {
         restoreSnapshots(snapshots);
@@ -591,7 +876,7 @@ export const useNutritionRecipeActions = () => {
     },
     [
       deleteMutation,
-      invalidateRecipes,
+      invalidateFavoriteDomains,
       restoreSnapshots,
       setOptimisticFavorite,
     ],
@@ -599,28 +884,35 @@ export const useNutritionRecipeActions = () => {
 
   const toggleFavorite = React.useCallback(
     async (recipe) => {
-      if (!recipe?.catalogFoodId) {
+      const actionId = getRecipeMutationId(recipe);
+
+      if (!actionId) {
         return null;
       }
 
       return recipe.isFavorite
-        ? removeFavorite(recipe.catalogFoodId)
-        : addFavorite(recipe.catalogFoodId);
+        ? removeFavorite(actionId)
+        : addFavorite(actionId);
     },
     [addFavorite, removeFavorite],
   );
 
   const addToMealLog = React.useCallback(
     async (recipeId, payload) => {
+      const actionId = getRecipeMutationId(recipeId);
+
+      if (!actionId) {
+        return null;
+      }
+
       const response = await postMutation.mutateAsync({
-        url: `/user/nutrition/recipes/${recipeId}/meal-log`,
+        url: `/user/nutrition/recipes/${actionId}/meal-log`,
         attributes: payload,
       });
       await Promise.all([
         invalidateRecipes(),
-        queryClient.invalidateQueries({ queryKey: ["daily-tracking"] }),
-        queryClient.invalidateQueries({
-          queryKey: ["user", "nutrition", "dashboard"],
+        invalidateNutritionMealMutationQueries(queryClient, {
+          date: payload?.date,
         }),
       ]);
       return response;
@@ -630,13 +922,19 @@ export const useNutritionRecipeActions = () => {
 
   const addToMealPlan = React.useCallback(
     async (recipeId, payload) => {
+      const actionId = getRecipeMutationId(recipeId);
+
+      if (!actionId) {
+        return null;
+      }
+
       const response = await postMutation.mutateAsync({
-        url: `/user/nutrition/recipes/${recipeId}/add-to-meal-plan`,
+        url: `/user/nutrition/recipes/${actionId}/add-to-meal-plan`,
         attributes: payload,
       });
       await Promise.all([
         invalidateRecipes(),
-        queryClient.invalidateQueries({ queryKey: MEAL_PLAN_QUERY_KEY }),
+        invalidateNutritionMealPlans(queryClient),
       ]);
       return response;
     },
@@ -645,8 +943,14 @@ export const useNutritionRecipeActions = () => {
 
   const createShoppingList = React.useCallback(
     async (recipeId, payload = {}) => {
+      const actionId = getRecipeMutationId(recipeId);
+
+      if (!actionId) {
+        return normalizeMealPlanShoppingList();
+      }
+
       const response = await postMutation.mutateAsync({
-        url: `/user/nutrition/recipes/${recipeId}/shopping-list`,
+        url: `/user/nutrition/recipes/${actionId}/shopping-list`,
         attributes: payload,
       });
       await invalidateRecipes();
@@ -677,21 +981,7 @@ export const useNutritionRecipeBuilderActions = () => {
   const fileMutation = usePostFileQuery({});
 
   const invalidateRecipeApp = React.useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: NUTRITION_RECIPES_QUERY_KEY }),
-      queryClient.invalidateQueries({
-        queryKey: MY_NUTRITION_RECIPES_QUERY_KEY,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: NUTRITION_RECIPE_DETAIL_QUERY_KEY,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: NUTRITION_RECIPE_GALLERY_QUERY_KEY,
-      }),
-      queryClient.invalidateQueries({
-        queryKey: NUTRITION_RECIPE_GENERATION_QUERY_KEY,
-      }),
-    ]);
+    await invalidateNutritionRecipes(queryClient);
   }, [queryClient]);
 
   const createMyRecipe = React.useCallback(
@@ -777,7 +1067,7 @@ export const useNutritionRecipeBuilderActions = () => {
   const createRecipeGenerationJob = React.useCallback(
     async (payload) => {
       const response = await postMutation.mutateAsync({
-        url: "/user/nutrition/recipes/generate-from-products",
+        url: "/user/nutrition/recipe-generation-jobs",
         attributes: payload,
       });
       await invalidateRecipeApp();

@@ -17,10 +17,8 @@ const FeatureSubNav = ({
   className,
   mobile = false,
   ariaLabel,
-  variant = "default",
 }) => {
   const { pathname } = useLocation();
-  const isNutrition = variant === "nutrition";
 
   return (
     <nav
@@ -34,10 +32,7 @@ const FeatureSubNav = ({
       {mobile ? (
         <div
           data-workout-tab="surface"
-          className={cn(
-            "rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80",
-            isNutrition && "border-primary/10 bg-card/90 shadow-primary/5",
-          )}
+          className="rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
         >
           <div className="overflow-x-auto no-scrollbar">
             <div
@@ -56,12 +51,8 @@ const FeatureSubNav = ({
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-semibold transition-colors",
-                      isNutrition && "border border-transparent",
                       active
-                        ? cn(
-                            "bg-primary/10 text-primary",
-                            isNutrition && "border-primary/15 bg-primary/10 shadow-sm shadow-primary/10",
-                          )
+                        ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
@@ -76,36 +67,31 @@ const FeatureSubNav = ({
       ) : (
         <div
           data-workout-tab="surface"
-          className={cn(
-            "rounded-[1.25rem] border bg-background/80 p-2 backdrop-blur",
-            isNutrition && "border-primary/10 bg-card/80 shadow-sm shadow-primary/5",
-          )}
+          className="rounded-[1.75rem] border bg-background/95 px-1 py-1 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
         >
-          <div className="flex flex-wrap items-center justify-start gap-2 overflow-x-auto no-scrollbar">
-            {map(items, (item) => {
-              const active = isItemActive(pathname, item);
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex min-w-max flex-nowrap items-center gap-1.5">
+              {map(items, (item) => {
+                const active = isItemActive(pathname, item);
 
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-3xl px-8 py-2 text-sm font-semibold transition-colors",
-                    isNutrition && "border border-transparent px-5 lg:px-7",
-                    active
-                      ? cn(
-                          "bg-primary/10 text-primary",
-                          isNutrition && "border-primary/15 bg-primary/10 shadow-sm shadow-primary/10",
-                        )
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <item.icon className="size-4" />
-                  <span className="text-sm">{item.label}</span>
-                </NavLink>
-              );
-            })}
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-colors",
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="size-4" />
+                    <span className="text-sm">{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

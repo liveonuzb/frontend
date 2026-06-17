@@ -138,7 +138,7 @@ export default function AiMealDraftDrawer({
       }
       if (aiAccessStatus.isDisabled) {
         toast.error(
-          "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+          "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring.",
         );
         return;
       }
@@ -164,7 +164,7 @@ export default function AiMealDraftDrawer({
         }
       } catch (error) {
         const message = isAiAccessLimitError(error)
-          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
+          ? "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring."
           : error?.response?.data?.error?.message ||
             error?.response?.data?.message ||
             "Matnni AI orqali tahlil qilib bo'lmadi";

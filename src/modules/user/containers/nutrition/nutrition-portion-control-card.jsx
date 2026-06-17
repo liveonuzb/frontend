@@ -19,14 +19,14 @@ const normalizeNumber = (value, fallback = 0) => {
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
-export const formatPortionNumber = (value) => {
+const formatPortionNumber = (value) => {
   const normalized = normalizeNumber(value);
   return Number.isInteger(normalized)
     ? normalized.toLocaleString("en-US")
     : normalized.toLocaleString("en-US", { maximumFractionDigits: 1 });
 };
 
-export const formatPortionAmount = (value, unit) =>
+const formatPortionAmount = (value, unit) =>
   `${formatPortionNumber(value)}${unit || "g"}`;
 
 const getMacroPercent = (value, target) => {

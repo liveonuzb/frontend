@@ -4,6 +4,8 @@ import get from "lodash/get";
 import isArray from "lodash/isArray";
 import trim from "lodash/trim";
 import map from "lodash/map";
+import slice from "lodash/slice";
+import size from "lodash/size";
 import {
   CopyIcon,
   EyeIcon,
@@ -60,6 +62,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 
 const QUERY_KEY = ["admin", "meal-plans"];
+const ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL =
+  "/admin/nutrition/meal-plan-templates";
 
 const GOAL_OPTIONS = [
   { value: "maintenance", label: "Balans" },
@@ -93,7 +97,24 @@ const getDayLabel = (dayKey) => {
     : dayKey;
 };
 
-const getTemplateDayEntries = (template) => {
+const compareDayKeys = (leftKey, rightKey) => {
+  const dayDifference = getDayNumber(leftKey) - getDayNumber(rightKey);
+
+  if (dayDifference !== 0) {
+    return dayDifference;
+  }
+
+  const left = String(leftKey);
+  const right = String(rightKey);
+
+  if (left === right) {
+    return 0;
+  }
+
+  return left < right ? -1 : 1;
+};
+
+export const getTemplateDayEntries = (template) => {
   if (isArray(template?.days)) {
     return map(template.days, (day, index) => [
       `day-${day?.dayNumber || index + 1}`,
@@ -104,7 +125,7 @@ const getTemplateDayEntries = (template) => {
   const weeklyKanban = template?.weeklyKanban;
   if (!weeklyKanban || typeof weeklyKanban !== "object") return [];
   return Object.entries(weeklyKanban).sort(
-    ([leftKey], [rightKey]) => getDayNumber(leftKey) - getDayNumber(rightKey),
+    ([leftKey], [rightKey]) => compareDayKeys(leftKey, rightKey),
   );
 };
 
@@ -119,8 +140,58 @@ const getDayMealCount = (columns) =>
     0,
   );
 
+const getValidationVariant = (status) => {
+  if (status === "ready") return "default";
+  if (status === "blocked") return "destructive";
+  return "secondary";
+};
+
+const CHANGED_FIELD_LABELS = {
+  name: "Nomi",
+  description: "Izoh",
+  goal: "Maqsad",
+  days: "Kunlar",
+  mealsPerDay: "Kunlik ovqatlar",
+  budgetTier: "Budjet",
+  dietaryTags: "Dietary taglar",
+  weeklyKanban: "Reja",
+  source: "Source",
+  isActive: "Status",
+};
+
+const getTemplateVersion = (template) =>
+  Number(get(template, "versionMetadata.version", template?.version ?? 1)) || 1;
+
+const getTemplateChangedFields = (template) => {
+  const fields = get(
+    template,
+    "versionMetadata.changedFields",
+    template?.changedFields,
+  );
+  return isArray(fields) ? fields : [];
+};
+
+const formatChangedValue = (value) => {
+  if (isArray(value)) return value.length ? value.join(", ") : "empty";
+  if (value === null || value === undefined || value === "") return "empty";
+  if (typeof value === "object") return "updated";
+  return String(value);
+};
+
+const getStatusImpactDescription = (impact, isLoading) => {
+  if (isLoading) return "User impact hisoblanmoqda...";
+  if (!impact) return "Existing user plans o'zgarmaydi.";
+  const activeUserPlans = Number(get(impact, "activeUserPlans", 0)) || 0;
+  const totalUserPlans = Number(get(impact, "totalUserPlans", 0)) || 0;
+  return `${activeUserPlans} active user plan - ${totalUserPlans} total. Existing user plans o'zgarmaydi.`;
+};
+
 const MealPlanPreviewDrawer = ({ template, open, onOpenChange, language }) => {
   const days = getTemplateDayEntries(template);
+  const validationIssues = get(template, "validation.issues", []);
+  const shoppingEstimate = get(template, "shoppingListEstimate", {});
+  const version = getTemplateVersion(template);
+  const changedFields = getTemplateChangedFields(template);
   const title = resolveLabel(
     template?.translations,
     template?.name ?? "",
@@ -133,10 +204,61 @@ const MealPlanPreviewDrawer = ({ template, open, onOpenChange, language }) => {
         <DrawerHeader className="px-6 text-left">
           <DrawerTitle>30 kunlik preview</DrawerTitle>
           <DrawerDescription>
-            {title || "Meal plan shabloni"} · {template?.totalMeals ?? 0} taom
+          {title || "Meal plan shabloni"} · {template?.totalMeals ?? 0} taom
           </DrawerDescription>
         </DrawerHeader>
         <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
+          <div className="mb-4 grid gap-2 rounded-xl border bg-muted/20 p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant={getValidationVariant(
+                  get(template, "validation.status", "blocked"),
+                )}
+              >
+                Validation {get(template, "validation.score", 0)}%
+              </Badge>
+              <span className="text-muted-foreground">
+                {get(template, "validation.errorCount", 0)} error ·{" "}
+                {get(template, "validation.warningCount", 0)} warning
+              </span>
+              <span className="text-muted-foreground">
+                Cost: {get(shoppingEstimate, "knownCost", 0)} · unknown price:{" "}
+                {get(shoppingEstimate, "unknownPriceCount", 0)}
+              </span>
+            </div>
+            {size(validationIssues) ? (
+              <ul className="grid gap-1 text-xs text-muted-foreground">
+                {map(slice(validationIssues, 0, 5), (issue) => (
+                  <li key={`${issue.code}-${issue.dayKey || "template"}`}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          {version > 1 || size(changedFields) ? (
+            <div className="mb-4 grid gap-2 rounded-xl border bg-background p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">Version {version}</Badge>
+                {get(template, "versionMetadata.sourceTemplateId") ? (
+                  <span className="text-xs text-muted-foreground">
+                    Source: {get(template, "versionMetadata.sourceTemplateId")}
+                  </span>
+                ) : null}
+              </div>
+              {size(changedFields) ? (
+                <ul className="grid gap-1 text-xs text-muted-foreground">
+                  {map(changedFields, (change) => (
+                    <li key={change.field}>
+                      {CHANGED_FIELD_LABELS[change.field] || change.field}:{" "}
+                      {formatChangedValue(change.from)} -&gt;{" "}
+                      {formatChangedValue(change.to)}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
           {days.length ? (
             <div className="grid gap-3 lg:grid-cols-2">
               {map(days, ([dayKey, columns]) => (
@@ -169,9 +291,20 @@ const MealPlanPreviewDrawer = ({ template, open, onOpenChange, language }) => {
                               key={item.id ?? item.name}
                               className="flex items-center justify-between gap-3 rounded-md bg-background px-3 py-2 text-sm"
                             >
-                              <span className="min-w-0 truncate">
-                                {item.name || item.title || "Taom"}
-                              </span>
+                              {item.foodId || item.catalogFoodId ? (
+                                <a
+                                  href={`/admin/foods/list/edit/${
+                                    item.foodId || item.catalogFoodId
+                                  }`}
+                                  className="min-w-0 truncate font-medium text-primary"
+                                >
+                                  {item.name || item.title || "Taom"}
+                                </a>
+                              ) : (
+                                <span className="min-w-0 truncate">
+                                  {item.name || item.title || "Taom"}
+                                </span>
+                              )}
                               {item.cal ? (
                                 <span className="shrink-0 text-xs text-muted-foreground">
                                   {item.cal} kcal
@@ -276,13 +409,13 @@ const MealPlanFormDrawer = ({ mode, template, open, onOpenChange }) => {
       try {
         if (isEdit) {
           await updateMutation.mutateAsync({
-            url: `/admin/meal-plans/${template.id}`,
+            url: `${ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL}/${template.id}`,
             attributes: payload,
           });
           toast.success("Meal plan shabloni yangilandi");
         } else {
           await createMutation.mutateAsync({
-            url: "/admin/meal-plans",
+            url: ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL,
             attributes: payload,
           });
           toast.success("Meal plan shabloni yaratildi");
@@ -421,19 +554,30 @@ const ListPage = () => {
     template: null,
   });
   const [archiveTarget, setArchiveTarget] = React.useState(null);
+  const [statusTarget, setStatusTarget] = React.useState(null);
   const [previewTemplate, setPreviewTemplate] = React.useState(null);
   const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/meal-plans",
+    url: ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL,
     params: {
       pageSize: 100,
       ...(trim(query) ? { q: trim(query) } : {}),
     },
     queryProps: { queryKey: [...QUERY_KEY, query] },
   });
+  const statusImpactQuery = useGetQuery({
+    url: `${ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL}/${
+      statusTarget?.id ?? "pending"
+    }/user-impact`,
+    queryProps: {
+      enabled: Boolean(statusTarget),
+      queryKey: [...QUERY_KEY, "user-impact", statusTarget?.id ?? "pending"],
+    },
+  });
   const cloneMutation = usePostQuery({ queryKey: QUERY_KEY });
   const statusMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
   const templates = getPayload(data);
+  const statusImpact = getPayload(statusImpactQuery.data);
   const items = isArray(templates) ? templates : [];
 
   React.useEffect(() => {
@@ -453,7 +597,7 @@ const ListPage = () => {
   const cloneTemplate = async (template) => {
     try {
       await cloneMutation.mutateAsync({
-        url: `/admin/meal-plans/${template.id}/clone`,
+        url: `${ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL}/${template.id}/clone`,
         attributes: { isActive: false },
       });
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -463,11 +607,10 @@ const ListPage = () => {
     }
   };
 
-  const toggleTemplateStatus = async (template) => {
-    const isActive = template.isActive !== true;
+  const applyTemplateStatus = async (template, isActive) => {
     try {
       await statusMutation.mutateAsync({
-        url: `/admin/meal-plans/${template.id}`,
+        url: `${ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL}/${template.id}`,
         attributes: { isActive },
       });
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -481,11 +624,26 @@ const ListPage = () => {
     }
   };
 
+  const requestTemplateStatusChange = async (template) => {
+    const isActive = template.isActive !== true;
+    if (!isActive) {
+      setStatusTarget(template);
+      return;
+    }
+    await applyTemplateStatus(template, isActive);
+  };
+
+  const confirmTemplateStatusChange = async () => {
+    if (!statusTarget) return;
+    await applyTemplateStatus(statusTarget, false);
+    setStatusTarget(null);
+  };
+
   const archiveTemplate = async () => {
     if (!archiveTarget) return;
     try {
       await deleteMutation.mutateAsync({
-        url: `/admin/meal-plans/${archiveTarget.id}`,
+        url: `${ADMIN_MEAL_PLAN_TEMPLATE_BASE_URL}/${archiveTarget.id}`,
       });
       toast.success("Meal plan shabloni arxivlandi");
       setArchiveTarget(null);
@@ -575,7 +733,7 @@ const ListPage = () => {
                         Nusxalash
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => void toggleTemplateStatus(template)}
+                        onClick={() => void requestTemplateStatusChange(template)}
                       >
                         {template.isActive ? (
                           <PowerOffIcon className="size-4" />
@@ -605,12 +763,35 @@ const ListPage = () => {
                 {template.source === "ai_variant" ? (
                   <Badge variant="secondary">AI variant</Badge>
                 ) : null}
+                {getTemplateVersion(template) > 1 ? (
+                  <Badge variant="secondary">
+                    v{getTemplateVersion(template)}
+                  </Badge>
+                ) : null}
+                {size(getTemplateChangedFields(template)) ? (
+                  <Badge variant="outline">
+                    {size(getTemplateChangedFields(template))} o'zgarish
+                  </Badge>
+                ) : null}
                 {template.goal ? (
                   <Badge variant="outline">{template.goal}</Badge>
                 ) : null}
                 <Badge variant="outline">
                   {template.totalMeals ?? 0} meals
                 </Badge>
+                <Badge
+                  variant={getValidationVariant(
+                    get(template, "validation.status", "blocked"),
+                  )}
+                >
+                  QA {get(template, "validation.score", 0)}%
+                </Badge>
+                {get(template, "shoppingListEstimate.unknownPriceCount", 0) ? (
+                  <Badge variant="secondary">
+                    {get(template, "shoppingListEstimate.unknownPriceCount", 0)}{" "}
+                    unknown price
+                  </Badge>
+                ) : null}
                 {map(template.dietaryTags ?? [], (tag) => (
                   <Badge key={tag} variant="outline">
                     {tagLabel(tag)}
@@ -648,6 +829,21 @@ const ListPage = () => {
         open={Boolean(previewTemplate)}
         onOpenChange={closePreview}
         language={currentLanguage}
+      />
+      <AdminConfirmDialog
+        open={Boolean(statusTarget)}
+        onOpenChange={(open) => {
+          if (!open) setStatusTarget(null);
+        }}
+        title="Meal plan shablonini nofaol qilish?"
+        description={getStatusImpactDescription(
+          statusImpact,
+          statusImpactQuery.isLoading,
+        )}
+        confirmText="Nofaol qilish"
+        variant="destructive"
+        isPending={statusMutation.isPending}
+        onConfirm={() => void confirmTemplateStatusChange()}
       />
       <AdminConfirmDialog
         open={Boolean(archiveTarget)}

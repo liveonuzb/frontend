@@ -6,6 +6,8 @@ import { MODE_OPTIONS } from "@/components/mode-options";
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
 } from "@/components/ui/drawer";
 
 import find from "lodash/find";
@@ -13,13 +15,17 @@ import map from "lodash/map";
 
 /* Shared between auth layout and profile drawer. */
 
-export function ModeDrawer({ open, onOpenChange }) {
+export function ModeDrawer({
+  open,
+  onOpenChange,
+  defaultMode = APP_MODES.MADAGASCAR,
+}) {
   const { mode, setMode } = useAppModeStore();
-  const [selected, setSelected] = useState(mode || APP_MODES.MADAGASCAR);
+  const [selected, setSelected] = useState(mode || defaultMode);
 
   const handleOpenChange = (nextOpen) => {
     if (nextOpen) {
-      setSelected(mode || APP_MODES.MADAGASCAR);
+      setSelected(mode || defaultMode);
     }
     onOpenChange(nextOpen);
   };
@@ -54,10 +60,12 @@ export function ModeDrawer({ open, onOpenChange }) {
 
         {/* Header */}
         <div className="relative z-10 px-5 pb-1 pt-4 text-center">
-          <p className="text-base font-bold">Pick your mood</p>
-          <p className="text-xs text-muted-foreground">
+          <DrawerTitle className="text-base font-bold">
+            Pick your mood
+          </DrawerTitle>
+          <DrawerDescription className="text-xs">
             Choose the vibe that suits you today.
-          </p>
+          </DrawerDescription>
         </div>
 
         {/* Mode cards */}
@@ -102,7 +110,9 @@ export function ModeDrawer({ open, onOpenChange }) {
                   )}
                 >
                   {isActive && (
-                    <div className={cn("size-2.5 rounded-full", item.dotTone)} />
+                    <div
+                      className={cn("size-2.5 rounded-full", item.dotTone)}
+                    />
                   )}
                 </div>
               </motion.button>

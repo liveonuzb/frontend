@@ -32,7 +32,7 @@ export const CurrentWeightCard = ({ currentW, onOpenModal }) => {
             </p>
             <Button
               onClick={onOpenModal}
-              className="mt-4 rounded-full px-8 font-bold h-11 bg-primary hover:bg-primary/90 text-white"
+              className="mt-4 h-11 rounded-full bg-primary px-8 font-bold text-primary-foreground hover:bg-primary/90"
             >
               <PencilIcon className="size-4 mr-2" /> Vazn kiritish
             </Button>

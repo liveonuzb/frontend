@@ -296,7 +296,7 @@ const getRouteQualityToneKey = (score) => {
   return "user.workout.history.routeWeak";
 };
 
-export const buildWorkoutHistoryCsv = (sessions) => {
+const buildWorkoutHistoryCsv = (sessions) => {
   const headers = [
     "id",
     "title",

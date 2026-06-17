@@ -1,19 +1,19 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import get from "lodash/get";
-import join from "lodash/join";
 import map from "lodash/map";
-import take from "lodash/take";
-import toNumber from "lodash/toNumber";
-import toUpper from "lodash/toUpper";
-import trim from "lodash/trim";
-import split from "lodash/split";
+import range from "lodash/range";
+import {
+  addDays,
+  differenceInCalendarDays,
+  isAfter,
+  isBefore,
+  isSameDay,
+  startOfDay,
+} from "date-fns";
 import { useBreadcrumbStore } from "@/store";
 import PageTransition from "@/components/page-transition";
-import CalendarBottomDrawer from "@/components/calendar-bottom-drawer.jsx";
-import NotificationCenter from "@/components/notification-center";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import MealsWidget from "./meals-widget.jsx";
@@ -36,34 +36,99 @@ import AchievementsWidget from "@/modules/user/containers/dashboard/achievements
 import FriendActivityFeed from "@/modules/user/containers/dashboard/friend-activity-feed.jsx";
 import ChallengeInvitationsSection from "@/modules/user/containers/dashboard/challenge-invitations-section.jsx";
 import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
-import {
-  AlertTriangleIcon,
-  CalendarDaysIcon,
-  FlameIcon,
-  RefreshCwIcon,
-} from "lucide-react";
-import {
-  PROFILE_OVERVIEW_TAB,
-  useProfileOverlay,
-} from "@/modules/profile/hooks/use-profile-overlay";
+import { AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
+import { useUserLayoutDate } from "@/modules/user/layout/user-layout-date-context.jsx";
+import { cn } from "@/lib/utils";
 
-const formatDashboardDateLabel = (date) =>
-  date.toLocaleDateString("uz-UZ", {
-    day: "numeric",
-    month: "short",
-  });
+const DASHBOARD_WEEKDAY_LABELS = [
+  "Sun",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+];
+
+const DASHBOARD_PAST_DAY_COUNT = 30;
+
+const DashboardWeekDatePicker = ({ selectedDate, onSelectDate }) => {
+  const selectedButtonRef = React.useRef(null);
+  const today = React.useMemo(() => startOfDay(new Date()), []);
+  const selectedDay = React.useMemo(
+    () => startOfDay(selectedDate),
+    [selectedDate],
+  );
+  const visibleDays = React.useMemo(() => {
+    const defaultStart = addDays(today, -DASHBOARD_PAST_DAY_COUNT);
+    const rangeStart = isBefore(selectedDay, defaultStart)
+      ? selectedDay
+      : defaultStart;
+    const rangeEnd = isAfter(selectedDay, today) ? selectedDay : today;
+    const dayCount = differenceInCalendarDays(rangeEnd, rangeStart);
+
+    return map(range(0, dayCount + 1), (offset) =>
+      addDays(rangeStart, offset),
+    );
+  }, [selectedDay, today]);
+
+  React.useEffect(() => {
+    selectedButtonRef.current?.scrollIntoView?.({
+      block: "nearest",
+      inline: "center",
+    });
+  }, [selectedDate]);
+
+  return (
+    <div
+      data-testid="dashboard-week-date-picker"
+      className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <div className="flex min-w-max items-center gap-0.5 px-1">
+        {map(visibleDays, (date) => {
+          const selected = isSameDay(date, selectedDay);
+          const label = DASHBOARD_WEEKDAY_LABELS[date.getDay()];
+
+          return (
+            <button
+              key={date.toISOString()}
+              ref={selected ? selectedButtonRef : null}
+              type="button"
+              aria-label={`${label} ${date.getDate()}`}
+              aria-pressed={selected}
+              className={cn(
+                "flex h-[48px] w-10 shrink-0 flex-col items-center justify-center rounded-2xl text-center transition-colors",
+                selected
+                  ? "bg-primary text-primary-foreground shadow-[0_8px_18px_rgb(var(--accent-rgb)/0.18)]"
+                  : "text-muted-foreground hover:bg-card/70",
+              )}
+              onClick={() => onSelectDate(date)}
+            >
+              <span className="text-[10px] font-medium leading-none">
+                {label}
+              </span>
+              <span className="mt-1 text-[16px] font-semibold leading-none">
+                {date.getDate()}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const DashboardSkeleton = () => (
-  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-11">
-    <Skeleton className="h-80 md:col-span-1 lg:col-span-3" />
-    <Skeleton className="h-80 md:col-span-2 lg:col-span-5" />
-    <div className="space-y-4 md:col-span-1 lg:col-span-3">
-      <Skeleton className="h-40" />
-      <Skeleton className="h-36" />
-    </div>
-    <Skeleton className="h-44 md:col-span-1 lg:col-span-3" />
-    <Skeleton className="h-44 md:col-span-1 lg:col-span-3" />
-    <Skeleton className="h-44 md:col-span-2 lg:col-span-5" />
+  <div className="grid grid-cols-1 gap-4">
+    <Skeleton className="h-80" />
+    <Skeleton className="h-80" />
+    <Skeleton className="h-40" />
+    <Skeleton className="h-36" />
+    <Skeleton className="h-44" />
+    <Skeleton className="h-44" />
+    <Skeleton className="h-44" />
+    <Skeleton className="h-44" />
+    <Skeleton className="h-44" />
   </div>
 );
 
@@ -105,109 +170,18 @@ const DashboardStatusMessage = ({
   </div>
 );
 
-const getDashboardDisplayName = (user, fallback) =>
-  trim(`${user?.firstName || ""} ${user?.lastName || ""}`) ||
-  user?.username ||
-  fallback;
-
-const getDashboardInitials = (displayName) =>
-  toUpper(
-    join(
-      take(
-        map(split(displayName, " "), (part) => get(part, "[0]", "")),
-        2,
-      ),
-      "",
-    ),
-  );
-
-const DashboardMobileTopBar = ({
-  user,
-  selectedDateLabel,
-  onOpenCalendar,
-}) => {
-  const { t } = useTranslation();
-  const { openProfile } = useProfileOverlay();
-  const displayName = getDashboardDisplayName(
-    user,
-    t("common.navUser.user", "Foydalanuvchi"),
-  );
-  const initials = getDashboardInitials(displayName);
-  const streakDays = Math.max(0, toNumber(get(user, "currentStreak", 0)) || 0);
-
-  return (
-    <div
-      data-testid="dashboard-mobile-top-bar"
-      className="flex items-center justify-between gap-3 pt-[max(0.25rem,env(safe-area-inset-top))] md:hidden"
-    >
-      <button
-        type="button"
-        className="flex min-w-0 items-center gap-3 rounded-2xl text-left outline-none transition-opacity active:opacity-80"
-        onClick={() => openProfile(PROFILE_OVERVIEW_TAB)}
-        aria-label={`Profilni ochish: ${displayName}`}
-      >
-        <Avatar className="size-11 shrink-0 border border-border/70 bg-card">
-          <AvatarImage src={user?.avatar} alt={displayName} />
-          <AvatarFallback className="text-xs font-semibold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
-        <span className="min-w-0 space-y-0.5">
-          <span
-            data-testid="dashboard-mobile-greeting-line"
-            className="flex min-w-0 items-baseline gap-1.5 leading-tight"
-          >
-            <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
-              {t("user.dashboard.mobileGreeting", "Salom")}
-            </span>{" "}
-            <span className="truncate text-[15px] font-semibold text-foreground">
-              {displayName}
-            </span>
-          </span>
-          <span
-            data-testid="dashboard-mobile-streak"
-            className="flex items-center gap-1 text-[11px] font-medium leading-tight text-muted-foreground"
-          >
-            <FlameIcon className="size-3.5 text-orange-500" />
-            <span>
-              {t("user.dashboard.mobileStreakDays", {
-                count: streakDays,
-                defaultValue: "{{count}} kun",
-              })}
-            </span>
-          </span>
-        </span>
-      </button>
-
-      <div className="flex shrink-0 items-center gap-2">
-        <NotificationCenter className="size-11 rounded-full border border-border/60 bg-card/80 shadow-none hover:bg-card" />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-lg"
-          className="size-11 rounded-full bg-card/80 shadow-none hover:shadow-none"
-          onClick={onOpenCalendar}
-          aria-label={`Sana tanlash: ${selectedDateLabel}`}
-        >
-          <CalendarDaysIcon className="size-5" />
-        </Button>
-      </div>
-    </div>
-  );
-};
-
 const DashboardContainer = () => {
   const { t } = useTranslation();
   const { setBreadcrumbs } = useBreadcrumbStore();
-  const [selectedDate, setSelectedDate] = React.useState(() => new Date());
-  const [calendarOpen, setCalendarOpen] = React.useState(false);
-  const [maxSelectableDate] = React.useState(() => new Date());
+  const layoutDateState = useUserLayoutDate();
+  const [fallbackSelectedDate, setFallbackSelectedDate] = React.useState(
+    () => new Date(),
+  );
+  const selectedDate = layoutDateState?.selectedDate ?? fallbackSelectedDate;
+  const setSelectedDate =
+    layoutDateState?.setSelectedDate ?? setFallbackSelectedDate;
   const dateKey = React.useMemo(
     () => normalizeDateKey(selectedDate),
-    [selectedDate],
-  );
-  const selectedDateLabel = React.useMemo(
-    () => formatDashboardDateLabel(selectedDate),
     [selectedDate],
   );
   const {
@@ -215,6 +189,7 @@ const DashboardContainer = () => {
     dayData,
     goalsState,
     measurementSnapshot,
+    activeMealPlan,
     activeWorkoutPlan,
     friends,
     challenges,
@@ -236,24 +211,11 @@ const DashboardContainer = () => {
 
   return (
     <PageTransition mode="slide-up">
-      <div className="flex flex-col gap-6">
-        <DashboardMobileTopBar
-          user={user}
-          selectedDateLabel={selectedDateLabel}
-          onOpenCalendar={() => setCalendarOpen(true)}
+      <div className="flex flex-col gap-6 [&_[data-slot=card]]:border-0 [&_[data-slot=card]]:ring-0">
+        <DashboardWeekDatePicker
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
         />
-        <div className="hidden justify-end md:flex">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-lg"
-            className="rounded-2xl bg-card/80 shadow-none hover:shadow-none"
-            onClick={() => setCalendarOpen(true)}
-            aria-label={`Sana tanlash: ${selectedDateLabel}`}
-          >
-            <CalendarDaysIcon className="size-5" />
-          </Button>
-        </div>
         {isCoreLoading ? (
           <DashboardSkeleton />
         ) : hasCoreError ? (
@@ -275,56 +237,56 @@ const DashboardContainer = () => {
               />
             ) : null}
             {USER_CHALLENGES_ENABLED ? <ChallengeInvitationsSection /> : null}
-            <div className="grid grid-cols-1 gap-4">
-              <div
-                data-testid="dashboard-top-card-row"
-                className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:h-[400px] lg:grid-cols-11"
-              >
-                <div className="flex min-h-0 md:col-span-1 lg:col-span-3">
-                  <CalorieGaugeWidget
-                    dateKey={dateKey}
-                    dayData={dayData}
-                    goalsState={goalsState}
-                    user={user}
-                    showCalorieModeToggle
-                  />
-                </div>
-                <div className="flex min-h-0 md:col-span-2 lg:col-span-5">
-                  <MealsWidget
-                    dateKey={dateKey}
-                    dayData={dayData}
-                    goalsState={goalsState}
-                  />
-                </div>
-                <div className="flex flex-col gap-y-4 md:col-span-1 lg:col-span-3">
-                  <WaterWidget
-                    dateKey={dateKey}
-                    dayData={dayData}
-                    goalsState={goalsState}
-                  />
-                  <MoodWidget dateKey={dateKey} dayData={dayData}  />
-                </div>
+            <div
+              data-testid="dashboard-card-list"
+              className="grid grid-cols-1 items-stretch gap-4"
+            >
+              <div className="flex min-h-0">
+                <CalorieGaugeWidget
+                  dateKey={dateKey}
+                  dayData={dayData}
+                  goalsState={goalsState}
+                  user={user}
+                  showCalorieModeToggle
+                />
               </div>
-              <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-11">
-                <div className="md:col-span-1 lg:col-span-3">
-                  <BmiWidget measurementSnapshot={measurementSnapshot} />
-                </div>
-                <div className="md:col-span-1 lg:col-span-3">
-                  <WeightWidget measurementSnapshot={measurementSnapshot} />
-                </div>
-                <div className="md:col-span-2 lg:col-span-5">
-                  <WorkoutWidget activePlan={activeWorkoutPlan} />
-                </div>
-                <div className="md:col-span-2 lg:col-span-5">
-                  <AchievementsWidget />
-                </div>
-                <div className="md:col-span-2 lg:col-span-6">
-                  <FriendActivityFeed
-                    friends={friends}
-                    challenges={challenges}
-                    currentUserId={get(user, "id")}
-                  />
-                </div>
+              <div className="flex min-h-0">
+                <MealsWidget
+                  dateKey={dateKey}
+                  selectedDate={selectedDate}
+                  activeMealPlan={activeMealPlan}
+                  dayData={dayData}
+                  goalsState={goalsState}
+                />
+              </div>
+              <div>
+                <WaterWidget
+                  dateKey={dateKey}
+                  dayData={dayData}
+                  goalsState={goalsState}
+                />
+              </div>
+              <div>
+                <MoodWidget dateKey={dateKey} dayData={dayData} />
+              </div>
+              <div>
+                <BmiWidget measurementSnapshot={measurementSnapshot} />
+              </div>
+              <div>
+                <WeightWidget measurementSnapshot={measurementSnapshot} />
+              </div>
+              <div>
+                <WorkoutWidget activePlan={activeWorkoutPlan} />
+              </div>
+              <div>
+                <AchievementsWidget />
+              </div>
+              <div>
+                <FriendActivityFeed
+                  friends={friends}
+                  challenges={challenges}
+                  currentUserId={get(user, "id")}
+                />
               </div>
             </div>
           </>
@@ -338,15 +300,6 @@ const DashboardContainer = () => {
       <WaterReminderDrawer />
       {USER_CHALLENGES_ENABLED ? <ChallengeReminderDrawer /> : null}
       {USER_CHALLENGES_ENABLED ? <ChallengeCompletionDrawer /> : null}
-      <CalendarBottomDrawer
-        open={calendarOpen}
-        onOpenChange={setCalendarOpen}
-        date={selectedDate}
-        onChange={setSelectedDate}
-        maxDate={maxSelectableDate}
-        title="Sana tanlang"
-        description="Dashboard ma'lumotlari tanlangan kunga moslanadi."
-      />
     </PageTransition>
   );
 };

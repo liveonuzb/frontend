@@ -1,25 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import get from "lodash/get";
-import find from "lodash/find";
-import map from "lodash/map";
-import trim from "lodash/trim";
-import toUpper from "lodash/toUpper";
-import split from "lodash/split";
-import take from "lodash/take";
+import { find, get, map, size, split } from "lodash";
 import {
-  CheckIcon,
   CircleDollarSignIcon,
   CrownIcon,
-  GiftIcon,
+  HistoryIcon,
   LoaderCircleIcon,
-  MinusIcon,
-  UserPlusIcon,
-  UsersIcon,
+  ReceiptTextIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,8 +22,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import PremiumPlanOption from "@/components/premium/plan-option.jsx";
 import {
@@ -42,13 +30,12 @@ import {
   getPlanSavings,
   getShortestPremiumPlan,
 } from "@/components/premium/plan-option-utils.js";
-import { useGetQuery } from "@/hooks/api";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 import useApi from "@/hooks/api/use-api";
 import usePremium from "@/hooks/app/use-premium";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
 import { trackLaunchEvent } from "@/lib/analytics.js";
 import { cn } from "@/lib/utils";
-import GiftPremiumDrawer from "@/modules/user/components/gift-premium-drawer.jsx";
 
 const getStatusLabels = (t) => ({
   active: t("profile.premium.status.active"),
@@ -131,220 +118,156 @@ const PaymentMethodOption = ({
   </button>
 );
 
-const PLAN_FEATURES = [
-  { label: "Kunlik kuzatuv (Suv, Ovqat, Mashq)", free: true, premium: true, family: true },
-  { label: "Do'stlar tarmog'i va challenge", free: true, premium: true, family: true },
-  { label: "Discover (Zallar va ovqatlar)", free: true, premium: true, family: true },
-  { label: "AI ovqat tahlili (kuniga 3 ta bepul)", free: true, premium: true, family: true },
-  { label: "Cheksiz ovqat logi", free: false, premium: true, family: true },
-  { label: "Premium Leaderboard", free: false, premium: true, family: true },
-  { label: "Haftalik sog'liq hisoboti (PDF)", free: false, premium: true, family: true },
-  { label: "Premium qo'llab-quvvatlash", free: false, premium: true, family: true },
-  { label: "Reklama yo'q", free: false, premium: true, family: true },
-  { label: "Oila a'zolari (5 tagacha)", free: false, premium: false, family: true },
-  { label: "Oila leaderboard", free: false, premium: false, family: true },
-];
+const formatPremiumDate = (value, locale = "uz-UZ") => {
+  const rawValue = String(value ?? "");
+  const date = new Date(rawValue);
 
-const PlanComparisonSection = () => (
-  <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-5 space-y-4">
-    <h3 className="text-base font-bold">Tariflarni solishtirish</h3>
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[360px] text-sm">
-        <thead>
-          <tr className="border-b border-white/10">
-            <th className="pb-3 text-left font-medium text-muted-foreground">Xususiyat</th>
-            <th className="pb-3 text-center font-medium text-muted-foreground">Bepul</th>
-            <th className="pb-3 text-center font-bold text-amber-400">Premium</th>
-            <th className="pb-3 text-center font-bold text-primary">Oilaviy</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/5">
-          {map(PLAN_FEATURES, (f) => (
-            <tr key={f.label}>
-              <td className="py-2.5 pr-4 text-xs leading-5">{f.label}</td>
-              {map(["free", "premium", "family"], (plan) => (
-                <td key={plan} className="py-2.5 text-center">
-                  {f[plan] ? (
-                    <CheckIcon className="mx-auto size-4 text-emerald-400" />
-                  ) : (
-                    <MinusIcon className="mx-auto size-4 text-muted-foreground/30" />
-                  )}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  if (Number.isNaN(date.getTime())) {
+    return split(rawValue, "T")[0] || "-";
+  }
+
+  return date.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const BillingActionButton = ({
+  count,
+  description,
+  icon: Icon,
+  onClick,
+  title,
+}) => (
+  <button
+    type="button"
+    className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-amber-400/30 hover:bg-amber-400/[0.06]"
+    onClick={onClick}
+  >
+    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-300">
+      <Icon className="size-5" />
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block text-sm font-semibold">{title}</span>
+      <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+        {description}
+      </span>
+    </span>
+    <Badge className="rounded-full bg-white/10 px-2.5 py-1 text-xs text-foreground hover:bg-white/10">
+      {count}
+    </Badge>
+  </button>
 );
 
-const FamilyPlanSection = () => {
-  const { request } = useApi();
-  const queryClient = useQueryClient();
-  const [identifier, setIdentifier] = React.useState("");
-  const [isAdding, setIsAdding] = React.useState(false);
-  const [removingId, setRemovingId] = React.useState(null);
-
-  const { data, isLoading } = useGetQuery({
-    url: "/users/me/family",
-    queryProps: { queryKey: ["me", "family"] },
-  });
-
-  const group = data?.data?.group;
-
-  const handleAddMember = async () => {
-    if (!trim(identifier)) return;
-    try {
-      setIsAdding(true);
-      await request.post("/users/me/family/members", {
-        identifier: trim(identifier),
-      });
-      setIdentifier("");
-      queryClient.invalidateQueries({ queryKey: ["me", "family"] });
-      toast.success("A'zo qo'shildi");
-    } catch (err) {
-      toast.error(getRequestErrorMessage(err, "A'zo qo'shilmadi"));
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  const handleRemoveMember = async (memberId) => {
-    try {
-      setRemovingId(memberId);
-      await request.delete(`/users/me/family/members/${memberId}`);
-      queryClient.invalidateQueries({ queryKey: ["me", "family"] });
-      toast.success("A'zo olib tashlandi");
-    } catch (err) {
-      toast.error(getRequestErrorMessage(err, "Xatolik yuz berdi"));
-    } finally {
-      setRemovingId(null);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Card className="border-white/10 bg-white/[0.03] py-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold">Oilaviy plan</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Skeleton className="h-24 rounded-2xl" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!group) {
-    return (
-      <Card className="border-white/10 bg-white/[0.03] py-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold">Oilaviy plan</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-2 p-6 py-8 text-center">
-          <UsersIcon className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Oilaviy plan faol emas. Oilaviy plan sotib oling va oila
-            a&apos;zolarini qo&apos;shing.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="border-white/10 bg-white/[0.03] py-6">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-lg font-semibold">Oilaviy plan</CardTitle>
-          <Badge
-            variant="outline"
-            className="border-white/10 text-muted-foreground"
-          >
-            {group.members.length}/{group.maxMembers} a&apos;zo
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 p-6">
-        {group.members.length < group.maxMembers ? (
-          <div className="flex gap-2">
-            <Input
-              placeholder="Username yoki telefon"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
-              className="border-white/10 bg-white/5"
-            />
-            <Button
-              type="button"
-              size="sm"
-              disabled={!trim(identifier) || isAdding}
-              onClick={handleAddMember}
-            >
-              <UserPlusIcon className="mr-1.5 size-3.5" />
-              Qo&apos;shish
-            </Button>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Maksimal a&apos;zolar soni to&apos;lgan ({group.maxMembers} ta).
-          </p>
-        )}
-
-        {group.members.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-6 text-center">
-            <UsersIcon className="size-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Hali a&apos;zolar yo&apos;q
+const PremiumInvoicesDrawer = ({
+  currencyLabel,
+  currentLocale,
+  onOpenChange,
+  open,
+  paymentMethodLabel,
+  payments,
+  t,
+}) => (
+  <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <DrawerHeader className="border-b border-white/10 pb-4 pt-5 text-left">
+        <DrawerTitle className="text-xl font-semibold tracking-tight">
+          {t("profile.premium.invoicesTitle")}
+        </DrawerTitle>
+        <DrawerDescription>
+          {t("profile.premium.invoicesDescription")}
+        </DrawerDescription>
+      </DrawerHeader>
+      <DrawerBody className="space-y-3 px-4 pb-5 pt-4">
+        {size(payments) === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-center">
+            <ReceiptTextIcon className="mx-auto size-7 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t("profile.premium.invoicesEmpty")}
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {map(group.members, (member) => {
-              const initials = toUpper(map(split(member.name, " "), (n) => n[0])
-                .join(""))
-                .slice(0, 2);
-              return (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="size-9 shrink-0">
-                      <AvatarImage src={member.avatarUrl} />
-                      <AvatarFallback className="text-xs">
-                        {initials || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-semibold">{member.name}</p>
-                      {member.username ? (
-                        <p className="text-xs text-muted-foreground">
-                          @{member.username}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    disabled={removingId === member.id}
-                    onClick={() => handleRemoveMember(member.id)}
-                  >
-                    {removingId === member.id ? "..." : "Olib tashlash"}
-                  </Button>
+          map(payments, (payment) => (
+            <div
+              key={payment.id}
+              className="rounded-3xl border border-white/10 bg-white/[0.04] p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">
+                    {payment.planName || t("profile.premium.premiumPayment")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatPremiumDate(payment.date, currentLocale)}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-semibold">
+                    {formatPremiumPrice(payment.amount, currentLocale)}{" "}
+                    {currencyLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {paymentMethodLabel[payment.method] ||
+                      payment.method ||
+                      "Uzcard"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
         )}
-      </CardContent>
-    </Card>
-  );
-};
+      </DrawerBody>
+    </DrawerContent>
+  </Drawer>
+);
+
+const PremiumHistoryDrawer = ({ history, onOpenChange, open, statusLabel, t }) => (
+  <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+    <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
+      <DrawerHeader className="border-b border-white/10 pb-4 pt-5 text-left">
+        <DrawerTitle className="text-xl font-semibold tracking-tight">
+          {t("profile.premium.historyTitle")}
+        </DrawerTitle>
+        <DrawerDescription>
+          {t("profile.premium.historyDescription")}
+        </DrawerDescription>
+      </DrawerHeader>
+      <DrawerBody className="space-y-3 px-4 pb-5 pt-4">
+        {size(history) === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-center">
+            <HistoryIcon className="mx-auto size-7 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t("profile.premium.historyEmpty")}
+            </p>
+          </div>
+        ) : (
+          map(history, (item) => (
+            <div
+              key={item.id}
+              className="rounded-3xl border border-white/10 bg-white/[0.04] p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">
+                    {item.planName}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {item.startDate} -{" "}
+                    {item.endDate || t("profile.premium.unlimited")}
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {statusLabel[item.status] || item.status}
+                </Badge>
+              </div>
+            </div>
+          ))
+        )}
+      </DrawerBody>
+    </DrawerContent>
+  </Drawer>
+);
 
 export const PremiumTab = () => {
   const { t } = useTranslation();
@@ -374,18 +297,50 @@ export const PremiumTab = () => {
     PAYMENT_METHODS[0].code,
   );
   const [checkoutOpen, setCheckoutOpen] = React.useState(false);
-  const [giftDrawerOpen, setGiftDrawerOpen] = React.useState(false);
+  const {
+    activeProfileDrawer,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
+  const isCheckoutOpen = checkoutOpen || activeProfileDrawer === "checkout";
+  const isInvoicesOpen = activeProfileDrawer === "invoices";
+  const isHistoryOpen = activeProfileDrawer === "history";
+  const handleCheckoutOpenChange = React.useCallback(
+    (nextOpen) => {
+      setCheckoutOpen(nextOpen);
+      if (nextOpen) {
+        openProfileDrawer("checkout", "premium");
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
+  const handlePremiumDrawerOpenChange = React.useCallback(
+    (drawerId, nextOpen) => {
+      if (nextOpen) {
+        openProfileDrawer(drawerId, "premium");
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
-    if (!selectedPlan && plans.length > 0) {
-      setSelectedPlan(plans[0]?.code ?? null);
+    if (!selectedPlan && size(plans) > 0) {
+      setSelectedPlan(get(plans, "[0].code", null));
     }
   }, [plans, selectedPlan]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const activePlan = React.useMemo(
-    () => find(plans, (plan) => plan.code === selectedPlan) ?? plans[0] ?? null,
+    () =>
+      find(plans, (plan) => plan.code === selectedPlan) ??
+      get(plans, "[0]", null),
     [plans, selectedPlan],
   );
   const shortestPlan = React.useMemo(
@@ -420,7 +375,7 @@ export const PremiumTab = () => {
       });
 
       if (response?.redirect) {
-        setCheckoutOpen(false);
+        handleCheckoutOpenChange(false);
         void trackLaunchEvent("premium_checkout_session_created", {
           source: "premium",
           properties: {
@@ -433,7 +388,7 @@ export const PremiumTab = () => {
         return;
       }
 
-      setCheckoutOpen(false);
+      handleCheckoutOpenChange(false);
       void trackLaunchEvent("premium_checkout_succeeded", {
         source: "premium",
         properties: {
@@ -457,7 +412,13 @@ export const PremiumTab = () => {
         getRequestErrorMessage(error, t("profile.premium.activationError")),
       );
     }
-  }, [activePlan, selectedPaymentMethod, setCheckoutOpen, startPremiumCheckout, t]);
+  }, [
+    activePlan,
+    handleCheckoutOpenChange,
+    selectedPaymentMethod,
+    startPremiumCheckout,
+    t,
+  ]);
 
   const handleCancel = React.useCallback(async () => {
     try {
@@ -494,7 +455,7 @@ export const PremiumTab = () => {
     );
   }
 
-  if (plans.length === 0) {
+  if (size(plans) === 0) {
     return (
       <Card className="border-white/10 bg-white/[0.03] py-6">
         <CardHeader className="pb-2">
@@ -680,95 +641,46 @@ export const PremiumTab = () => {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5">
               <Button
                 type="button"
-                className="h-12 rounded-2xl bg-amber-400 text-black hover:bg-amber-300"
+                className="h-12 w-full rounded-2xl bg-amber-400 text-black hover:bg-amber-300"
                 disabled={!activePlan || isActivating || isPreparingCheckout}
-                onClick={() => setCheckoutOpen(true)}
+                onClick={() => handleCheckoutOpenChange(true)}
               >
                 {t("profile.premium.activate")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 gap-2 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
-                onClick={() => setGiftDrawerOpen(true)}
-              >
-                <GiftIcon className="size-4" />
-                {t("profile.premium.giftAction")}
               </Button>
             </div>
           </div>
         </div>
       </section>
-      {history.length > 0 ? (
-        <Card className="border-white/10 bg-white/[0.03] py-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">
-              {t("profile.premium.historyTitle")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-6">
-            {map(take(history, 5), (item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 p-4"
-              >
-                <div>
-                  <p className="font-medium">{item.planName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.startDate} - {item.endDate || t("profile.premium.unlimited")}
-                  </p>
-                </div>
-                <Badge variant="secondary">
-                  {statusLabel[item.status] || item.status}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
-      {recentPayments.length > 0 ? (
-        <Card className="border-white/10 bg-white/[0.03] py-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold">
-              {t("profile.premium.paymentsTitle")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 p-6">
-            {map(take(recentPayments, 5), (payment) => (
-              <div
-                key={payment.id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/10 p-4"
-              >
-                <div>
-                  <p className="font-medium">
-                    {payment.planName || t("profile.premium.premiumPayment")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {payment.date.slice(0, 10)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">
-                    {formatPremiumPrice(payment.amount, currentLocale)}{" "}
-                    {currencyLabel}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {paymentMethodLabel[payment.method] ||
-                      payment.method ||
-                      "Uzcard"}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
+      <Card className="border-white/10 bg-white/[0.03] py-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <ReceiptTextIcon className="size-5 text-amber-300" />
+            {t("profile.premium.billingTitle")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-6">
+          <BillingActionButton
+            icon={ReceiptTextIcon}
+            title={t("profile.premium.invoicesTitle")}
+            description={t("profile.premium.invoicesDescription")}
+            count={size(recentPayments)}
+            onClick={() => handlePremiumDrawerOpenChange("invoices", true)}
+          />
+          <BillingActionButton
+            icon={HistoryIcon}
+            title={t("profile.premium.historyTitle")}
+            description={t("profile.premium.historyDescription")}
+            count={size(history)}
+            onClick={() => handlePremiumDrawerOpenChange("history", true)}
+          />
+        </CardContent>
+      </Card>
       <Drawer
-        open={checkoutOpen}
-        onOpenChange={setCheckoutOpen}
+        open={isCheckoutOpen}
+        onOpenChange={handleCheckoutOpenChange}
         direction="bottom"
       >
         <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
@@ -844,18 +756,32 @@ export const PremiumTab = () => {
               variant="outline"
               className="h-12 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
               disabled={isActivating || isPreparingCheckout}
-              onClick={() => setCheckoutOpen(false)}
+              onClick={() => handleCheckoutOpenChange(false)}
             >
               {t("profile.general.cancel")}
             </Button>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-      <PlanComparisonSection />
-      <FamilyPlanSection />
-      <GiftPremiumDrawer
-        open={giftDrawerOpen}
-        onOpenChange={setGiftDrawerOpen}
+      <PremiumInvoicesDrawer
+        open={isInvoicesOpen}
+        onOpenChange={(nextOpen) =>
+          handlePremiumDrawerOpenChange("invoices", nextOpen)
+        }
+        payments={recentPayments}
+        currentLocale={currentLocale}
+        currencyLabel={currencyLabel}
+        paymentMethodLabel={paymentMethodLabel}
+        t={t}
+      />
+      <PremiumHistoryDrawer
+        open={isHistoryOpen}
+        onOpenChange={(nextOpen) =>
+          handlePremiumDrawerOpenChange("history", nextOpen)
+        }
+        history={history}
+        statusLabel={statusLabel}
+        t={t}
       />
     </div>
   );

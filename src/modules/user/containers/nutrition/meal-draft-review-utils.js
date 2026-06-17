@@ -1,7 +1,4 @@
-import round from "lodash/round";
-import filter from "lodash/filter";
-import reduce from "lodash/reduce";
-import some from "lodash/some";
+import { filter, reduce, round, some, trim } from "lodash";
 import {
   buildMealIngredientsPayload,
   getMealIngredientTotals,
@@ -10,6 +7,10 @@ import {
   normalizeMealNutrition,
   toNumber,
 } from "./meal-ingredients.js";
+
+const DRAFT_REVIEW_CONFIDENCE_THRESHOLD = 0.55;
+
+const hasValue = (value) => value !== null && value !== undefined && value !== "";
 
 export const formatConfidence = (confidence = 0) =>
   `${Math.max(0, Math.min(100, Math.round(toNumber(confidence) * 100)))}%`;
@@ -51,6 +52,8 @@ export const getDraftNutritionPreview = (item = {}) => {
 
 export const isDraftReviewNeeded = (item = {}) =>
   Boolean(item?.reviewNeeded) ||
+  (hasValue(item?.confidence) &&
+    toNumber(item.confidence, 1) < DRAFT_REVIEW_CONFIDENCE_THRESHOLD) ||
   some(normalizeMealIngredients(item?.ingredients), (ingredient) =>
     ingredient.reviewNeeded || ingredient.matchStatus === "unmatched");
 
@@ -80,10 +83,12 @@ export const buildMealPayloadFromDraft = (
 ) => {
   const preview = getDraftNutritionPreview(item);
   const ingredients = buildMealIngredientsPayload(item?.ingredients);
+  const name = trim(String(item?.title || item?.name || "")) || "Ovqat";
+  const safeSource = trim(String(source || "")) || "ai";
 
   return {
-    name: item?.title || "Ovqat",
-    source,
+    name,
+    source: safeSource,
     savedMealId,
     qty: 1,
     grams: getDraftPortion(item),
@@ -99,4 +104,4 @@ export const buildMealPayloadFromDraft = (
 };
 
 export const getDraftImageUrl = (item = {}) =>
-  item?.imageUrl || item?.image || null;
+  trim(String(item?.imageUrl || item?.image || "")) || null;

@@ -43,7 +43,7 @@ const CuisineFormDrawer = ({ mode }) => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const isEdit = mode === "edit";
   const { data, isLoading } = useGetQuery({
-    url: `/admin/cuisines/${id}`,
+    url: `/admin/nutrition/cuisines/${id}`,
     queryProps: {
       queryKey: ["admin", "cuisines", id],
       enabled: isEdit && Boolean(id),
@@ -68,7 +68,9 @@ const CuisineFormDrawer = ({ mode }) => {
   const mutation = isEdit ? patchMutation : postMutation;
   const onSubmit = async (values) => {
     await mutation.mutateAsync({
-      url: isEdit ? `/admin/cuisines/${id}` : "/admin/cuisines",
+      url: isEdit
+        ? `/admin/nutrition/cuisines/${id}`
+        : "/admin/nutrition/cuisines",
       attributes: {
         name: values.name,
         translations: {

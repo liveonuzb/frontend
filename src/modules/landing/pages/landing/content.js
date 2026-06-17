@@ -30,7 +30,6 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { buildLiveOnProductPreviewCopy } from "@/components/liveon-product-preview";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
 import toLower from "lodash/toLower";
@@ -174,10 +173,7 @@ export const useLandingContent = (language) => {
     const { meta = {}, ...copy } = landingCopy;
 
     return {
-      copy: {
-        ...hydrateLandingCopy(copy),
-        productPreview: buildLiveOnProductPreviewCopy(fixedT, "auth.layout"),
-      },
+      copy: hydrateLandingCopy(copy),
       meta,
     };
   }, [i18n, language]);

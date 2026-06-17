@@ -102,9 +102,52 @@ const dashboardResponse = {
         events: {
           scanStarted: 20,
           scanReviewed: 11,
+          mealLogged: 42,
+          templateApplied: 5,
+          aiPlanGenerated: 3,
+          planActivated: 6,
+          shoppingListGenerated: 8,
           reportExported: 4,
           restrictionConflictShown: 3,
         },
+        funnel: [
+          {
+            key: "mealLogged",
+            label: "Meal logged",
+            value: 42,
+            conversionRate: 100,
+          },
+          {
+            key: "scanReviewed",
+            label: "AI scan reviewed",
+            value: 11,
+            conversionRate: 26.2,
+          },
+          {
+            key: "planIntent",
+            label: "Plan intent",
+            value: 8,
+            conversionRate: 19,
+          },
+          {
+            key: "planActivated",
+            label: "Plan activated",
+            value: 7,
+            conversionRate: 16.7,
+          },
+          {
+            key: "shoppingListGenerated",
+            label: "Shopping list",
+            value: 9,
+            conversionRate: 21.4,
+          },
+          {
+            key: "reportExported",
+            label: "Report exported",
+            value: 4,
+            conversionRate: 9.5,
+          },
+        ],
       },
       catalogQuality: {
         totalIssues: 14,
@@ -141,7 +184,10 @@ describe("Admin dashboard launch overview", () => {
     expect(screen.getByText("D7 active")).toBeInTheDocument();
     expect(screen.getByText("Referral activation")).toBeInTheDocument();
     expect(screen.getByText("Nutrition analytics")).toBeInTheDocument();
-    expect(screen.getByText(/AI scan review/)).toBeInTheDocument();
+    expect(screen.getByText("Nutrition product funnel")).toBeInTheDocument();
+    expect(screen.getByText("Plan intent")).toBeInTheDocument();
+    expect(screen.getByText("26.2%")).toBeInTheDocument();
+    expect(screen.getByText(/AI scan review 55%/)).toBeInTheDocument();
     expect(screen.getByText(/55%/)).toBeInTheDocument();
     expect(screen.getByText("Catalog quality")).toBeInTheDocument();
     expect(screen.getByText("Duplicate active names")).toBeInTheDocument();

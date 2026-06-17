@@ -4,7 +4,6 @@ import {
   AlertTriangleIcon,
   ArrowRightIcon,
   CheckCircle2Icon,
-  LockIcon,
   SparklesIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -160,14 +159,6 @@ export const DashboardAiInsightCardView = ({
                   <ArrowRightIcon data-icon="inline-end" />
                 </Link>
               </Button>
-              {viewModel.showPremiumCta ? (
-                <Button asChild variant="outline">
-                  <Link to="/user/payments">
-                    <LockIcon data-icon="inline-start" />
-                    Premiumga o&apos;tish
-                  </Link>
-                </Button>
-              ) : null}
             </div>
           </div>
         </div>

@@ -237,8 +237,20 @@ const Index = ({
 
   useEffect(() => {
     if (!some(dayOptions, (option) => option.key === selectedDay)) {
-      setSelectedDay(dayOptions[0]?.key || getTodayDayName());
+      let isCurrent = true;
+
+      queueMicrotask(() => {
+        if (isCurrent) {
+          setSelectedDay(dayOptions[0]?.key || getTodayDayName());
+        }
+      });
+
+      return () => {
+        isCurrent = false;
+      };
     }
+
+    return undefined;
   }, [dayOptions, selectedDay]);
 
   const foodMap = useMemo(
@@ -339,7 +351,10 @@ const Index = ({
   }, [categoriesWithAll, selectedCategoryId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const currentDayColumns = daysData[selectedDay] || [];
+  const currentDayColumns = useMemo(
+    () => daysData[selectedDay] || [],
+    [daysData, selectedDay],
+  );
   const savedMealsById = useMemo(
     () => new Map(map(savedMeals, (item) => [item.id, item])),
     [savedMeals],

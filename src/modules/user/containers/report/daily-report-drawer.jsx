@@ -91,7 +91,8 @@ export default function DailyReportDrawer() {
   }, [navigate, location.search]);
 
   const { data: response, isLoading } = useGetQuery({
-    url: `/user/tracking/reports/daily?date=${dateKey}`,
+    url: "/user/nutrition/reports/daily",
+    params: { date: dateKey },
     queryProps: {
       queryKey: dailyReportQueryKey(dateKey),
     },

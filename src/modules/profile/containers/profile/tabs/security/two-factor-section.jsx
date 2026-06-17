@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGetQuery } from "@/hooks/api";
 import useApi from "@/hooks/api/use-api";
 import { getRequestErrorMessage } from "@/hooks/app/use-profile-settings";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
 const OtpInput = ({ value, onChange }) => (
   <InputOTP
@@ -44,6 +45,11 @@ const OtpInput = ({ value, onChange }) => (
 
 export const TwoFactorSection = ({ t }) => {
   const { request } = useApi();
+  const {
+    activeProfileDrawer,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
 
   const {
     data: statusData,
@@ -75,6 +81,17 @@ export const TwoFactorSection = ({ t }) => {
   const [regenError, setRegenError] = useState("");
   const [newBackupCodes, setNewBackupCodes] = useState(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const routedSetupOpen = activeProfileDrawer === "2fa-setup";
+  const routedDisableOpen = activeProfileDrawer === "2fa-disable";
+  const routedRegenOpen = activeProfileDrawer === "2fa-regenerate";
+
+  React.useEffect(() => {
+    if (!routedSetupOpen || setupOpen || setupData) {
+      return;
+    }
+
+    closeProfileDrawer();
+  }, [closeProfileDrawer, routedSetupOpen, setupData, setupOpen]);
 
   const copyToClipboard = async (text) => {
     try {
@@ -99,6 +116,7 @@ export const TwoFactorSection = ({ t }) => {
       setSetupError("");
       setBackupCodes(null);
       setSetupOpen(true);
+      openProfileDrawer("2fa-setup", "security");
     } catch (err) {
       toast.error(
         getRequestErrorMessage(err, t("profile.security.2fa.setupError")),
@@ -133,6 +151,7 @@ export const TwoFactorSection = ({ t }) => {
     setSetupCode("");
     setSetupError("");
     setBackupCodes(null);
+    closeProfileDrawer();
   };
 
   const handleDisable = async () => {
@@ -145,6 +164,7 @@ export const TwoFactorSection = ({ t }) => {
       refetchStatus();
       setDisableOpen(false);
       setDisableCode("");
+      closeProfileDrawer();
       toast.success(t("profile.security.2fa.disableSuccess"));
     } catch {
       setDisableError(t("profile.security.2fa.invalidCode"));
@@ -165,6 +185,7 @@ export const TwoFactorSection = ({ t }) => {
       );
       setNewBackupCodes(data.backupCodes);
       setRegenCode("");
+      openProfileDrawer("2fa-regenerate", "security");
     } catch {
       setRegenError(t("profile.security.2fa.invalidCode"));
     } finally {
@@ -226,6 +247,7 @@ export const TwoFactorSection = ({ t }) => {
                   setDisableCode("");
                   setDisableError("");
                   setDisableOpen(true);
+                  openProfileDrawer("2fa-disable", "security");
                 }}
               >
                 {t("profile.security.2fa.disable")}
@@ -239,6 +261,7 @@ export const TwoFactorSection = ({ t }) => {
                   setRegenError("");
                   setNewBackupCodes(null);
                   setRegenOpen(true);
+                  openProfileDrawer("2fa-regenerate", "security");
                 }}
               >
                 <RefreshCwIcon className="size-3.5" />
@@ -258,7 +281,18 @@ export const TwoFactorSection = ({ t }) => {
         </CardContent>
       </Card>
 
-      <Drawer open={setupOpen} onOpenChange={setSetupOpen} direction="bottom">
+      <Drawer
+        open={setupOpen || (routedSetupOpen && Boolean(setupData))}
+        onOpenChange={(nextOpen) => {
+          setSetupOpen(nextOpen);
+          if (nextOpen) {
+            openProfileDrawer("2fa-setup", "security");
+          } else {
+            handleSetupClose();
+          }
+        }}
+        direction="bottom"
+      >
         <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>
@@ -365,8 +399,17 @@ export const TwoFactorSection = ({ t }) => {
       </Drawer>
 
       <Drawer
-        open={disableOpen}
-        onOpenChange={setDisableOpen}
+        open={disableOpen || routedDisableOpen}
+        onOpenChange={(nextOpen) => {
+          setDisableOpen(nextOpen);
+          if (nextOpen) {
+            openProfileDrawer("2fa-disable", "security");
+          } else {
+            setDisableError("");
+            setDisableCode("");
+            closeProfileDrawer();
+          }
+        }}
         direction="bottom"
       >
         <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
@@ -398,7 +441,10 @@ export const TwoFactorSection = ({ t }) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setDisableOpen(false)}
+              onClick={() => {
+                setDisableOpen(false);
+                closeProfileDrawer();
+              }}
             >
               {t("profile.security.2fa.cancel")}
             </Button>
@@ -406,7 +452,20 @@ export const TwoFactorSection = ({ t }) => {
         </DrawerContent>
       </Drawer>
 
-      <Drawer open={regenOpen} onOpenChange={setRegenOpen} direction="bottom">
+      <Drawer
+        open={regenOpen || routedRegenOpen}
+        onOpenChange={(nextOpen) => {
+          setRegenOpen(nextOpen);
+          if (nextOpen) {
+            openProfileDrawer("2fa-regenerate", "security");
+          } else {
+            setRegenError("");
+            setRegenCode("");
+            closeProfileDrawer();
+          }
+        }}
+        direction="bottom"
+      >
         <DrawerContent className="data-[vaul-drawer-direction=bottom]:md:max-w-sm">
           <DrawerHeader>
             <DrawerTitle>{t("profile.security.2fa.regenTitle")}</DrawerTitle>
@@ -452,7 +511,13 @@ export const TwoFactorSection = ({ t }) => {
           </DrawerBody>
           <DrawerFooter>
             {newBackupCodes ? (
-              <Button type="button" onClick={() => setRegenOpen(false)}>
+              <Button
+                type="button"
+                onClick={() => {
+                  setRegenOpen(false);
+                  closeProfileDrawer();
+                }}
+              >
                 {t("profile.security.2fa.done")}
               </Button>
             ) : (
@@ -469,7 +534,10 @@ export const TwoFactorSection = ({ t }) => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setRegenOpen(false)}
+                  onClick={() => {
+                    setRegenOpen(false);
+                    closeProfileDrawer();
+                  }}
                 >
                   {t("profile.security.2fa.cancel")}
                 </Button>

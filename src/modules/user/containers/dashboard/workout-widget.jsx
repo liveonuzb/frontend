@@ -59,7 +59,7 @@ export default function WorkoutWidget({
     interactive ? (
       <Link
         to="/user/workout/running"
-        className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <span className="inline-flex min-w-0 items-center gap-2">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -103,7 +103,7 @@ export default function WorkoutWidget({
   return (
     <Card
       className={cn(
-        "relative h-full overflow-hidden border border-border/60 py-3 ring-0 transition-colors hover:border-primary/30",
+        "relative h-full overflow-hidden border border-border/60 py-3 ring-0",
         className,
       )}
     >
@@ -142,7 +142,7 @@ export default function WorkoutWidget({
             {interactive ? (
               <Link
                 to="/user/workout"
-                className="inline-flex h-8 self-start items-center rounded-full bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="inline-flex h-8 self-start items-center rounded-full bg-primary/10 px-3 text-xs font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 {resolvedLabels.continue}{" "}
                 <ArrowRightIcon className="ml-1 size-3" />
@@ -164,7 +164,7 @@ export default function WorkoutWidget({
             {interactive ? (
               <Link
                 to="/user/workout"
-                className="inline-flex h-8 items-center rounded-full bg-primary/10 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="inline-flex h-8 items-center rounded-full bg-primary/10 px-3 text-xs font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 {resolvedLabels.start}{" "}
                 <ArrowRightIcon className="ml-1 size-3" />

@@ -10,9 +10,7 @@ import {
   ChevronsUpDown,
   LogOutIcon,
   UserIcon,
-  CreditCardIcon,
   BellIcon,
-  SparklesIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -134,20 +132,9 @@ const NavUser = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => openProfileEntry("premium")}>
-                <SparklesIcon />
-                {t("common.navUser.upgradePro")}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
               <DropdownMenuItem onClick={handleProfileClick}>
                 <UserIcon />
                 {t("common.navUser.profile")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openProfileEntry("premium")}>
-                <CreditCardIcon />
-                {t("common.navUser.payment")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("settings")}>
                 <BellIcon />

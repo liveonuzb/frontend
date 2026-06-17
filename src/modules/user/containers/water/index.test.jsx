@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WaterPage from "./index.jsx";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import {
@@ -74,6 +74,8 @@ vi.mock("@/lib/telegram-haptics", () => ({
 describe("WaterPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-02T10:00:00.000Z"));
     vi.mocked(useHealthGoals).mockReturnValue({
       goals: {
         waterMl: 2500,
@@ -115,6 +117,10 @@ describe("WaterPage", () => {
     });
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("removes the old water header and summary/log/activity sections", () => {
     render(<WaterPage />);
 
@@ -147,12 +153,28 @@ describe("WaterPage", () => {
     );
   });
 
+  it("renders water stats in one compact row", () => {
+    render(<WaterPage />);
+
+    const statsRow = screen.getByTestId("water-stats-row");
+    const statCards = screen.getAllByTestId("water-stat-card");
+
+    expect(statsRow).toHaveClass("grid-cols-3", "gap-2");
+    expect(statsRow).not.toHaveClass("sm:grid-cols-3");
+    expect(statCards).toHaveLength(3);
+
+    for (const card of statCards) {
+      expect(card).toHaveClass("rounded-2xl");
+      expect(card.firstElementChild).toHaveClass("p-2.5");
+    }
+  });
+
   it("loads AI Hydration from the live backend insight endpoint", () => {
     render(<WaterPage />);
 
     expect(useGetQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: "/daily-tracking/water/insight",
+        url: "/user/nutrition/tracking/water/insight",
         params: expect.objectContaining({
           date: "2026-06-02",
           days: 7,

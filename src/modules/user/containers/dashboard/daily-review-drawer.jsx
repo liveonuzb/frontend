@@ -58,7 +58,8 @@ export default function DailyReviewDrawer() {
   const isAfterStart = nowMinute >= startMinute;
 
   const { data: reportResponse } = useGetQuery({
-    url: `/user/tracking/reports/daily?date=${yesterday}`,
+    url: "/user/nutrition/reports/daily",
+    params: { date: yesterday },
     queryProps: {
       queryKey: dailyReportQueryKey(yesterday),
       enabled: Boolean(userId) && isAfterStart,

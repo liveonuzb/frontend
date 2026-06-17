@@ -19,9 +19,9 @@ export default function NutritionLayout({
           !sidebar && "xl:grid-cols-1",
         )}
       >
-        <main className={cn("min-w-0 space-y-5", mainClassName)}>
+        <div className={cn("min-w-0 space-y-5", mainClassName)}>
           {children}
-        </main>
+        </div>
         {sidebar ? (
           <aside className={cn("min-w-0 space-y-5", sidebarClassName)}>
             {sidebar}
@@ -32,4 +32,3 @@ export default function NutritionLayout({
     </div>
   );
 }
-

@@ -20,6 +20,7 @@ const RecipeInstructionsStep = ({
   onDraftSave,
   onPublish,
   onAddToMealPlan,
+  isSubmitting,
 }) => (
   <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
     <div className="flex flex-col gap-4">
@@ -112,14 +113,24 @@ const RecipeInstructionsStep = ({
           <CardTitle>Retseptni saqlash va nashr etish</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          <Button type="button" variant="outline" onClick={onDraftSave}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={onDraftSave}
+          >
             Qoralama sifatida saqlash
           </Button>
-          <Button type="button" onClick={onPublish}>
+          <Button type="button" disabled={isSubmitting} onClick={onPublish}>
             <SendIcon data-icon="inline-start" />
-            Nashr etish
+            Admin ko'rib chiqishiga yuborish
           </Button>
-          <Button type="button" variant="secondary" onClick={onAddToMealPlan}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={onAddToMealPlan}
+          >
             <CalendarPlusIcon data-icon="inline-start" />
             Ovqatlanish rejasiga qo'shish
           </Button>

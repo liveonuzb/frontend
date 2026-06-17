@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button.jsx";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
+  AlertTriangleIcon,
   BarcodeIcon,
   CheckIcon,
   Loader2Icon,
@@ -39,6 +40,22 @@ const getSliderMax = (food) => {
 };
 
 const AiResultContent = ({ ai }) => {
+  if (ai.status === "uploading") {
+    return (
+      <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-center">
+        <div className="grid size-14 place-items-center rounded-2xl bg-primary/10">
+          <Loader2Icon className="size-7 animate-spin text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-black">Rasm yuklanmoqda</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Rasm xavfsiz saqlanmoqda, keyin AI tahlili boshlanadi.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (ai.status === "analyzing") {
     return (
       <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 text-center">
@@ -92,6 +109,23 @@ const AiResultContent = ({ ai }) => {
 
   return (
     <div className="space-y-4">
+      {ai.status === "low-confidence" ? (
+        <div
+          role="status"
+          aria-label="Past ishonch ogohlantirishi"
+          className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-200"
+        >
+          <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+          <div>
+            <p className="text-sm font-black">Past ishonch</p>
+            <p className="mt-1 text-xs leading-5">
+              AI draftdagi miqdor yoki ingredientlarga ishonchi past. Saqlashdan
+              oldin ingredientlarni tekshiring.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {ai.imageUrl ? (
         <div
           className="relative w-full overflow-hidden rounded-2xl bg-muted"
@@ -152,7 +186,7 @@ const BarcodeResultContent = ({ barcode }) => {
             <Loader2Icon className="size-5 animate-spin text-primary" />
           </div>
           <div>
-            <p className="text-sm font-black">Barcode tekshirilmoqda</p>
+            <p className="text-sm font-black">Shtrix-kod tekshirilmoqda</p>
             <p className="text-xs text-muted-foreground">{barcode.scannedCode}</p>
           </div>
         </div>
@@ -233,7 +267,7 @@ const BarcodeResultContent = ({ barcode }) => {
             variant="outline"
             size="icon"
             onClick={barcode.onReset}
-            aria-label="Barcode reset"
+            aria-label="Shtrix-kodni qayta skanerlash"
           >
             <RefreshCcwIcon className="size-4" />
           </Button>
@@ -255,7 +289,12 @@ const BarcodeResultContent = ({ barcode }) => {
         </div>
         <h3 className="text-lg font-black">Ovqatni qo&apos;l bilan kiriting</h3>
         <p className="text-xs font-semibold text-muted-foreground">
-          Barcode: {barcode.scannedCode || "noma'lum"}
+          Shtrix-kod: {barcode.scannedCode || "noma'lum"}
+        </p>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          {barcode.status === "error"
+            ? "Katalog bilan bog'lanishda xatolik bo'ldi. Qayta urinib ko'ring yoki ovqatni qo'l bilan kiriting."
+            : "Katalogda bu shtrix-kod topilmadi. Ovqatni qo'l bilan kiriting yoki qayta skanerlang."}
         </p>
       </div>
       <div className="space-y-3">
@@ -312,15 +351,29 @@ const BarcodeResultContent = ({ barcode }) => {
           </label>
         </div>
       </div>
-      <div className="mt-5 grid grid-cols-[auto_1fr] gap-2">
+      <div className="mt-5 grid grid-cols-[auto_auto_1fr] gap-2">
         <Button
           type="button"
           variant="outline"
           size="icon"
           onClick={barcode.onReset}
-          aria-label="Barcode reset"
+          aria-label="Shtrix-kodni qayta skanerlash"
         >
           <RefreshCcwIcon className="size-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={barcode.onRetry}
+          disabled={!barcode.scannedCode || barcode.isLookingUp}
+          aria-label="Shtrix-kodni qayta tekshirish"
+        >
+          {barcode.isLookingUp ? (
+            <Loader2Icon className="mr-2 size-4 animate-spin" />
+          ) : (
+            <RefreshCwIcon className="mr-2 size-4" />
+          )}
+          Qayta
         </Button>
         <Button type="button" onClick={barcode.onAddManualFood}>
           <PlusIcon className="mr-2 size-4" />
@@ -339,10 +392,12 @@ export default function CameraResultDrawer({
   barcode,
 }) {
   const isAi = resultType === "ai";
-  const title = isAi ? "AI topgan ovqatlar" : "Barcode natijasi";
+  const isAiDraftReady =
+    isAi && (ai.status === "ready" || ai.status === "low-confidence");
+  const title = isAi ? "AI topgan ovqatlar" : "Shtrix-kod natijasi";
   const description = isAi
     ? "Ingredientlarni tekshiring va ovqatni qo'shing."
-    : "Barcode natijasini tekshiring yoki qo'l bilan kiriting.";
+    : "Shtrix-kod natijasini tekshiring yoki qo'l bilan kiriting.";
 
   return (
     <Drawer nested open={open} onOpenChange={onOpenChange} direction="bottom">
@@ -360,7 +415,7 @@ export default function CameraResultDrawer({
                 {description}
               </DrawerDescription>
             </div>
-            {isAi && ai.status === "ready" ? (
+            {isAiDraftReady ? (
               <SaveToMyMealsButton
                 checked={ai.saveToMyMeals}
                 onCheckedChange={ai.onSaveToMyMealsChange}
@@ -387,7 +442,7 @@ export default function CameraResultDrawer({
           )}
         </DrawerBody>
 
-        {isAi && ai.status === "ready" && ai.items.length > 0 ? (
+        {isAiDraftReady && ai.items.length > 0 ? (
           <DrawerFooter>
             <div className="grid w-full gap-3">
               <Button type="button" variant="outline" onClick={ai.onRetake}>

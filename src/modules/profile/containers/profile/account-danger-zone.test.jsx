@@ -7,12 +7,18 @@ const mockFns = vi.hoisted(() => ({
   navigate: vi.fn(),
   clear: vi.fn(),
   closeProfile: vi.fn(),
+  closeProfileDrawer: vi.fn(),
   logout: vi.fn(),
   deleteRequest: vi.fn(),
   logoutRequest: vi.fn(),
+  openProfileDrawer: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
 }));
+
+let profileOverlayState = {
+  activeProfileDrawer: null,
+};
 
 let authState = {
   roles: ["USER"],
@@ -70,8 +76,18 @@ vi.mock("@/hooks/app/use-profile-settings", () => ({
 }));
 
 vi.mock("@/modules/profile/hooks/use-profile-overlay", () => ({
+  PROFILE_OVERVIEW_TAB: "overview",
   useProfileOverlay: () => ({
+    activeProfileDrawer: profileOverlayState.activeProfileDrawer,
     closeProfile: mockFns.closeProfile,
+    closeProfileDrawer: () => {
+      profileOverlayState.activeProfileDrawer = null;
+      mockFns.closeProfileDrawer();
+    },
+    openProfileDrawer: (drawerId) => {
+      profileOverlayState.activeProfileDrawer = drawerId;
+      mockFns.openProfileDrawer(drawerId);
+    },
   }),
 }));
 
@@ -89,6 +105,9 @@ vi.mock("sonner", () => ({
 describe("AccountDangerZone", () => {
   afterEach(() => {
     vi.clearAllMocks();
+    profileOverlayState = {
+      activeProfileDrawer: null,
+    };
     authState = {
       roles: ["USER"],
       logout: mockFns.logout,
@@ -137,9 +156,10 @@ describe("AccountDangerZone", () => {
   it("opens a bottom drawer and requires exact DELETE before allowing account deletion", async () => {
     mockFns.deleteRequest.mockResolvedValue({});
 
-    render(<AccountDangerZone />);
+    const { rerender } = render(<AccountDangerZone />);
 
     fireEvent.click(screen.getByRole("button", { name: /Hisobni o'chirish/i }));
+    rerender(<AccountDangerZone />);
 
     expect(screen.getByTestId("delete-account-drawer")).toBeInTheDocument();
     expect(

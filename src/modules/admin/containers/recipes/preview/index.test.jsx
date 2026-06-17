@@ -94,7 +94,7 @@ describe("RecipePreviewDrawer", () => {
     );
 
     expect(mockUseGetQuery).toHaveBeenCalledWith({
-      url: "/admin/foods/41",
+      url: "/admin/nutrition/recipes/41",
       queryProps: {
         enabled: true,
         queryKey: ["admin", "recipes", "detail", "41"],

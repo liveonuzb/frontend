@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import FoodRecipeDrawer from "./index.jsx";
 
 const mockPatchMutateAsync = vi.fn();
+const mockPostMutateAsync = vi.fn();
 
 const foodFixture = {
   id: 12,
@@ -39,6 +40,10 @@ vi.mock("@/hooks/api", () => ({
   }),
   usePatchQuery: () => ({
     mutateAsync: mockPatchMutateAsync,
+    isPending: false,
+  }),
+  usePostQuery: () => ({
+    mutateAsync: mockPostMutateAsync,
     isPending: false,
   }),
 }));
@@ -90,10 +95,38 @@ const renderDrawer = () =>
     </MemoryRouter>,
   );
 
+const renderRecipeDrawer = () =>
+  render(
+    <MemoryRouter initialEntries={["/admin/recipes/list/recipe/12"]}>
+      <Routes>
+        <Route
+          path="/admin/recipes/list/recipe/:id"
+          element={<FoodRecipeDrawer mode="recipe" />}
+        />
+        <Route path="/admin/recipes/list" element={<div>Recipes list</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
 describe("FoodRecipeDrawer", () => {
   beforeEach(() => {
     mockPatchMutateAsync.mockReset();
+    mockPostMutateAsync.mockReset();
     mockPatchMutateAsync.mockResolvedValue({ data: { data: {} } });
+    mockPostMutateAsync.mockResolvedValue({
+      data: {
+        data: {
+          totals: {
+            calories: 320,
+            protein: 18,
+            carbs: 42,
+            fat: 8,
+            estimatedCost: 12000,
+          },
+          warnings: [],
+        },
+      },
+    });
   });
 
   it("authors instruction steps with duration and media URL in recipe payload", async () => {
@@ -126,6 +159,7 @@ describe("FoodRecipeDrawer", () => {
             {
               ingredientId: 1,
               grams: 150,
+              optional: false,
               orderKey: 1024,
             },
           ],
@@ -150,5 +184,68 @@ describe("FoodRecipeDrawer", () => {
         },
       });
     });
+  });
+
+  it("saves admin recipe ingredients and steps through canonical endpoints", async () => {
+    renderRecipeDrawer();
+
+    fireEvent.click(screen.getByRole("button", { name: /Recipe saqlash/i }));
+
+    await waitFor(() => {
+      expect(mockPatchMutateAsync).toHaveBeenNthCalledWith(1, {
+        url: "/admin/nutrition/recipes/12/ingredients",
+        attributes: {
+          ingredients: [
+            {
+              ingredientId: 1,
+              grams: 150,
+              optional: false,
+              orderKey: 1024,
+            },
+          ],
+        },
+      });
+      expect(mockPatchMutateAsync).toHaveBeenNthCalledWith(2, {
+        url: "/admin/nutrition/recipes/12/steps",
+        attributes: {
+          instructions: [
+            {
+              language: "uz",
+              stepNumber: 1,
+              title: "Tayyorlash",
+              body: "Guruchni yuving.",
+              durationMinutes: 5,
+              mediaUrl: "https://cdn.liveon.test/old-step.mp4",
+              orderKey: 1024,
+            },
+          ],
+        },
+      });
+    });
+  });
+
+  it("previews recipe nutrition before saving", async () => {
+    renderRecipeDrawer();
+
+    fireEvent.click(screen.getByRole("button", { name: /Hisoblash/i }));
+
+    await waitFor(() => {
+      expect(mockPostMutateAsync).toHaveBeenCalledWith({
+        url: "/admin/nutrition/recipes/12/nutrition-preview",
+        attributes: {
+          ingredients: [
+            {
+              ingredientId: 1,
+              grams: 150,
+              optional: false,
+              orderKey: 1024,
+            },
+          ],
+        },
+      });
+    });
+    expect(screen.getByText("320 kcal")).toBeInTheDocument();
+    expect(screen.getByText("P: 18g")).toBeInTheDocument();
+    expect(screen.getByText("Cost: 12000")).toBeInTheDocument();
   });
 });

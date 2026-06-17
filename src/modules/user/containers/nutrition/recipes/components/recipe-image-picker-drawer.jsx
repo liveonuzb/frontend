@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/drawer.jsx";
 import ImageUploadTile from "@/components/image-upload-tile";
 import { cn } from "@/lib/utils.js";
-import { ADMIN_RECIPE_IMAGES } from "../recipe-mock-data.js";
+import { ADMIN_RECIPE_IMAGES } from "../recipe-runtime-data.js";
 
 const RecipeImagePickerDrawer = ({
   open,
@@ -29,13 +29,13 @@ const RecipeImagePickerDrawer = ({
       <DrawerHeader className="border-b border-border/40">
         <DrawerTitle>Retsept rasmini tanlash</DrawerTitle>
         <DrawerDescription>
-          Rasm yuklang yoki admin library'dagi tayyor coverlardan foydalaning.
+          Rasm yuklang yoki admin kutubxonasidagi tayyor coverlardan foydalaning.
         </DrawerDescription>
       </DrawerHeader>
       <DrawerBody className="flex flex-col gap-5 px-4 pb-4">
         <section className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-foreground">
-            Gallery yoki kamera
+            Galereya yoki kamera
           </h3>
           <ImageUploadTile
             imageUrl={imageUrl}
@@ -54,7 +54,7 @@ const RecipeImagePickerDrawer = ({
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-foreground">
-              Admin image library
+              Admin rasm kutubxonasi
             </h3>
             <Badge variant="secondary">{ADMIN_RECIPE_IMAGES.length} ta</Badge>
           </div>

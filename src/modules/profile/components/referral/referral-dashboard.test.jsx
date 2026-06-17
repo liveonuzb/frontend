@@ -30,6 +30,14 @@ vi.mock("@/hooks/use-telegram", () => ({
   useTelegram: () => telegramState,
 }));
 
+vi.mock("@/modules/profile/hooks/use-profile-overlay", () => ({
+  useProfileOverlay: () => ({
+    activeProfileDrawer: null,
+    closeProfileDrawer: vi.fn(),
+    openProfileDrawer: vi.fn(),
+  }),
+}));
+
 describe("ReferralDashboard", () => {
   afterEach(() => {
     vi.clearAllMocks();

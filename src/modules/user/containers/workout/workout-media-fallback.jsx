@@ -2,11 +2,10 @@ import React from "react";
 import { DumbbellIcon, ImageIcon, PlayCircleIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const getFallbackIcon = (variant) => {
-  if (variant === "video") return PlayCircleIcon;
-  if (variant === "exercise") return DumbbellIcon;
-
-  return ImageIcon;
+const fallbackIconByVariant = {
+  exercise: DumbbellIcon,
+  image: ImageIcon,
+  video: PlayCircleIcon,
 };
 
 const WorkoutMediaFallback = ({
@@ -20,12 +19,9 @@ const WorkoutMediaFallback = ({
   fallbackClassName,
   loading = "lazy",
 }) => {
-  const [hasImageError, setHasImageError] = React.useState(false);
-  const Icon = getFallbackIcon(variant);
-
-  React.useEffect(() => {
-    setHasImageError(false);
-  }, [src]);
+  const [failedSrc, setFailedSrc] = React.useState(null);
+  const Icon = fallbackIconByVariant[variant] || ImageIcon;
+  const hasImageError = Boolean(src && failedSrc === src);
 
   if (src && !hasImageError) {
     return (
@@ -34,7 +30,7 @@ const WorkoutMediaFallback = ({
         alt={alt}
         className={cn("size-full object-cover", className, imageClassName)}
         loading={loading}
-        onError={() => setHasImageError(true)}
+        onError={() => setFailedSrc(src)}
       />
     );
   }

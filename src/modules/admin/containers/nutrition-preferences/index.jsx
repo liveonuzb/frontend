@@ -1,11 +1,12 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route } from "react-router";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import ListPage from "./list/index.jsx";
 
 const NutritionPreferencesIndex = () => (
-  <Routes>
+  <ProfileAwareRoutes>
     <Route index element={<Navigate to="list" replace />} />
     <Route path="list" element={<ListPage />} />
-  </Routes>
+  </ProfileAwareRoutes>
 );
 
 export default NutritionPreferencesIndex;

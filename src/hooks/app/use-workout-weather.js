@@ -64,37 +64,52 @@ export const useWorkoutWeatherToday = (options = {}) => {
 
   React.useEffect(() => {
     if (!enabled || coordinates) {
-      return;
+      return undefined;
     }
+
+    let isCurrent = true;
+    const applyFallbackLocation = () => {
+      if (!isCurrent) {
+        return;
+      }
+
+      setCoordinates(TASHKENT_COORDINATES);
+      setLocationStatus("fallback");
+    };
 
     if (
       typeof navigator === "undefined" ||
       !navigator.geolocation?.getCurrentPosition
     ) {
-      setCoordinates(TASHKENT_COORDINATES);
-      setLocationStatus("fallback");
-      return;
+      queueMicrotask(applyFallbackLocation);
+      return () => {
+        isCurrent = false;
+      };
     }
 
-    setLocationStatus("requesting");
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!isCurrent) {
+          return;
+        }
+
         setCoordinates({
           latitude: toNumber(position.coords.latitude),
           longitude: toNumber(position.coords.longitude),
         });
         setLocationStatus("granted");
       },
-      () => {
-        setCoordinates(TASHKENT_COORDINATES);
-        setLocationStatus("fallback");
-      },
+      applyFallbackLocation,
       {
         enableHighAccuracy: false,
         timeout: 5000,
         maximumAge: 30 * 60 * 1000,
       },
     );
+
+    return () => {
+      isCurrent = false;
+    };
   }, [coordinates, enabled]);
 
   const queryString = coordinates

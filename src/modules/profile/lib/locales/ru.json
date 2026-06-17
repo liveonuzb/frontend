@@ -47,12 +47,6 @@
     "levelTitle": "Уровень",
     "completion": "Заполнение профиля",
     "completionDesc": "Полное заполнение профиля обеспечивает корректную работу разделов сообщений, конфиденциальности и рефералов.",
-    "healthReport": {
-      "title": "AI health report",
-      "description": "Откройте одноразовый wellness-отчёт на основе онбординга и health-данных.",
-      "badge": "AI report",
-      "action": "Открыть отчёт"
-    },
     "tabs": {
       "profile": "Профиль",
       "general": "Язык",
@@ -62,7 +56,8 @@
       "privacy": "Приватность",
       "security": "Безопасность",
       "premium": "Премиум",
-      "referral": "Рефералы"
+      "friends": "Друзья",
+      "referral": "Рекомендация"
     },
     "language": {
       "title": "Язык",
@@ -331,8 +326,14 @@
       "activate": "Получить Премиум",
       "giftAction": "Подарить Premium",
       "planSelectorTitle": "Выберите подходящий тариф",
-      "planSelectorDescription": "Сначала выберите тариф, затем переходите к оплате или подарку другому пользователю.",
+      "planSelectorDescription": "Сначала выберите тариф, затем перейдите к оплате.",
+      "billingTitle": "Биллинг",
+      "invoicesTitle": "Invoices",
+      "invoicesDescription": "Платежи и invoice-записи открываются в отдельном drawer.",
+      "invoicesEmpty": "Invoice-записей пока нет.",
       "historyTitle": "История подписок",
+      "historyDescription": "Периоды и статусы premium-подписок открываются в отдельном drawer.",
+      "historyEmpty": "Истории подписок пока нет.",
       "unlimited": "Безлимитно",
       "paymentsTitle": "Последние платежи",
       "premiumPayment": "Оплата Премиум",
@@ -401,6 +402,10 @@
       },
       "preparingCheckout": "Подготовка чекаута...",
       "goToPayment": "Перейти к оплате"
+    },
+    "friends": {
+      "description": "Список друзей, заявки и новые рекомендации",
+      "value": "Друзья"
     },
     "referral": {
       "title": "Рефералы",

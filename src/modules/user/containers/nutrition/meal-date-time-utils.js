@@ -86,14 +86,16 @@ export const getCameraDateOptions = (minDateKey, locale = "uz-latn") => {
 export const getTimePartsFromDate = (value = new Date()) => {
   const date = dayjs(value);
   const fallback = dayjs();
-  const hour24 = date.isValid() ? date.hour() : fallback.hour();
+  const rawHour24 = date.isValid() ? date.hour() : fallback.hour();
   const minute = date.isValid() ? date.minute() : fallback.minute();
+  const roundedMinute = Math.round(minute / 5) * 5;
+  const hour24 = (rawHour24 + (roundedMinute >= 60 ? 1 : 0)) % 24;
   const period = hour24 >= 12 ? "PM" : "AM";
   const hour12 = hour24 % 12 || 12;
 
   return {
     hour: hour12,
-    minute: Math.round(minute / 5) * 5 % 60,
+    minute: roundedMinute % 60,
     period,
   };
 };

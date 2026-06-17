@@ -6,6 +6,10 @@ import isArray from "lodash/isArray";
 import map from "lodash/map";
 import some from "lodash/some";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import useMealPlan from "@/hooks/app/use-meal-plan";
 import { getApiResponseData } from "@/lib/api-response";
 import { normalizeUserOnboarding } from "@/lib/user-onboarding";
@@ -55,7 +59,7 @@ export default function useDashboardData(dateKey) {
     },
   });
   const dayQuery = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, dateKey),
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
       enabled: Boolean(dateKey),

@@ -54,7 +54,8 @@ export default function TenDayPopupDrawer() {
     Boolean(userId) && currentStreak > 0 && currentStreak % 10 === 0;
 
   const { data: reportResponse } = useGetQuery({
-    url: `/user/tracking/reports/range?days=10&endDate=${today}`,
+    url: "/user/nutrition/reports/range",
+    params: { days: 10, endDate: today },
     queryProps: {
       queryKey: rangeReportQueryKey(10, today),
       enabled: eligible,

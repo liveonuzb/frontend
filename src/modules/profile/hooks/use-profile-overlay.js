@@ -1,10 +1,17 @@
 import React from "react";
-import { useSearchParams } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
   DEFAULT_PROFILE_TAB,
   PROFILE_OVERVIEW_TAB,
   normalizeProfileOverlayTab,
 } from "@/modules/profile/lib/profile-tab-registry";
+import {
+  PROFILE_DRAWER_IDS_BY_TAB,
+  buildProfileRoutePath,
+  getProfileRouteState,
+  isProfileDrawerId,
+} from "@/modules/profile/lib/profile-route-state";
+import { useProfileRouteLocation } from "@/modules/profile/lib/profile-route-location-context.jsx";
 
 const PROFILE_OPEN_PARAM = "profile";
 const PROFILE_TAB_PARAM = "profileTab";
@@ -36,86 +43,122 @@ export const getNormalizedProfileOverlayState = ({
 };
 
 export const useProfileOverlay = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const routerLocation = useLocation();
+  const location = useProfileRouteLocation(routerLocation);
+  const navigate = useNavigate();
   const overlayState = React.useMemo(
-    () =>
-      getNormalizedProfileOverlayState({
-        profileState: searchParams.get(PROFILE_OPEN_PARAM),
-        profileTab: searchParams.get(PROFILE_TAB_PARAM),
+    () => getProfileRouteState(location.pathname, location.search),
+    [location.pathname, location.search],
+  );
+  const {
+    isProfileOpen,
+    activeProfileTab,
+    activeProfileDrawer,
+    basePath,
+    shouldSanitize,
+    sanitizedPath,
+  } = overlayState;
+
+  const getRoutePath = React.useCallback(
+    ({ tab = PROFILE_OVERVIEW_TAB, drawer = null } = {}) =>
+      buildProfileRoutePath({
+        pathname: location.pathname,
+        search: location.search,
+        tab,
+        drawer,
       }),
-    [searchParams],
+    [location.pathname, location.search],
   );
-  const { isProfileOpen, activeProfileTab, shouldSanitize } = overlayState;
 
-  const updateSearchParams = React.useCallback(
-    (updater, options) => {
-      const nextParams = new URLSearchParams(searchParams);
-      updater(nextParams);
+  const getBaseRoutePath = React.useCallback(() => {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete(PROFILE_OPEN_PARAM);
+    nextParams.delete(PROFILE_TAB_PARAM);
+    const query = nextParams.toString();
 
-      if (nextParams.toString() === searchParams.toString()) {
-        return;
-      }
-
-      setSearchParams(nextParams, options);
-    },
-    [searchParams, setSearchParams],
-  );
+    return query ? `${basePath}?${query}` : basePath;
+  }, [basePath, location.search]);
 
   React.useEffect(() => {
-    if (!shouldSanitize) {
+    if (!shouldSanitize || !sanitizedPath) {
       return;
     }
 
-    updateSearchParams(
-      (nextParams) => {
-        nextParams.set(PROFILE_OPEN_PARAM, PROFILE_OPEN_VALUE);
-        nextParams.set(PROFILE_TAB_PARAM, activeProfileTab);
-      },
-      { replace: true },
-    );
-  }, [activeProfileTab, shouldSanitize, updateSearchParams]);
+    navigate(sanitizedPath, { replace: true });
+  }, [navigate, sanitizedPath, shouldSanitize]);
 
   const openProfile = React.useCallback(
-    (tab = DEFAULT_PROFILE_TAB) => {
-      updateSearchParams(
-        (nextParams) => {
-          nextParams.set(PROFILE_OPEN_PARAM, PROFILE_OPEN_VALUE);
-          nextParams.set(PROFILE_TAB_PARAM, normalizeProfileOverlayTab(tab));
-        },
-        { replace: true },
+    (tab = DEFAULT_PROFILE_TAB, drawer = null) => {
+      navigate(
+        getRoutePath({
+          tab: normalizeProfileOverlayTab(tab),
+          drawer,
+        }),
       );
     },
-    [updateSearchParams],
+    [getRoutePath, navigate],
   );
 
   const closeProfile = React.useCallback(() => {
-    updateSearchParams(
-      (nextParams) => {
-        nextParams.delete(PROFILE_OPEN_PARAM);
-        nextParams.delete(PROFILE_TAB_PARAM);
-      },
-      { replace: true },
-    );
-  }, [updateSearchParams]);
+    navigate(getBaseRoutePath(), { replace: true });
+  }, [getBaseRoutePath, navigate]);
 
   const setProfileTab = React.useCallback(
     (tab) => {
-      updateSearchParams(
-        (nextParams) => {
-          nextParams.set(PROFILE_OPEN_PARAM, PROFILE_OPEN_VALUE);
-          nextParams.set(PROFILE_TAB_PARAM, normalizeProfileOverlayTab(tab));
-        },
+      navigate(
+        getRoutePath({
+          tab: normalizeProfileOverlayTab(tab),
+        }),
         { replace: true },
       );
     },
-    [updateSearchParams],
+    [getRoutePath, navigate],
+  );
+
+  const openProfileDrawer = React.useCallback(
+    (drawer, tab) => {
+      const targetTab =
+        tab ??
+        (isProfileDrawerId(activeProfileTab, drawer)
+          ? activeProfileTab
+          : PROFILE_OVERVIEW_TAB);
+      const targetDrawer = isProfileDrawerId(targetTab, drawer) ? drawer : null;
+
+      navigate(
+        getRoutePath({
+          tab: targetTab,
+          drawer: targetDrawer,
+        }),
+        { replace: true },
+      );
+    },
+    [activeProfileTab, getRoutePath, navigate],
+  );
+
+  const closeProfileDrawer = React.useCallback(() => {
+    navigate(
+      getRoutePath({
+        tab: activeProfileTab,
+      }),
+      { replace: true },
+    );
+  }, [activeProfileTab, getRoutePath, navigate]);
+
+  const getProfileDrawerIds = React.useCallback(
+    (tab = activeProfileTab) => PROFILE_DRAWER_IDS_BY_TAB[tab] ?? [],
+    [activeProfileTab],
   );
 
   return {
     isProfileOpen,
     activeProfileTab,
+    activeProfileDrawer,
+    baseProfilePath: basePath,
     openProfile,
     closeProfile,
     setProfileTab,
+    openProfileDrawer,
+    closeProfileDrawer,
+    getProfileDrawerIds,
   };
 };

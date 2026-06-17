@@ -16,15 +16,24 @@ import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
   DownloadIcon,
+  Globe2Icon,
+  ImageOffIcon,
   PlusIcon,
   RotateCcwIcon,
+  RefreshCwIcon,
   TagIcon,
   Trash2Icon,
+  Undo2Icon,
   UploadIcon,
 } from "lucide-react";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
-import { useGetQuery, usePatchQuery, useDeleteQuery } from "@/hooks/api";
-import useApi from "@/hooks/api/use-api.js";
+import {
+  useGetQuery,
+  usePatchQuery,
+  useDeleteQuery,
+  usePostQuery,
+  usePostFileQuery,
+} from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +53,8 @@ import { useColumns } from "./columns.jsx";
 import { Filter } from "./filter.jsx";
 import { useFoodFilters } from "./use-filters.js";
 import { DeleteAlert, HardDeleteAlert } from "./delete-alert.jsx";
+import FoodImportPreviewDialog from "./import-preview-dialog.jsx";
+import FoodImageCleanupDialog from "./image-cleanup-dialog.jsx";
 
 const resolveLabel = (translations, fallback, language) => {
   if (isObject(translations)) {
@@ -53,7 +64,9 @@ const resolveLabel = (translations, fallback, language) => {
     const uz = trim(String(get(translations, "uz", "")));
     if (uz) return uz;
 
-    const first = find(lodashValues(translations), (value) => trim(String(value)));
+    const first = find(lodashValues(translations), (value) =>
+      trim(String(value)),
+    );
     if (first) return trim(String(first));
   }
 
@@ -66,8 +79,22 @@ const getMutationErrorMessage = (error, fallback) => {
   const dependencySummary = response?.dependencySummary;
   const baseMessage = isArray(message) ? message.join(", ") : message;
 
-  return lodashFilter([baseMessage || fallback, dependencySummary], Boolean).join(" ");
+  return lodashFilter(
+    [baseMessage || fallback, dependencySummary],
+    Boolean,
+  ).join(" ");
 };
+
+const buildFoodImportFormData = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return formData;
+};
+
+export const buildFoodBulkStatusPayload = (ids, isActive) => ({
+  ids,
+  isActive,
+});
 
 const Index = () => {
   const navigate = useNavigate();
@@ -78,14 +105,14 @@ const Index = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: categoriesData } = useGetQuery({
-    url: "/admin/food-categories",
+    url: "/admin/nutrition/food-categories",
     params: { pageSize: 100 },
     queryProps: { queryKey: ["admin", "food-categories", "options"] },
   });
   const categories = get(categoriesData, "data.data", []);
 
   const { data: cuisinesData } = useGetQuery({
-    url: "/admin/cuisines",
+    url: "/admin/nutrition/cuisines",
     params: { pageSize: 100 },
     queryProps: { queryKey: ["admin", "cuisines", "options"] },
   });
@@ -110,6 +137,10 @@ const Index = () => {
     onboardingOp,
     hasImageFilter,
     hasImageOp,
+    lifecycle,
+    nutritionMode,
+    recipeStatus,
+    qualityIssue,
     dietaryTag,
     dietaryTagOp,
     allergenTag,
@@ -128,6 +159,8 @@ const Index = () => {
     canReorder,
     filterFields,
     activeFilters,
+    savedFilterViews,
+    applySavedFilterView,
     handleFiltersChange,
     handleSortingChange,
   } = useFoodFilters({ categories, cuisines, currentLanguage, resolveLabel });
@@ -155,6 +188,10 @@ const Index = () => {
       ...(hasImageFilter !== "all" || hasImageOp !== "is"
         ? { hasImageOp }
         : {}),
+      ...(lifecycle !== "active" ? { lifecycle } : {}),
+      ...(nutritionMode !== "all" ? { nutritionMode } : {}),
+      ...(recipeStatus !== "all" ? { recipeStatus } : {}),
+      ...(qualityIssue !== "all" ? { qualityIssue } : {}),
       ...(dietaryTag !== "all" ? { dietaryTag } : {}),
       ...(dietaryTag !== "all" || dietaryTagOp !== "is"
         ? { dietaryTagOp }
@@ -189,9 +226,13 @@ const Index = () => {
       duplicatesFilter,
       hasImageFilter,
       hasImageOp,
+      lifecycle,
+      nutritionMode,
       onboardingFilter,
       onboardingOp,
       pageSize,
+      qualityIssue,
+      recipeStatus,
       searchOp,
       sortBy,
       sortDir,
@@ -203,10 +244,11 @@ const Index = () => {
   );
 
   const queryClient = useQueryClient();
-  const { request } = useApi();
   const FOODS_QUERY_KEY = ["admin", "foods"];
   const FOOD_CATEGORIES_QUERY_KEY = ["admin", "food-categories"];
   const FOOD_CATEGORY_FOODS_QUERY_KEY = ["admin", "food-category-foods"];
+  const FOOD_IMAGE_ORPHANS_QUERY_KEY = ["admin", "food-images", "orphans"];
+  const [imageCleanupOpen, setImageCleanupOpen] = React.useState(false);
 
   const {
     data: foodsData,
@@ -228,6 +270,22 @@ const Index = () => {
     pageSize: 10,
     totalPages: 1,
   });
+  const {
+    data: imageCleanupData,
+    isFetching: isLoadingImageCleanup,
+    refetch: refetchImageCleanup,
+  } = useGetQuery({
+    url: "/admin/food-images/orphans",
+    queryProps: {
+      queryKey: FOOD_IMAGE_ORPHANS_QUERY_KEY,
+      enabled: imageCleanupOpen,
+    },
+  });
+  const imageCleanupPreview = get(
+    imageCleanupData,
+    "data.data",
+    get(imageCleanupData, "data", null),
+  );
 
   const invalidateFoodRelated = React.useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -271,19 +329,49 @@ const Index = () => {
     queryKey: FOODS_QUERY_KEY,
     mutationProps: { onSuccess: invalidateFoodAndCategories },
   });
+  const bulkAssignCuisinesMutation = usePatchQuery({
+    queryKey: FOODS_QUERY_KEY,
+    mutationProps: { onSuccess: invalidateFoodRelated },
+  });
+  const bulkRecalculateRecipeMutation = usePatchQuery({
+    queryKey: FOODS_QUERY_KEY,
+    mutationProps: { onSuccess: invalidateFoodRelated },
+  });
   const hardDeleteMutation = usePatchQuery({
     queryKey: FOODS_QUERY_KEY,
     mutationProps: { onSuccess: invalidateFoodAndCategories },
   });
   const reorderMutation = usePatchQuery({ queryKey: FOODS_QUERY_KEY });
+  const {
+    mutateAsync: createExportJob,
+    isPending: isCreatingExportJob,
+  } = usePostQuery({});
+  const {
+    mutateAsync: previewFoodImportFile,
+    isPending: isPreviewingImport,
+  } = usePostFileQuery({});
+  const {
+    mutateAsync: createImportJob,
+    isPending: isCreatingImportJob,
+  } = usePostFileQuery({ queryKey: FOODS_QUERY_KEY });
+  const { mutateAsync: fetchDeletionImpact } = usePostQuery({});
+  const {
+    mutateAsync: cleanupFoodImages,
+    isPending: isCleaningFoodImages,
+  } = usePostQuery({ queryKey: FOOD_IMAGE_ORPHANS_QUERY_KEY });
   const isDeleting = deleteMutation.isPending;
   const isBulkUpdatingStatus = bulkStatusMutation.isPending;
   const isBulkTrashing = bulkTrashMutation.isPending;
   const isAssigningCategories = bulkAssignCategoriesMutation.isPending;
+  const isAssigningCuisines = bulkAssignCuisinesMutation.isPending;
+  const isRecalculatingRecipes = bulkRecalculateRecipeMutation.isPending;
   const isHardDeleting = hardDeleteMutation.isPending;
   const isRestoring =
     restoreMutation.isPending || bulkRestoreMutation.isPending;
   const [isImporting, setIsImporting] = React.useState(false);
+  const [pendingImportFile, setPendingImportFile] = React.useState(null);
+  const [importPreview, setImportPreview] = React.useState(null);
+  const [importPreviewOpen, setImportPreviewOpen] = React.useState(false);
 
   const deleteFood = React.useCallback(
     async (id) => deleteMutation.mutateAsync({ url: `/admin/foods/${id}` }),
@@ -345,6 +433,22 @@ const Index = () => {
       }),
     [bulkAssignCategoriesMutation],
   );
+  const assignFoodCuisines = React.useCallback(
+    async (payload) =>
+      bulkAssignCuisinesMutation.mutateAsync({
+        url: "/admin/foods/cuisines",
+        attributes: payload,
+      }),
+    [bulkAssignCuisinesMutation],
+  );
+  const recalculateFoodRecipes = React.useCallback(
+    async (payload) =>
+      bulkRecalculateRecipeMutation.mutateAsync({
+        url: "/admin/foods/recalculate-recipes",
+        attributes: payload,
+      }),
+    [bulkRecalculateRecipeMutation],
+  );
   const hardDeleteFoods = React.useCallback(
     async (payload) =>
       hardDeleteMutation.mutateAsync({
@@ -354,48 +458,41 @@ const Index = () => {
     [hardDeleteMutation],
   );
   const exportFoods = React.useCallback(async () => {
-    const response = await request.post("/admin/foods/export/jobs", null, {
-      params: queryParams,
+    const response = await createExportJob({
+      url: "/admin/nutrition/foods/export/jobs",
+      attributes: null,
+      config: {
+        params: queryParams,
+      },
     });
     return get(response, "data.data", get(response, "data"));
-  }, [queryParams, request]);
+  }, [createExportJob, queryParams]);
 
-  const importFoods = React.useCallback(
+  const previewImportFoods = React.useCallback(
     async (file) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const previewResponse = await request.post(
-        "/admin/foods/import/preview",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-      const preview = get(
-        previewResponse,
-        "data.data",
-        get(previewResponse, "data"),
-      );
+      const response = await previewFoodImportFile({
+        url: "/admin/nutrition/foods/import/preview",
+        attributes: buildFoodImportFormData(file),
+        config: { headers: { "Content-Type": "multipart/form-data" } },
+      });
 
-      if (get(preview, "invalidCount", 0) > 0) {
-        return {
-          preview,
-          job: null,
-        };
-      }
-
-      const jobResponse = await request.post(
-        "/admin/foods/import/jobs",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
-
-      return {
-        preview,
-        job: get(jobResponse, "data.data", get(jobResponse, "data")),
-      };
+      return get(response, "data.data", get(response, "data"));
     },
-    [request],
+    [previewFoodImportFile],
+  );
+
+  const startImportFoodsJob = React.useCallback(
+    async (file) => {
+      const response = await createImportJob({
+        url: "/admin/nutrition/foods/import/jobs",
+        attributes: buildFoodImportFormData(file),
+        config: { headers: { "Content-Type": "multipart/form-data" } },
+      });
+
+      await invalidateFoodAndCategories();
+      return get(response, "data.data", get(response, "data"));
+    },
+    [createImportJob, invalidateFoodAndCategories],
   );
 
   const activeLanguages = React.useMemo(
@@ -415,13 +512,23 @@ const Index = () => {
     () => lodashFilter(categories, (category) => category.isActive),
     [categories],
   );
+  const assignableCuisines = React.useMemo(
+    () => lodashFilter(cuisines, (cuisine) => cuisine.isActive),
+    [cuisines],
+  );
 
   const [bulkCategoryDrawerOpen, setBulkCategoryDrawerOpen] =
     React.useState(false);
+  const [bulkCuisineDrawerOpen, setBulkCuisineDrawerOpen] =
+    React.useState(false);
   const [rowSelection, setRowSelection] = React.useState({});
   const [bulkCategoryIds, setBulkCategoryIds] = React.useState([]);
+  const [bulkCuisineIds, setBulkCuisineIds] = React.useState([]);
   const [foodToDelete, setFoodToDelete] = React.useState(null);
   const [hardDeleteTarget, setHardDeleteTarget] = React.useState(null);
+  const [deleteImpact, setDeleteImpact] = React.useState(null);
+  const [isLoadingDeleteImpact, setIsLoadingDeleteImpact] =
+    React.useState(false);
   const importFileInputRef = React.useRef(null);
   const [isExporting, setIsExporting] = React.useState(false);
 
@@ -440,6 +547,56 @@ const Index = () => {
     }
   }, [currentPage, hasMeta, isFetching, meta, setPageQuery]);
 
+  const deletionImpactIds = React.useMemo(() => {
+    if (foodToDelete?.id) {
+      return [foodToDelete.id];
+    }
+
+    if (hardDeleteTarget?.ids?.length) {
+      return hardDeleteTarget.ids;
+    }
+
+    return [];
+  }, [foodToDelete, hardDeleteTarget]);
+  const deletionImpactKey = React.useMemo(
+    () => deletionImpactIds.join(","),
+    [deletionImpactIds],
+  );
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (!deletionImpactIds.length) {
+      setDeleteImpact(null);
+      setIsLoadingDeleteImpact(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoadingDeleteImpact(true);
+    fetchDeletionImpact({
+      url: "/admin/foods/deletion-impact",
+      attributes: { ids: deletionImpactIds },
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setDeleteImpact(get(response, "data.data", get(response, "data", null)));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDeleteImpact(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoadingDeleteImpact(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deletionImpactIds, deletionImpactKey, fetchDeletionImpact]);
+
   React.useEffect(() => {
     setRowSelection({});
   }, [
@@ -447,8 +604,12 @@ const Index = () => {
     currentPage,
     duplicatesFilter,
     hasImageFilter,
+    lifecycle,
+    nutritionMode,
     onboardingFilter,
     pageSize,
+    qualityIssue,
+    recipeStatus,
     search,
     sortBy,
     sortDir,
@@ -462,7 +623,15 @@ const Index = () => {
   );
   const selectedFoodIds = React.useMemo(
     () =>
-      lodashFilter(lodashMap(lodashFilter(toPairs(rowSelection), ([, selected]) => Boolean(selected)), ([id]) => toNumber(id)), (id) => Number.isInteger(id)),
+      lodashFilter(
+        lodashMap(
+          lodashFilter(toPairs(rowSelection), ([, selected]) =>
+            Boolean(selected),
+          ),
+          ([id]) => toNumber(id),
+        ),
+        (id) => Number.isInteger(id),
+      ),
     [rowSelection],
   );
   const selectedFoodCount = selectedFoodIds.length;
@@ -527,32 +696,37 @@ const Index = () => {
 
       try {
         setIsImporting(true);
-        const result = await importFoods(file);
-        const invalidCount = get(result, "preview.invalidCount", 0);
+        setPendingImportFile(file);
+        const preview = await previewImportFoods(file);
+        setImportPreview(preview);
+        setImportPreviewOpen(true);
+
+        const invalidCount = get(preview, "invalidCount", 0);
 
         if (invalidCount > 0) {
-          const firstError = get(result, "preview.errors.0.error");
-          const firstQualityTitle = get(
-            result,
-            "preview.quality.groups.0.title",
-          );
+          const firstError = get(preview, "errors.0.error");
+          const firstQualityTitle = get(preview, "quality.groups.0.title");
           toast.error(
             `${invalidCount} ta qatorda xato bor. ${
               firstQualityTitle ? `${firstQualityTitle}: ` : ""
-            }${firstError || "Import boshlanmadi."}`,
+            }${firstError || "Import job bloklandi."}`,
           );
           return;
         }
 
-        const warningCount = get(result, "preview.quality.warnCount", 0);
+        const warningCount = get(preview, "quality.warnCount", 0);
         if (warningCount > 0) {
           toast.warning(
-            `${warningCount} ta Content Quality ogohlantirishi bor. /admin/content-quality sahifasida ko'rinadi.`,
+            `${warningCount} ta Content Quality ogohlantirishi bor. Tasdiqlasangiz import job boshlanadi.`,
           );
+          return;
         }
 
-        toast.success("Ovqat import job sifatida boshlandi");
+        toast.success("Preview tayyor. Import jobni boshlash mumkin");
       } catch (error) {
+        setPendingImportFile(null);
+        setImportPreview(null);
+        setImportPreviewOpen(false);
         const message = error?.response?.data?.message;
         toast.error(
           isArray(message)
@@ -564,8 +738,35 @@ const Index = () => {
         event.target.value = "";
       }
     },
-    [canManageContent, importFoods],
+    [canManageContent, previewImportFoods],
   );
+
+  const handleConfirmImportFoods = React.useCallback(async () => {
+    if (!canManageContent || !pendingImportFile) return;
+
+    try {
+      await startImportFoodsJob(pendingImportFile);
+      toast.success("Ovqat import job sifatida boshlandi");
+      setImportPreviewOpen(false);
+      setPendingImportFile(null);
+      setImportPreview(null);
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Excel import jobni boshlab bo'lmadi",
+      );
+    }
+  }, [canManageContent, pendingImportFile, startImportFoodsJob]);
+
+  const handleImportPreviewOpenChange = React.useCallback((open) => {
+    setImportPreviewOpen(open);
+    if (!open) {
+      setPendingImportFile(null);
+      setImportPreview(null);
+    }
+  }, []);
 
   const handleToggleStatus = async (food) => {
     if (!canManageContent) return;
@@ -628,10 +829,9 @@ const Index = () => {
     if (!canManageContent || !selectedFoodIds.length) return;
 
     try {
-      await updateFoodsStatus({
-        ids: selectedFoodIds,
-        isActive: nextIsActive,
-      });
+      await updateFoodsStatus(
+        buildFoodBulkStatusPayload(selectedFoodIds, nextIsActive),
+      );
       toast.success(
         nextIsActive
           ? `${selectedFoodIds.length} ta ovqat faollashtirildi`
@@ -711,6 +911,59 @@ const Index = () => {
     }
   };
 
+  const handleBulkAssignCuisines = async () => {
+    if (!canManageContent) return;
+
+    if (!selectedFoodIds.length || !bulkCuisineIds.length) {
+      toast.error("Kamida bitta oshxona tanlang");
+      return;
+    }
+
+    try {
+      await assignFoodCuisines({
+        ids: selectedFoodIds,
+        cuisineIds: bulkCuisineIds,
+      });
+      toast.success(
+        `${selectedFoodIds.length} ta ovqatga oshxonalar biriktirildi`,
+      );
+      setBulkCuisineDrawerOpen(false);
+      setBulkCuisineIds([]);
+      setRowSelection({});
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Oshxonalarni biriktirib bo'lmadi",
+      );
+    }
+  };
+
+  const handleBulkRecalculateRecipes = async () => {
+    if (!canManageContent || !selectedFoodIds.length) return;
+
+    try {
+      const response = await recalculateFoodRecipes({ ids: selectedFoodIds });
+      const result = get(response, "data.data", get(response, "data", {}));
+      const updatedCount = get(result, "updatedCount", 0);
+      const skippedCount = get(result, "skippedCount", 0);
+      toast.success(
+        skippedCount
+          ? `${updatedCount} ta recipe qayta hisoblandi, ${skippedCount} ta o'tkazildi`
+          : `${updatedCount} ta recipe nutrition qayta hisoblandi`,
+      );
+      setRowSelection({});
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Recipe nutrition qayta hisoblab bo'lmadi",
+      );
+    }
+  };
+
   const handleHardDelete = async () => {
     if (!canHardDelete || !hardDeleteTarget?.ids?.length) return;
 
@@ -729,6 +982,37 @@ const Index = () => {
       );
     }
   };
+
+  const handleCleanupFoodImages = React.useCallback(async () => {
+    if (!canManageContent) return;
+
+    try {
+      const response = await cleanupFoodImages({
+        url: "/admin/food-images/cleanup",
+        attributes: {},
+      });
+      const result = get(response, "data.data", get(response, "data", {}));
+      const removed = get(result, "removed", 0);
+      const errors = get(result, "errors", 0);
+
+      if (errors > 0) {
+        toast.warning(
+          `${removed} ta orphan rasm tozalandi, ${errors} ta xato bor`,
+        );
+      } else {
+        toast.success(`${removed} ta orphan rasm tozalandi`);
+      }
+
+      await refetchImageCleanup();
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      toast.error(
+        isArray(message)
+          ? message.join(", ")
+          : message || "Orphan rasmlarni tozalab bo'lmadi",
+      );
+    }
+  }, [canManageContent, cleanupFoodImages, refetchImageCleanup]);
 
   const columns = useColumns({
     activeLanguages,
@@ -825,6 +1109,16 @@ const Index = () => {
     }
   };
 
+  const isTrashView = lifecycle === "trash";
+  const isBulkActionBusy =
+    isAssigningCategories ||
+    isAssigningCuisines ||
+    isRecalculatingRecipes ||
+    isBulkUpdatingStatus ||
+    isBulkTrashing ||
+    isRestoring ||
+    isHardDeleting;
+
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Page header */}
@@ -849,25 +1143,42 @@ const Index = () => {
               <Button
                 variant="outline"
                 onClick={() => importFileInputRef.current?.click()}
-                disabled={isImporting}
+                disabled={
+                  isImporting || isPreviewingImport || isCreatingImportJob
+                }
                 className="gap-1.5"
               >
                 <UploadIcon className="size-4" />
                 <span className="hidden sm:inline">
-                  {isImporting ? "Import..." : "Excel import"}
+                  {isImporting || isPreviewingImport
+                    ? "Preview..."
+                    : isCreatingImportJob
+                      ? "Import..."
+                      : "Excel import"}
                 </span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setImageCleanupOpen(true)}
+                disabled={isCleaningFoodImages}
+                className="gap-1.5"
+              >
+                <ImageOffIcon className="size-4" />
+                <span className="hidden sm:inline">Rasm cleanup</span>
               </Button>
             </>
           ) : null}
           <Button
             variant="outline"
             onClick={() => void handleExportFoods()}
-            disabled={isExporting}
+            disabled={isExporting || isCreatingExportJob}
             className="gap-1.5"
           >
             <DownloadIcon className="size-4" />
             <span className="hidden sm:inline">
-              {isExporting ? "Export..." : "Excel export"}
+              {isExporting || isCreatingExportJob
+                ? "Export..."
+                : "Excel export"}
             </span>
           </Button>
           <Button
@@ -889,7 +1200,23 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-3">
+        <ScrollArea className="w-full">
+          <div className="flex w-max items-center gap-2 pb-1">
+            {lodashMap(savedFilterViews, (view) => (
+              <Button
+                key={view.id}
+                type="button"
+                size="xs"
+                variant={view.active ? "secondary" : "outline"}
+                onClick={() => applySavedFilterView(view.id)}
+              >
+                {view.label}
+              </Button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
         <Filter
           filterFields={filterFields}
           activeFilters={activeFilters}
@@ -939,51 +1266,109 @@ const Index = () => {
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3">
           <div className="pointer-events-auto flex w-full max-w-6xl flex-wrap items-center gap-2 rounded-2xl border bg-background/95 px-3 py-2.5 shadow-2xl backdrop-blur">
             <Badge variant="secondary">{selectedFoodCount} ta</Badge>
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                disabled={isAssigningCategories}
-                onClick={() => setBulkCategoryDrawerOpen(true)}
-              >
-                <TagIcon className="size-4" />
-                <span className="hidden sm:inline">Kategoriya biriktirish</span>
-              </Button>
-              <Button
-                size="sm"
-                className="gap-1.5"
-                disabled={isBulkUpdatingStatus}
-                onClick={() => void handleBulkStatus(true)}
-              >
-                <span className="hidden sm:inline">Faollashtirish</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                disabled={isBulkUpdatingStatus}
-                onClick={() => void handleBulkStatus(false)}
-              >
-                <span className="hidden sm:inline">Nofaol qilish</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1.5"
-                disabled={isBulkTrashing}
-                onClick={() => void handleBulkTrash()}
-              >
-                <Trash2Icon className="size-4" />
-                <span className="hidden sm:inline">Trashga yuborish</span>
-              </Button>
-            </>
+            {isTrashView ? (
+              <>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={isRestoring}
+                  onClick={() => void handleBulkRestore()}
+                >
+                  <Undo2Icon className="size-4" />
+                  <span className="hidden sm:inline">Tiklash</span>
+                </Button>
+                {canHardDelete ? (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="gap-1.5"
+                    disabled={isHardDeleting}
+                    onClick={() =>
+                      setHardDeleteTarget({
+                        ids: selectedFoodIds,
+                        label: `${selectedFoodIds.length} ta ovqat`,
+                      })
+                    }
+                  >
+                    <Trash2Icon className="size-4" />
+                    <span className="hidden sm:inline">Butunlay o'chirish</span>
+                  </Button>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={isAssigningCategories}
+                  onClick={() => setBulkCategoryDrawerOpen(true)}
+                >
+                  <TagIcon className="size-4" />
+                  <span className="hidden sm:inline">
+                    Kategoriya biriktirish
+                  </span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={isAssigningCuisines}
+                  onClick={() => setBulkCuisineDrawerOpen(true)}
+                >
+                  <Globe2Icon className="size-4" />
+                  <span className="hidden sm:inline">Oshxona biriktirish</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={isRecalculatingRecipes}
+                  onClick={() => void handleBulkRecalculateRecipes()}
+                >
+                  <RefreshCwIcon
+                    className={cn(
+                      "size-4",
+                      isRecalculatingRecipes && "animate-spin",
+                    )}
+                  />
+                  <span className="hidden sm:inline">
+                    Recipe qayta hisoblash
+                  </span>
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={isBulkUpdatingStatus}
+                  onClick={() => void handleBulkStatus(true)}
+                >
+                  <span className="hidden sm:inline">Faollashtirish</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={isBulkUpdatingStatus}
+                  onClick={() => void handleBulkStatus(false)}
+                >
+                  <span className="hidden sm:inline">Nofaol qilish</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={isBulkTrashing}
+                  onClick={() => void handleBulkTrash()}
+                >
+                  <Trash2Icon className="size-4" />
+                  <span className="hidden sm:inline">Trashga yuborish</span>
+                </Button>
+              </>
+            )}
             <Button
               size="sm"
               variant="ghost"
-              disabled={
-                isAssigningCategories || isBulkUpdatingStatus || isBulkTrashing
-              }
+              disabled={isBulkActionBusy}
               onClick={() => setRowSelection({})}
             >
               <span className="hidden sm:inline">Bekor qilish</span>
@@ -993,6 +1378,24 @@ const Index = () => {
       ) : null}
 
       <Outlet />
+
+      <FoodImportPreviewDialog
+        open={importPreviewOpen}
+        onOpenChange={handleImportPreviewOpenChange}
+        preview={importPreview}
+        isStarting={isCreatingImportJob}
+        onStartImport={() => void handleConfirmImportFoods()}
+      />
+
+      <FoodImageCleanupDialog
+        open={imageCleanupOpen}
+        onOpenChange={setImageCleanupOpen}
+        preview={imageCleanupPreview}
+        isLoading={isLoadingImageCleanup}
+        isCleaning={isCleaningFoodImages}
+        onCleanup={() => void handleCleanupFoodImages()}
+        onRefresh={() => void refetchImageCleanup()}
+      />
 
       <FoodBulkCategoryDrawer
         open={bulkCategoryDrawerOpen}
@@ -1009,12 +1412,33 @@ const Index = () => {
         onAssign={() => void handleBulkAssignCategories()}
       />
 
+      <FoodBulkCategoryDrawer
+        open={bulkCuisineDrawerOpen}
+        onOpenChange={(open) => {
+          setBulkCuisineDrawerOpen(open);
+          if (!open) setBulkCuisineIds([]);
+        }}
+        selectedFoodCount={selectedFoodCount}
+        assignableItems={assignableCuisines}
+        selectedIds={bulkCuisineIds}
+        setSelectedIds={setBulkCuisineIds}
+        currentLanguage={currentLanguage}
+        isSaving={isAssigningCuisines}
+        onAssign={() => void handleBulkAssignCuisines()}
+        title="Bulk oshxona biriktirish"
+        description={`Tanlangan ${selectedFoodCount} ta ovqatga qo'shimcha oshxonalar biriktiriladi.`}
+        emptyLabel="Faol oshxonalar topilmadi."
+        saveLabel="Oshxonalarni biriktirish"
+      />
+
       <DeleteAlert
         food={foodToDelete}
         open={Boolean(foodToDelete)}
         onOpenChange={(open) => !open && setFoodToDelete(null)}
         onConfirm={handleDelete}
         isDeleting={isDeleting}
+        impact={deleteImpact}
+        isLoadingImpact={isLoadingDeleteImpact}
       />
 
       <HardDeleteAlert
@@ -1023,10 +1447,11 @@ const Index = () => {
         onOpenChange={(open) => !open && setHardDeleteTarget(null)}
         onConfirm={handleHardDelete}
         isDeleting={isHardDeleting}
+        impact={deleteImpact}
+        isLoadingImpact={isLoadingDeleteImpact}
       />
     </div>
   );
 };
 
 export default Index;
-

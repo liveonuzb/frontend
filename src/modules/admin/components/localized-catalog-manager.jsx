@@ -30,24 +30,11 @@ import {
 } from "@/components/reui/data-grid";
 import { Filters } from "@/components/reui/filters.jsx";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import {
-  LoaderCircleIcon,
-  PlusIcon,
-  RotateCcwIcon,
-} from "lucide-react";
+import { PlusIcon, RotateCcwIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
 import {
@@ -55,13 +42,17 @@ import {
   useAdminDrawerListNavigation,
 } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import TaxonomyDeleteImpactAlert from "@/modules/admin/components/taxonomy-delete-impact-alert.jsx";
 import { useLocalizedCatalogFilters } from "./use-localized-catalog-filters.js";
 import { LocalizedCatalogDrawers } from "./localized-catalog-drawers.jsx";
+import { buildLocalizedCatalogPayload } from "./localized-catalog-manager-utils.js";
 
 const emptyForm = {
   name: "",
   isActive: true,
   isOnboarding: true,
+  dietaryTags: [],
+  allergenTags: [],
 };
 
 const SWITCH_CELL_CLASS_NAME =
@@ -130,6 +121,8 @@ const createFormFromItem = (item, language) => ({
   ),
   isActive: get(item, "isActive", true),
   isOnboarding: get(item, "isOnboarding", true),
+  dietaryTags: get(item, "dietaryTags", []),
+  allergenTags: get(item, "allergenTags", []),
 });
 
 const LocalizedCatalogManager = ({
@@ -146,7 +139,9 @@ const LocalizedCatalogManager = ({
   createItem,
   updateItem,
   deleteItem,
+  getDeletionImpactUrl,
   reorderItems,
+  showNutritionTagMapping = false,
   isLoading,
   isFetching,
   isCreating,
@@ -428,14 +423,11 @@ const LocalizedCatalogManager = ({
       return;
     }
 
-    const payload = {
-      name: trimmedName,
-      isActive: form.isActive,
-      isOnboarding: form.isOnboarding,
-      translations: {
-        [currentLanguage]: trimmedName,
-      },
-    };
+    const payload = buildLocalizedCatalogPayload({
+      form,
+      currentLanguage,
+      includeTagMapping: showNutritionTagMapping,
+    });
 
     try {
       if (editingItem) {
@@ -464,6 +456,7 @@ const LocalizedCatalogManager = ({
     form,
     closeAdminDrawer,
     singularLabel,
+    showNutritionTagMapping,
     updateItem,
   ]);
 
@@ -601,6 +594,20 @@ const LocalizedCatalogManager = ({
             <span className="text-xs text-muted-foreground">
               {get(info, "row.original.name")}
             </span>
+            {showNutritionTagMapping ? (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {map(get(info, "row.original.dietaryTags", []), (tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+                {map(get(info, "row.original.allergenTags", []), (tag) => (
+                  <Badge key={tag} variant="destructive">
+                    avoid {tag}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
           </div>
         ),
       },
@@ -702,6 +709,7 @@ const LocalizedCatalogManager = ({
       isReorderEnabled,
       openEditDrawer,
       openTranslationsDrawer,
+      showNutritionTagMapping,
       title,
     ],
   );
@@ -885,45 +893,28 @@ const LocalizedCatalogManager = ({
         onSubmitTranslations={submitTranslations}
         setForm={setForm}
         setTranslationForm={setTranslationForm}
+        showNutritionTagMapping={showNutritionTagMapping}
         singularLabel={singularLabel}
         translationForm={translationForm}
         translationsDrawerOpen={translationsDrawerOpen}
       />
 
-      <AlertDialog
+      <TaxonomyDeleteImpactAlert
+        item={itemToDelete}
         open={Boolean(itemToDelete)}
         onOpenChange={(open) => !open && setItemToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {singularLabel}ni o'chirmoqchimisiz?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {itemToDelete
-                ? `"${get(itemToDelete, "name")}" o'chiriladi va workoutlarda eski qiymat sifatida qolishi mumkin.`
-                : "Tanlangan element o'chiriladi."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void confirmDelete()}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <LoaderCircleIcon className="animate-spin" />
-              ) : null}
-              O'chirish
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onConfirm={() => void confirmDelete()}
+        impactUrl={itemToDelete ? getDeletionImpactUrl?.(itemToDelete) : null}
+        title={`${singularLabel}ni o'chirmoqchimisiz?`}
+        description={
+          itemToDelete
+            ? `"${get(itemToDelete, "name")}" o'chiriladi.`
+            : "Tanlangan element o'chiriladi."
+        }
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
 
 export default LocalizedCatalogManager;
-
-
-

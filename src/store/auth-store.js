@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import includes from "lodash/includes";
 import find from "lodash/find";
 import isArray from "lodash/isArray";
+import dayjs from "@/lib/dayjs";
 import { normalizeRoles } from "@/lib/roles";
 
 const defaultRoles = [];
@@ -71,20 +72,27 @@ const getAuthStorage = () => {
   return window.sessionStorage;
 };
 
-const getFallbackExpiresAt = (expiresAt, ttlMs) =>
-  expiresAt ?? new Date(Date.now() + ttlMs).toISOString();
+const getFallbackExpiresAt = (expiresAt, ttlMs) => {
+  const parsed = expiresAt ? dayjs.utc(expiresAt) : null;
+
+  if (parsed?.isValid()) {
+    return parsed.toISOString();
+  }
+
+  return dayjs.utc().add(ttlMs, "millisecond").toISOString();
+};
 
 const isFutureTimestamp = (value) => {
   if (!value) {
     return false;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  const date = dayjs.utc(value);
+  if (!date.isValid()) {
     return false;
   }
 
-  return date.getTime() > Date.now();
+  return date.isAfter(dayjs.utc());
 };
 
 const keepFreshFlowState = (payload) =>

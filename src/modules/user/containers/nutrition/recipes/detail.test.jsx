@@ -6,11 +6,17 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import NutritionRecipeDetailPage from "./detail.jsx";
+import { MOCK_RECIPES } from "./recipe-mock-data.js";
 
 const mockToggleFavorite = vi.fn();
 const mockAddToMealLog = vi.fn();
 const mockAddToMealPlan = vi.fn();
+const mockCreateShoppingList = vi.fn();
 const mockToastSuccess = vi.fn();
+const detailHookState = vi.hoisted(() => ({
+  recipe: null,
+  isLoading: false,
+}));
 
 vi.mock("sonner", () => ({
   toast: {
@@ -21,14 +27,15 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/hooks/app/use-nutrition-recipes.js", () => ({
   useNutritionRecipeDetail: () => ({
-    recipe: null,
-    isLoading: false,
+    recipe: detailHookState.recipe,
+    isLoading: detailHookState.isLoading,
     isError: false,
   }),
   useNutritionRecipeActions: () => ({
     toggleFavorite: mockToggleFavorite,
     addToMealLog: mockAddToMealLog,
     addToMealPlan: mockAddToMealPlan,
+    createShoppingList: mockCreateShoppingList,
     isUpdating: false,
   }),
 }));
@@ -68,23 +75,49 @@ const renderDetailPage = () =>
 describe("NutritionRecipeDetailPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    detailHookState.recipe = {
+      ...MOCK_RECIPES[0],
+      cuisines: [{ id: 5, name: "Uzbek", translations: { uz: "O'zbek" } }],
+      dietaryTags: ["balanced"],
+      allergenTags: ["gluten"],
+    };
+    detailHookState.isLoading = false;
     mockToggleFavorite.mockResolvedValue({});
     mockAddToMealLog.mockResolvedValue({});
     mockAddToMealPlan.mockResolvedValue({});
+    mockCreateShoppingList.mockResolvedValue({
+      items: [{ id: "item-1" }, { id: "item-2" }],
+    });
   });
 
-  it("renders the recipe detail fallback and scales ingredients by servings", () => {
+  it("renders the API recipe detail and scales ingredients by servings", () => {
     renderDetailPage();
 
     expect(
       screen.getByRole("heading", { name: "Tovuqli quinoa salatasi" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("420").length).toBeGreaterThan(0);
+    expect(screen.getByText("15 daq")).toBeInTheDocument();
+    expect(screen.queryByText("15 min")).not.toBeInTheDocument();
+    expect(screen.getByText("Tushlik")).toBeInTheDocument();
+    expect(screen.getByText("O'zbek")).toBeInTheDocument();
+    expect(screen.getAllByText("Glutensiz").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Porsiyani oshirish" }));
 
     expect(screen.getAllByText("840").length).toBeGreaterThan(0);
     expect(screen.getByText("240 g")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when the API has no recipe", () => {
+    detailHookState.recipe = null;
+
+    renderDetailPage();
+
+    expect(screen.getByText("Retsept topilmadi")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Tovuqli quinoa salatasi" }),
+    ).not.toBeInTheDocument();
   });
 
   it("toggles favorite and submits through the add drawer", async () => {
@@ -99,6 +132,18 @@ describe("NutritionRecipeDetailPage", () => {
     expect(
       screen.getByRole("button", { name: "Pishirishni boshlash" }),
     ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xarid ro'yxati" }));
+
+    await waitFor(() => {
+      expect(mockCreateShoppingList).toHaveBeenCalledWith(
+        expect.objectContaining({ catalogFoodId: 101 }),
+        { servings: 1 },
+      );
+    });
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      "Xarid ro'yxati yaratildi: 2 mahsulot",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Qo'shish" }));
 

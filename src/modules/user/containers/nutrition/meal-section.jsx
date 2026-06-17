@@ -22,18 +22,10 @@ import EmptyState from "@/components/empty-state/index.jsx";
 import map from "lodash/map";
 import sumBy from "lodash/sumBy";
 import isEmpty from "lodash/isEmpty";
-import filter from "lodash/filter";
-import forEach from "lodash/forEach";
 import MealCard from "./meal-card.jsx";
+import { mergePlannedAndLoggedMealItems } from "./nutrition-meal-section-state.js";
 import { getMealConfig } from "@/modules/user/lib/meal-config";
-
-const getMealIdentity = (item = {}) =>
-  item.barcode ||
-  filter(
-    [item.name, item.grams ?? item.defaultAmount ?? "", item.unit ?? ""],
-    Boolean,
-  )
-    .join(":");
+import { userCardClassName } from "@/modules/user/lib/card-styles";
 
 const getStoredOpenState = (type) => {
   if (typeof window === "undefined") return true;
@@ -108,49 +100,10 @@ const MealSection = ({
     );
   }, [isOpen, type]);
 
-  const allSectionItems = React.useMemo(() => {
-    const loggedQueues = new Map();
-
-    forEach(items, (item) => {
-      const identity = getMealIdentity(item);
-      const queue = loggedQueues.get(identity) || [];
-      queue.push(item);
-      loggedQueues.set(identity, queue);
-    });
-
-    const mergedItems = map(plannedItems, (plannedItem) => {
-      const identity = getMealIdentity(plannedItem);
-      const queue = loggedQueues.get(identity);
-
-      if (queue?.length) {
-        const consumedItem = queue.shift();
-        return {
-          ...consumedItem,
-          isConsumed: true,
-          isFromPlanLinked: true,
-        };
-      }
-
-      return {
-        ...plannedItem,
-        isPlanned: true,
-        isConsumed: false,
-        isFromPlanLinked: true,
-      };
-    });
-
-    forEach(loggedQueues, (queue) => {
-      forEach(queue, (item) => {
-        mergedItems.push({
-          ...item,
-          isConsumed: true,
-          isFromPlanLinked: false,
-        });
-      });
-    });
-
-    return mergedItems;
-  }, [items, plannedItems]);
+  const allSectionItems = React.useMemo(
+    () => mergePlannedAndLoggedMealItems({ items, plannedItems }),
+    [items, plannedItems],
+  );
 
   const currentKcal = Math.round(sumBy(items, (f) => (f.cal ?? 0) * (f.qty ?? 1)));
   const statusMeta = isActive
@@ -209,9 +162,9 @@ const MealSection = ({
   return (
     <Card
       className={cn(
-        "overflow-hidden rounded-2xl border bg-card py-5 shadow-sm transition-all duration-300",
-        isActive &&
-          "border-primary/40 ring-2 ring-primary/20 shadow-md shadow-primary/5",
+        userCardClassName,
+        "overflow-hidden py-5 transition-colors duration-300",
+        isActive && "border border-primary/35 bg-primary/5",
       )}
     >
       <CardHeader

@@ -1,6 +1,7 @@
 import React from "react";
 import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import lodashMap from "lodash/map";
+import every from "lodash/every";
 import find from "lodash/find";
 import toNumber from "lodash/toNumber";
 import trim from "lodash/trim";
@@ -19,8 +20,21 @@ const FOOD_SORT_FIELDS = [
   "isActive",
   "isOnboarding",
   "nutritionMode",
+  "recipeStatus",
 ];
 const FOOD_SORT_DIRECTIONS = ["asc", "desc"];
+const LIFECYCLE_VALUES = ["active", "trash", "all"];
+const NUTRITION_MODE_VALUES = ["all", "manual", "recipe"];
+const RECIPE_STATUS_VALUES = ["all", "draft", "published", "archived"];
+const QUALITY_ISSUE_VALUES = [
+  "all",
+  "missing_image",
+  "missing_translation",
+  "macro_warning",
+  "missing_category",
+  "missing_cuisine",
+  "recipe_missing_ingredients",
+];
 const TEXT_OPERATORS = [
   "contains",
   "not_contains",
@@ -47,6 +61,49 @@ const selectOperatorOptions = [
   { value: "is_not", label: "is not" },
   { value: "empty", label: "is empty" },
   { value: "not_empty", label: "is not empty" },
+];
+
+const FOOD_SAVED_FILTER_VIEWS = [
+  {
+    id: "active",
+    label: "Faol",
+    filters: { lifecycle: "active", status: "active" },
+  },
+  {
+    id: "inactive",
+    label: "Nofaol",
+    filters: { lifecycle: "active", status: "inactive" },
+  },
+  {
+    id: "trashed",
+    label: "Trash",
+    filters: { lifecycle: "trash" },
+  },
+  {
+    id: "missing-image",
+    label: "Rasmsiz",
+    filters: { lifecycle: "active", hasImage: "no" },
+  },
+  {
+    id: "missing-translation",
+    label: "Tarjima kam",
+    filters: { lifecycle: "active", translations: "missing" },
+  },
+  {
+    id: "macro-warning",
+    label: "Makro warning",
+    filters: { lifecycle: "active", qualityIssue: "macro_warning" },
+  },
+  {
+    id: "duplicates",
+    label: "Dublikat",
+    filters: { lifecycle: "active", duplicates: "only" },
+  },
+  {
+    id: "recipe-mode",
+    label: "Recipe",
+    filters: { lifecycle: "active", nutritionMode: "recipe" },
+  },
 ];
 
 export const useFoodFilters = ({
@@ -99,6 +156,22 @@ export const useFoodFilters = ({
   const [hasImageOp, setHasImageOp] = useQueryState(
     "hasImageOp",
     parseAsStringEnum(SELECT_OPERATORS).withDefault("is"),
+  );
+  const [lifecycle, setLifecycle] = useQueryState(
+    "lifecycle",
+    parseAsStringEnum(LIFECYCLE_VALUES).withDefault("active"),
+  );
+  const [nutritionMode, setNutritionMode] = useQueryState(
+    "nutritionMode",
+    parseAsStringEnum(NUTRITION_MODE_VALUES).withDefault("all"),
+  );
+  const [recipeStatus, setRecipeStatus] = useQueryState(
+    "recipeStatus",
+    parseAsStringEnum(RECIPE_STATUS_VALUES).withDefault("all"),
+  );
+  const [qualityIssue, setQualityIssue] = useQueryState(
+    "qualityIssue",
+    parseAsStringEnum(QUALITY_ISSUE_VALUES).withDefault("all"),
   );
   const [translationsFilter, setTranslationsFilter] = useQueryState(
     "translations",
@@ -175,6 +248,10 @@ export const useFoodFilters = ({
     onboardingOp === "is" &&
     hasImageFilter === "all" &&
     hasImageOp === "is" &&
+    lifecycle === "active" &&
+    nutritionMode === "all" &&
+    recipeStatus === "all" &&
+    qualityIssue === "all" &&
     dietaryTag === "all" &&
     dietaryTagOp === "is" &&
     allergenTag === "all" &&
@@ -266,6 +343,62 @@ export const useFoodFilters = ({
           { value: "all", label: "Barchasi" },
           { value: "yes", label: "Rasmli" },
           { value: "no", label: "Rasmsiz" },
+        ],
+      },
+      {
+        label: "Lifecycle",
+        key: "lifecycle",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "active", label: "Active catalog" },
+          { value: "trash", label: "Trash" },
+          { value: "all", label: "Active + trash" },
+        ],
+      },
+      {
+        label: "Nutrition mode",
+        key: "nutritionMode",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "manual", label: "Manual" },
+          { value: "recipe", label: "Recipe" },
+        ],
+      },
+      {
+        label: "Recipe status",
+        key: "recipeStatus",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "draft", label: "Draft" },
+          { value: "published", label: "Published" },
+          { value: "archived", label: "Archived" },
+        ],
+      },
+      {
+        label: "Quality issue",
+        key: "qualityIssue",
+        type: "select",
+        defaultOperator: "is",
+        operators: selectOperatorOptions,
+        options: [
+          { value: "all", label: "Barchasi" },
+          { value: "missing_image", label: "Rasmsiz" },
+          { value: "missing_translation", label: "Tarjima kam" },
+          { value: "macro_warning", label: "Makro warning" },
+          { value: "missing_category", label: "Kategoriya yo'q" },
+          { value: "missing_cuisine", label: "Oshxona yo'q" },
+          {
+            value: "recipe_missing_ingredients",
+            label: "Recipe tarkibi yo'q",
+          },
         ],
       },
       {
@@ -368,6 +501,42 @@ export const useFoodFilters = ({
       });
     }
 
+    if (lifecycle !== "active") {
+      items.push({
+        id: "lifecycle",
+        field: "lifecycle",
+        operator: "is",
+        values: [lifecycle],
+      });
+    }
+
+    if (nutritionMode !== "all") {
+      items.push({
+        id: "nutritionMode",
+        field: "nutritionMode",
+        operator: "is",
+        values: [nutritionMode],
+      });
+    }
+
+    if (recipeStatus !== "all") {
+      items.push({
+        id: "recipeStatus",
+        field: "recipeStatus",
+        operator: "is",
+        values: [recipeStatus],
+      });
+    }
+
+    if (qualityIssue !== "all") {
+      items.push({
+        id: "qualityIssue",
+        field: "qualityIssue",
+        operator: "is",
+        values: [qualityIssue],
+      });
+    }
+
     if (translationsFilter !== "all" || translationsOp !== "is") {
       items.push({
         id: "translations",
@@ -417,8 +586,12 @@ export const useFoodFilters = ({
     duplicatesFilter,
     hasImageFilter,
     hasImageOp,
+    lifecycle,
+    nutritionMode,
     onboardingFilter,
     onboardingOp,
+    qualityIssue,
+    recipeStatus,
     search,
     searchOp,
     translationsFilter,
@@ -437,6 +610,11 @@ export const useFoodFilters = ({
       const nextStatus = byField("status")?.values?.[0] ?? "all";
       const nextOnboarding = byField("onboarding")?.values?.[0] ?? "all";
       const nextHasImage = byField("hasImage")?.values?.[0] ?? "all";
+      const nextLifecycle = byField("lifecycle")?.values?.[0] ?? "active";
+      const nextNutritionMode =
+        byField("nutritionMode")?.values?.[0] ?? "all";
+      const nextRecipeStatus = byField("recipeStatus")?.values?.[0] ?? "all";
+      const nextQualityIssue = byField("qualityIssue")?.values?.[0] ?? "all";
       const nextTranslations = byField("translations")?.values?.[0] ?? "all";
       const nextDietaryTag = byField("dietaryTag")?.values?.[0] ?? "all";
       const nextAllergenTag = byField("allergenTag")?.values?.[0] ?? "all";
@@ -455,6 +633,10 @@ export const useFoodFilters = ({
         void setOnboardingOp(byField("onboarding")?.operator ?? "is");
         void setHasImageFilter(nextHasImage);
         void setHasImageOp(byField("hasImage")?.operator ?? "is");
+        void setLifecycle(nextLifecycle);
+        void setNutritionMode(nextNutritionMode);
+        void setRecipeStatus(nextRecipeStatus);
+        void setQualityIssue(nextQualityIssue);
         void setTranslationsFilter(nextTranslations);
         void setTranslationsOp(byField("translations")?.operator ?? "is");
         void setDietaryTag(nextDietaryTag);
@@ -477,15 +659,116 @@ export const useFoodFilters = ({
       setDuplicatesFilter,
       setHasImageFilter,
       setHasImageOp,
+      setLifecycle,
+      setNutritionMode,
       setOnboardingFilter,
       setOnboardingOp,
       setPageQuery,
+      setQualityIssue,
+      setRecipeStatus,
       setSearch,
       setSearchOp,
       setTranslationsFilter,
       setTranslationsOp,
       setStatusFilter,
       setStatusOp,
+    ],
+  );
+
+  const currentFilterValues = React.useMemo(
+    () => ({
+      lifecycle,
+      status: statusFilter,
+      hasImage: hasImageFilter,
+      translations: translationsFilter,
+      duplicates: duplicatesFilter,
+      nutritionMode,
+      qualityIssue,
+    }),
+    [
+      duplicatesFilter,
+      hasImageFilter,
+      lifecycle,
+      nutritionMode,
+      qualityIssue,
+      statusFilter,
+      translationsFilter,
+    ],
+  );
+
+  const savedFilterViews = React.useMemo(
+    () =>
+      lodashMap(FOOD_SAVED_FILTER_VIEWS, (view) => ({
+        ...view,
+        active: every(
+          Object.entries(view.filters),
+          ([key, value]) => currentFilterValues[key] === value,
+        ),
+      })),
+    [currentFilterValues],
+  );
+
+  const applySavedFilterView = React.useCallback(
+    (viewId) => {
+      const view = find(FOOD_SAVED_FILTER_VIEWS, (item) => item.id === viewId);
+      if (!view) return;
+
+      React.startTransition(() => {
+        void setSearch("");
+        void setSearchOp("contains");
+        void setCategoryFilter("all");
+        void setCategoryOp("is");
+        void setCuisineFilter("all");
+        void setCuisineOp("is");
+        void setStatusFilter(view.filters.status ?? "all");
+        void setStatusOp("is");
+        void setOnboardingFilter("all");
+        void setOnboardingOp("is");
+        void setHasImageFilter(view.filters.hasImage ?? "all");
+        void setHasImageOp("is");
+        void setLifecycle(view.filters.lifecycle ?? "active");
+        void setNutritionMode(view.filters.nutritionMode ?? "all");
+        void setRecipeStatus(view.filters.recipeStatus ?? "all");
+        void setQualityIssue(view.filters.qualityIssue ?? "all");
+        void setTranslationsFilter(view.filters.translations ?? "all");
+        void setTranslationsOp("is");
+        void setDietaryTag("all");
+        void setDietaryTagOp("is");
+        void setAllergenTag("all");
+        void setAllergenTagOp("is");
+        void setDuplicatesFilter(view.filters.duplicates ?? "all");
+        void setSortBy("orderKey");
+        void setSortDir("asc");
+        void setPageQuery("1");
+      });
+    },
+    [
+      setAllergenTag,
+      setAllergenTagOp,
+      setCategoryFilter,
+      setCategoryOp,
+      setCuisineFilter,
+      setCuisineOp,
+      setDietaryTag,
+      setDietaryTagOp,
+      setDuplicatesFilter,
+      setHasImageFilter,
+      setHasImageOp,
+      setLifecycle,
+      setNutritionMode,
+      setOnboardingFilter,
+      setOnboardingOp,
+      setPageQuery,
+      setQualityIssue,
+      setRecipeStatus,
+      setSearch,
+      setSearchOp,
+      setSortBy,
+      setSortDir,
+      setStatusFilter,
+      setStatusOp,
+      setTranslationsFilter,
+      setTranslationsOp,
     ],
   );
 
@@ -524,6 +807,10 @@ export const useFoodFilters = ({
     onboardingOp,
     hasImageFilter,
     hasImageOp,
+    lifecycle,
+    nutritionMode,
+    recipeStatus,
+    qualityIssue,
     dietaryTag,
     dietaryTagOp,
     allergenTag,
@@ -542,6 +829,8 @@ export const useFoodFilters = ({
     canReorder,
     filterFields,
     activeFilters,
+    savedFilterViews,
+    applySavedFilterView,
     handleFiltersChange,
     handleSortingChange,
   };

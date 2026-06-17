@@ -7,6 +7,7 @@ import round from "lodash/round";
 import min from "lodash/min";
 import get from "lodash/get";
 import toNumber from "lodash/toNumber";
+import { getUserSurfaceClassName } from "@/modules/user/lib/card-styles";
 
 export const GoalProgressCard = ({
   startW,
@@ -57,7 +58,11 @@ export const GoalProgressCard = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-muted-foreground/5 mt-auto">
+          <div
+            className={getUserSurfaceClassName(
+              "mt-auto flex items-center justify-between border border-border/40 bg-muted/40 p-3",
+            )}
+          >
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-muted-foreground uppercase">
                 Hozirgi vazn

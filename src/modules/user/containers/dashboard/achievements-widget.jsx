@@ -32,7 +32,7 @@ const AchievementsWidget = () => {
 
   return (
     <Link to="/user/achievements" className="block h-full focus:outline-none">
-      <Card className="group/card relative h-full overflow-hidden border border-border/60 py-4 ring-0 transition-colors hover:border-primary/30 focus-within:ring-2 focus-within:ring-primary/30">
+      <Card className="group/card relative h-full overflow-hidden border border-border/60 py-4 ring-0 focus-within:ring-2 focus-within:ring-primary/30">
         <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px]" />
         <CardHeader className="relative z-10 px-4 pb-2">
           <div className="flex items-center justify-between gap-3">

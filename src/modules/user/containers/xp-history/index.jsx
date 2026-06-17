@@ -1,7 +1,13 @@
 import React from "react";
-import map from "lodash/map";
-import toNumber from "lodash/toNumber";
-import trim from "lodash/trim";
+import {
+  get,
+  map,
+  replace,
+  size,
+  toNumber,
+  trim,
+  unionBy,
+} from "lodash";
 import { useNavigate } from "react-router";
 import {
   ArrowLeftIcon,
@@ -21,8 +27,13 @@ import { GAMIFICATION_XP_HISTORY_QUERY_KEY } from "@/modules/user/lib/gamificati
 import { getApiResponseData } from "@/lib/api-response";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
+import {
+  getUserSurfaceClassName,
+  userAccentCardClassName,
+} from "@/modules/user/lib/card-styles";
 
 const XP_HISTORY_LIMIT = 20;
+const EMPTY_XP_HISTORY_ITEMS = [];
 
 const XP_TYPE_LABELS = {
   ACHIEVEMENT: "Yutuq",
@@ -64,7 +75,7 @@ const formatDateTime = (value) => {
 
 const getTypeLabel = (type) => {
   const normalized = trim(String(type ?? ""));
-  return XP_TYPE_LABELS[normalized] ?? normalized.replaceAll("_", " ");
+  return XP_TYPE_LABELS[normalized] ?? replace(normalized, /_/g, " ");
 };
 
 const XpHistoryRow = ({ item }) => {
@@ -73,7 +84,11 @@ const XpHistoryRow = ({ item }) => {
   const Icon = isPositive ? TrendingUpIcon : TrendingDownIcon;
 
   return (
-    <div className="flex items-center gap-3 rounded-3xl border border-border/70 bg-card px-4 py-3">
+    <div
+      className={getUserSurfaceClassName(
+        "flex items-center gap-3 border border-border/50 bg-card px-4 py-3",
+      )}
+    >
       <span
         className={cn(
           "flex size-11 shrink-0 items-center justify-center rounded-full",
@@ -113,26 +128,158 @@ const XpHistoryRow = ({ item }) => {
   );
 };
 
-const XpHistoryPage = () => {
-  const navigate = useNavigate();
-  const { setBreadcrumbs } = useBreadcrumbStore();
-  const [page, setPage] = React.useState(0);
-  const offset = page * XP_HISTORY_LIMIT;
-
+const usePagedXpHistory = () => {
+  const [offset, setOffset] = React.useState(0);
+  const [items, setItems] = React.useState([]);
+  const [total, setTotal] = React.useState(0);
+  const loadedOffsetsRef = React.useRef(new Set());
   const { data, isLoading, isFetching } = useGetQuery({
     url: "/user/gamification/xp/history",
     params: { limit: XP_HISTORY_LIMIT, offset },
     queryProps: {
-      queryKey: [...GAMIFICATION_XP_HISTORY_QUERY_KEY, page, XP_HISTORY_LIMIT],
+      queryKey: [
+        ...GAMIFICATION_XP_HISTORY_QUERY_KEY,
+        offset,
+        XP_HISTORY_LIMIT,
+      ],
       keepPreviousData: true,
     },
   });
 
   const payload = getApiResponseData(data, {});
-  const items = payload?.items ?? [];
-  const total = toNumber(payload?.total) || 0;
-  const hasNextPage = offset + XP_HISTORY_LIMIT < total;
-  const hasPreviousPage = page > 0;
+  const pageItems = get(
+    payload,
+    "items",
+    get(payload, "data.items", EMPTY_XP_HISTORY_ITEMS),
+  );
+  const pageTotal =
+    toNumber(get(payload, "total", get(payload, "data.total"))) || 0;
+
+  React.useEffect(() => {
+    if (!data || loadedOffsetsRef.current.has(offset)) {
+      return;
+    }
+
+    loadedOffsetsRef.current.add(offset);
+    setTotal(pageTotal);
+    setItems((currentItems) =>
+      offset === 0 ? pageItems : unionBy([...currentItems, ...pageItems], "id"),
+    );
+  }, [data, offset, pageItems, pageTotal]);
+
+  const hasNextPage = size(items) < total || offset + XP_HISTORY_LIMIT < total;
+  const loadNextPage = React.useCallback(() => {
+    if (!hasNextPage || isFetching || isLoading) {
+      return;
+    }
+
+    setOffset((currentOffset) => currentOffset + XP_HISTORY_LIMIT);
+  }, [hasNextPage, isFetching, isLoading]);
+
+  return {
+    items,
+    total,
+    isFetching,
+    isInitialLoading: isLoading && offset === 0 && size(items) === 0,
+    hasNextPage,
+    loadNextPage,
+  };
+};
+
+export const XpHistoryContent = ({
+  embedded = false,
+  className,
+  testId = "xp-history-scroll",
+}) => {
+  const {
+    items,
+    total,
+    isFetching,
+    isInitialLoading,
+    hasNextPage,
+    loadNextPage,
+  } = usePagedXpHistory();
+
+  const handleScroll = React.useCallback(
+    (event) => {
+      const target = event.currentTarget;
+      const distanceToBottom =
+        target.scrollHeight - target.scrollTop - target.clientHeight;
+
+      if (distanceToBottom <= 96) {
+        loadNextPage();
+      }
+    },
+    [loadNextPage],
+  );
+
+  if (isInitialLoading) {
+    return <PageLoader />;
+  }
+
+  return (
+    <div
+      data-testid={testId}
+      onScroll={handleScroll}
+      className={cn(
+        "flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain",
+        embedded ? "max-h-[min(68vh,34rem)] pr-1" : "pb-24",
+        className,
+      )}
+    >
+      <Card className={cn(userAccentCardClassName, "overflow-hidden bg-primary/5")}>
+        <CardContent className="flex items-center justify-between gap-4 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <WalletCardsIcon className="size-6" />
+            </span>
+            <div>
+              <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+                Barcha loglar
+              </p>
+              <p className="text-2xl font-black">{formatXp(total)} ta</p>
+            </div>
+          </div>
+          <HistoryIcon className="size-7 text-primary/70" />
+        </CardContent>
+      </Card>
+
+      {size(items) > 0 ? (
+        <div className="space-y-2">
+          {map(items, (item) => (
+            <XpHistoryRow key={item.id} item={item} />
+          ))}
+        </div>
+      ) : (
+        <Card className="rounded-3xl border-dashed shadow-none">
+          <CardContent className="px-5 py-10 text-center">
+            <HistoryIcon className="mx-auto size-10 text-muted-foreground" />
+            <p className="mt-3 text-base font-black">Hali XP loglari yo'q</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Ovqat, suv, mashg'ulot va yutuqlar orqali XP yig'ishni boshlang.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {isFetching && size(items) > 0 ? (
+        <p className="py-3 text-center text-xs font-semibold text-muted-foreground">
+          Yana loglar yuklanmoqda...
+        </p>
+      ) : null}
+
+      {!hasNextPage && size(items) > 0 ? (
+        <p className="py-3 text-center text-xs font-semibold text-muted-foreground">
+          Barcha XP loglari ko'rsatildi.
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
+const XpHistoryPage = () => {
+  const navigate = useNavigate();
+  const { setBreadcrumbs } = useBreadcrumbStore();
 
   React.useEffect(() => {
     setBreadcrumbs([
@@ -140,10 +287,6 @@ const XpHistoryPage = () => {
       { url: "/user/xp-history", title: "XP tarixi" },
     ]);
   }, [setBreadcrumbs]);
-
-  if (isLoading && page === 0) {
-    return <PageLoader />;
-  }
 
   return (
     <PageTransition mode="slide-up">
@@ -169,66 +312,7 @@ const XpHistoryPage = () => {
           </div>
         </div>
 
-        <Card className="overflow-hidden rounded-3xl border-border/70 bg-gradient-to-br from-primary/15 via-card to-card shadow-none">
-          <CardContent className="flex items-center justify-between gap-4 p-5">
-            <div className="flex items-center gap-3">
-              <span className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <WalletCardsIcon className="size-6" />
-              </span>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
-                  Barcha loglar
-                </p>
-                <p className="text-2xl font-black">{formatXp(total)} ta</p>
-              </div>
-            </div>
-            <HistoryIcon className="size-7 text-primary/70" />
-          </CardContent>
-        </Card>
-
-        {items.length > 0 ? (
-          <div className="space-y-2">
-            {map(items, (item) => (
-              <XpHistoryRow key={item.id} item={item} />
-            ))}
-          </div>
-        ) : (
-          <Card className="rounded-3xl border-dashed shadow-none">
-            <CardContent className="px-5 py-10 text-center">
-              <HistoryIcon className="mx-auto size-10 text-muted-foreground" />
-              <p className="mt-3 text-base font-black">Hali XP loglari yo'q</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Ovqat, suv, mashg'ulot va yutuqlar orqali XP yig'ishni boshlang.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {hasPreviousPage || hasNextPage ? (
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 rounded-full"
-              disabled={!hasPreviousPage || isFetching}
-              onClick={() => setPage((current) => Math.max(0, current - 1))}
-            >
-              Oldingi
-            </Button>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {offset + 1}-{Math.min(offset + XP_HISTORY_LIMIT, total)} /{" "}
-              {formatXp(total)}
-            </span>
-            <Button
-              type="button"
-              className="h-11 rounded-full"
-              disabled={!hasNextPage || isFetching}
-              onClick={() => setPage((current) => current + 1)}
-            >
-              Ko'proq ko'rish
-            </Button>
-          </div>
-        ) : null}
+        <XpHistoryContent />
       </div>
     </PageTransition>
   );

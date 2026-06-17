@@ -68,7 +68,7 @@ const RecipePreviewDrawer = () => {
     useLanguageStore((state) => state.currentLanguage) || "uz";
 
   const { data, isLoading } = useGetQuery({
-    url: `/admin/foods/${id}`,
+    url: `/admin/nutrition/recipes/${id}`,
     queryProps: {
       enabled: Boolean(id),
       queryKey: ["admin", "recipes", "detail", id],

@@ -41,7 +41,7 @@ const escapeCsvCell = (value) => {
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
-export const buildWorkoutReportCsv = (report) => {
+const buildWorkoutReportCsv = (report) => {
   const summary = get(report, "summary", {});
   const summaryRows = [
     ["metric", "value"],

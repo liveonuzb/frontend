@@ -1,5 +1,6 @@
 import React from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route } from "react-router";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import ChallengeShell from "./challenge-shell.jsx";
 import ChallengeHomePage from "@/modules/user/pages/challenges/home/index.jsx";
 import ChallengeMyChallengesPage from "@/modules/user/pages/challenges/my/index.jsx";
@@ -8,7 +9,7 @@ import ChallengeCreatePage from "@/modules/user/pages/challenges/create/index.js
 import ChallengeDetailPage from "@/modules/user/pages/challenges/detail/index.jsx";
 
 const ChallengeRoutes = () => (
-  <Routes>
+  <ProfileAwareRoutes>
     <Route element={<ChallengeShell />}>
       <Route index element={<Navigate to="home" replace />} />
       <Route path="home" element={<ChallengeHomePage />} />
@@ -19,7 +20,7 @@ const ChallengeRoutes = () => (
     <Route path="create/*" element={<ChallengeCreatePage />} />
     <Route path=":id/edit" element={<ChallengeCreatePage />} />
     <Route path=":id" element={<ChallengeDetailPage />} />
-  </Routes>
+  </ProfileAwareRoutes>
 );
 
 export default ChallengeRoutes;

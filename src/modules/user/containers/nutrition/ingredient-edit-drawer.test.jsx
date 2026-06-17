@@ -149,7 +149,6 @@ describe("IngredientEditDrawer", () => {
     expect(screen.queryByPlaceholderText("Masalan: guruch, tuxum, avokado")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "AI bilan aniqlash" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ai-access-status")).not.toBeInTheDocument();
-    expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
 
     const nutritionCard = screen.getByTestId("ingredient-edit-nutrition-control-card");
     expect(nutritionCard).toHaveClass("rounded-2xl", "border", "p-3", "pb-4");
@@ -175,6 +174,20 @@ describe("IngredientEditDrawer", () => {
     fireEvent.change(screen.getByTestId("ingredient-grams-slider"), {
       target: { value: "140" },
     });
+    const spinButtons = screen.getAllByRole("spinbutton");
+    expect(spinButtons).toHaveLength(6);
+    fireEvent.change(spinButtons[0], {
+      target: { value: "1.5" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("dona"), {
+      target: { value: "piyola" },
+    });
+    fireEvent.change(spinButtons[1], {
+      target: { value: "220" },
+    });
+    fireEvent.change(spinButtons[2], {
+      target: { value: "5" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));
 
     expect(onSave).toHaveBeenCalledWith(
@@ -182,9 +195,11 @@ describe("IngredientEditDrawer", () => {
         id: "rice",
         name: "Guruch",
         grams: 140,
+        estimatedQuantity: 1.5,
+        estimatedUnit: "piyola",
         nutrition: expect.objectContaining({
-          calories: 182,
-          protein: 3.8,
+          calories: 220,
+          protein: 5,
           carbs: 39.2,
           fat: 0.4,
         }),

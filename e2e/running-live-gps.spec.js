@@ -153,7 +153,7 @@ const setupRunningApi = async (page) => {
           heading: 90,
           speed: point.speed,
         },
-        timestamp: Date.parse("2026-05-21T05:00:00.000Z") + index * 30_000,
+        timestamp: Date.parse("2026-05-21T05:00:00.000Z") + index * 30000,
       });
       const positions = points.map(toPosition);
       let nextWatchId = 1;
@@ -377,14 +377,20 @@ test("tracks a live GPS run through start, pause, resume, finish, and completed 
       .first(),
   ).toBeVisible();
 
-  const pauseResume = page.getByRole("button", { name: /RESUME|DAVOM/i });
-  await pauseResume.click();
+  await page.getByRole("button", { name: /^Pause$/i }).click();
   await expect.poll(() => state.pauseCalls).toBe(1);
 
-  await pauseResume.click();
+  await expect(
+    page.getByRole("heading", { name: /Pauzada/i }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /RESUME|DAVOM/i }).click();
   await expect.poll(() => state.resumeCalls).toBe(1);
 
-  await page.getByRole("button", { name: /END|YAKUN/i }).click();
+  await page.getByRole("button", { name: /^Pause$/i }).click();
+  await expect.poll(() => state.pauseCalls).toBe(2);
+  await expect(
+    page.getByRole("heading", { name: /Pauzada/i }),
+  ).toBeVisible();
   await page.getByRole("button", { name: /^Yakunlash$/i }).click();
 
   await expect.poll(() => state.finishPayloads.length).toBe(1);

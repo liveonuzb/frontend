@@ -45,6 +45,10 @@ import {
   getFriendRequests,
 } from "@/modules/user/lib/friends-response";
 import { cn } from "@/lib/utils";
+import {
+  getUserSurfaceClassName,
+  userCardClassName,
+} from "@/modules/user/lib/card-styles";
 import PersonRow from "./components/person-row.jsx";
 import SectionCard from "./components/section-card.jsx";
 
@@ -123,9 +127,13 @@ const SearchField = ({ value, onChange, placeholder, className }) => (
 );
 
 const StatTile = ({ icon: Icon, value, label, description }) => (
-  <Card className="relative overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm">
-    <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px]" />
-    <CardContent className="relative z-10 flex items-center gap-3 px-4 py-0">
+  <Card
+    className={cn(
+      userCardClassName,
+      "relative overflow-hidden py-4 transition-colors hover:bg-muted/30",
+    )}
+  >
+    <CardContent className="flex items-center gap-3 px-4 py-0">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <Icon className="size-5" strokeWidth={2.2} />
       </span>
@@ -174,7 +182,11 @@ const EmptyPanel = ({
   actionLabel,
   onAction,
 }) => (
-  <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 px-5 py-9 text-center">
+  <div
+    className={getUserSurfaceClassName(
+      "flex min-h-[240px] flex-col items-center justify-center border border-dashed border-border/70 bg-muted/20 px-5 py-9 text-center",
+    )}
+  >
     <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
       <Icon className="size-7" strokeWidth={1.9} />
     </div>
@@ -199,7 +211,9 @@ const LoadingRows = () => (
     {map(Array.from({ length: 4 }), (_, index) => (
       <div
         key={index}
-        className="flex w-full items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-3"
+        className={getUserSurfaceClassName(
+          "flex w-full items-center gap-3 bg-card p-3",
+        )}
       >
         <Skeleton className="size-11 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-2 py-1">
@@ -274,10 +288,10 @@ const REQUESTS_BATCH_SIZE = 10;
 const resolveFriendsTab = (value) =>
   FRIENDS_TABS.has(value) ? value : "friends";
 
-export default function FriendsContainer() {
+export default function FriendsContainer({ embedded = false }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabFromUrl = searchParams.get("tab");
+  const tabFromUrl = embedded ? null : searchParams.get("tab");
   const { setBreadcrumbs } = useBreadcrumbStore();
   const queryClient = useQueryClient();
 
@@ -371,17 +385,25 @@ export default function FriendsContainer() {
   });
 
   React.useEffect(() => {
+    if (embedded) {
+      return;
+    }
+
     setBreadcrumbs([
       { url: "/user", title: "Bosh sahifa" },
       { url: "/user/friends", title: "Do'stlar" },
     ]);
-  }, [setBreadcrumbs]);
+  }, [embedded, setBreadcrumbs]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   React.useEffect(() => {
+    if (embedded) {
+      return;
+    }
+
     const urlTab = resolveFriendsTab(tabFromUrl);
     setActiveTab((current) => (current === urlTab ? current : urlTab));
-  }, [tabFromUrl]);
+  }, [embedded, tabFromUrl]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const summary = React.useMemo(
@@ -549,6 +571,10 @@ export default function FriendsContainer() {
       const nextTab = resolveFriendsTab(value);
       setActiveTab(nextTab);
 
+      if (embedded) {
+        return;
+      }
+
       const nextParams = new URLSearchParams(searchParams);
       if (nextTab === "friends") {
         nextParams.delete("tab");
@@ -557,7 +583,7 @@ export default function FriendsContainer() {
       }
       setSearchParams(nextParams, { replace: true });
     },
-    [searchParams, setSearchParams],
+    [embedded, searchParams, setSearchParams],
   );
 
   const handleOpenFriendChat = React.useCallback(
@@ -570,39 +596,44 @@ export default function FriendsContainer() {
   const incomingEmpty = incomingRequests.length === 0;
   const friendsEmpty = friends.length === 0;
 
-  return (
-    <PageTransition className="space-y-5 pb-28">
-      <PageHeader onAddFriend={() => handleTabChange("suggestions")} />
+  const content = (
+    <>
+      {embedded ? null : (
+        <PageHeader onAddFriend={() => handleTabChange("suggestions")} />
+      )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatTile
-          icon={UsersIcon}
-          value={summary.friends}
-          label="Jami do'stlar"
-          description="Faol kontaktlar"
-        />
-        <StatTile
-          icon={ClipboardListIcon}
-          value={summary.incoming}
-          label="Kelgan so'rovlar"
-          description="Javob kutilmoqda"
-        />
-        <StatTile
-          icon={SendIcon}
-          value={summary.outgoing}
-          label="Yuborilgan so'rovlar"
-          description="Tasdiq kutilmoqda"
-        />
-      </div>
+      {embedded ? null : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatTile
+            icon={UsersIcon}
+            value={summary.friends}
+            label="Jami do'stlar"
+            description="Faol kontaktlar"
+          />
+          <StatTile
+            icon={ClipboardListIcon}
+            value={summary.incoming}
+            label="Kelgan so'rovlar"
+            description="Javob kutilmoqda"
+          />
+          <StatTile
+            icon={SendIcon}
+            value={summary.outgoing}
+            label="Yuborilgan so'rovlar"
+            description="Tasdiq kutilmoqda"
+          />
+        </div>
+      )}
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
         className="space-y-4"
       >
-        <div className="rounded-2xl border border-border/70 bg-muted/30 p-1">
+        <div className={getUserSurfaceClassName("bg-muted/40 p-1")}>
           <TabsList className="grid h-11 w-full grid-cols-2 bg-transparent p-0 text-muted-foreground">
             <TabsTrigger
               value="friends"
+              aria-label={`Do'stlar ${summary.friends}`}
               className="h-full min-w-0 rounded-xl px-2 text-sm font-bold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
               <UsersIcon className="mr-2 size-4" />
@@ -613,10 +644,11 @@ export default function FriendsContainer() {
             </TabsTrigger>
             <TabsTrigger
               value="suggestions"
+              aria-label={`Tavsiya ${suggestionRows.length}`}
               className="h-full min-w-0 rounded-xl px-2 text-sm font-bold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
             >
               <UserPlusIcon className="mr-2 size-4" />
-              <span>Tavsiyalar</span>
+              <span>Tavsiya</span>
               <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
                 {suggestionRows.length}
               </span>
@@ -925,6 +957,12 @@ export default function FriendsContainer() {
           </SectionCard>
         </TabsContent>
       </Tabs>
-    </PageTransition>
+    </>
   );
+
+  if (embedded) {
+    return <div className="space-y-4 pb-2">{content}</div>;
+  }
+
+  return <PageTransition className="space-y-5 pb-28">{content}</PageTransition>;
 }

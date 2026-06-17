@@ -1,5 +1,5 @@
-import { clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 import toLower from "lodash/toLower";
 import toUpper from "lodash/toUpper";

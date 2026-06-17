@@ -114,7 +114,7 @@ const PricePage = () => {
 
   const onSubmit = async (values) => {
     await mutation.mutateAsync({
-      url: `/admin/ingredients/${id}/price`,
+      url: `/admin/nutrition/ingredient-prices/${id}`,
       attributes: values,
     });
     toast.success("Ingredient narxi saqlandi");
@@ -122,7 +122,7 @@ const PricePage = () => {
   };
   const onRegionalSubmit = async (values) => {
     await regionalMutation.mutateAsync({
-      url: `/admin/ingredients/${id}/regional-prices`,
+      url: `/admin/nutrition/ingredient-prices/${id}/regional-prices`,
       attributes: values,
     });
     toast.success("Region narxi saqlandi");
@@ -135,7 +135,7 @@ const PricePage = () => {
   };
   const onRegionalDelete = async (priceId) => {
     await deleteMutation.mutateAsync({
-      url: `/admin/ingredients/${id}/regional-prices/${priceId}`,
+      url: `/admin/nutrition/ingredient-prices/${id}/regional-prices/${priceId}`,
     });
     toast.success("Region narxi o'chirildi");
     await refetch();
@@ -440,6 +440,7 @@ const PricePage = () => {
                             type="button"
                             variant="outline"
                             size="icon"
+                            aria-label={`${price.regionName} ${price.season} region narxini o'chirish`}
                             disabled={deleteMutation.isPending}
                             onClick={() => onRegionalDelete(price.id)}
                           >

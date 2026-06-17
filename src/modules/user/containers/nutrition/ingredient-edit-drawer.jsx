@@ -85,6 +85,63 @@ const createEmptyIngredientDraft = () =>
     id: createMealIngredientId(),
   });
 
+const MacroOverrideFields = ({ preview, onChange }) => (
+  <div className="grid grid-cols-2 gap-3">
+    {map(macroFields, ([key, label, step, maximumFractionDigits]) => (
+      <label key={key} className="space-y-1.5">
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
+        <NumberField
+          value={preview[key]}
+          onValueChange={(value) => onChange(key, value)}
+          minValue={0}
+          step={step}
+          formatOptions={{ maximumFractionDigits }}
+        >
+          <NumberFieldGroup className="h-11 rounded-2xl bg-background shadow-none">
+            <NumberFieldDecrement className="w-8 border-r-border/50" />
+            <NumberFieldInput className="text-center text-sm font-semibold" />
+            <NumberFieldIncrement className="w-8 border-l-border/50" />
+          </NumberFieldGroup>
+        </NumberField>
+      </label>
+    ))}
+  </div>
+);
+
+const IngredientServingFields = ({ draft, onQuantityChange, onUnitChange }) => (
+  <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3 rounded-3xl border bg-muted/15 p-3">
+    <label className="space-y-1.5">
+      <span className="text-xs font-medium text-muted-foreground">
+        Birlik miqdori
+      </span>
+      <NumberField
+        value={draft.estimatedQuantity ?? 0}
+        onValueChange={onQuantityChange}
+        minValue={0}
+        step={0.25}
+        formatOptions={{ maximumFractionDigits: 2 }}
+      >
+        <NumberFieldGroup className="h-11 rounded-2xl bg-background shadow-none">
+          <NumberFieldDecrement className="w-8 border-r-border/50" />
+          <NumberFieldInput className="text-center text-sm font-semibold" />
+          <NumberFieldIncrement className="w-8 border-l-border/50" />
+        </NumberFieldGroup>
+      </NumberField>
+    </label>
+    <label className="space-y-1.5">
+      <span className="text-xs font-medium text-muted-foreground">Birlik</span>
+      <Input
+        value={draft.estimatedUnit || ""}
+        onChange={(event) => onUnitChange(event.target.value)}
+        placeholder="dona"
+        className="h-11 rounded-2xl bg-background"
+      />
+    </label>
+  </div>
+);
+
 export default function IngredientEditDrawer({
   open,
   mode = "edit",
@@ -160,6 +217,20 @@ export default function IngredientEditDrawer({
     });
   }, []);
 
+  const setServingQuantity = React.useCallback((value) => {
+    setDraft((current) => ({
+      ...current,
+      estimatedQuantity: value == null ? null : Math.max(0, toNumber(value, 0)),
+    }));
+  }, []);
+
+  const setServingUnit = React.useCallback((value) => {
+    setDraft((current) => ({
+      ...current,
+      estimatedUnit: trim(value) || null,
+    }));
+  }, []);
+
   const handleAnalyze = React.useCallback(async () => {
     const name = trim(draft.name);
     if (!name) {
@@ -167,7 +238,7 @@ export default function IngredientEditDrawer({
       return;
     }
     if (aiAccessStatus.isDisabled) {
-      toast.error("Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.");
+      toast.error("Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring.");
       return;
     }
 
@@ -189,7 +260,7 @@ export default function IngredientEditDrawer({
     } catch (error) {
       toast.error(
         isAiAccessLimitError(error)
-          ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
+          ? "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring."
           : "Ingredient macro qiymatlarini AI orqali olib bo'lmadi.",
       );
       setDraft((current) => ({
@@ -315,44 +386,50 @@ export default function IngredientEditDrawer({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {map(macroFields, ([key, label, step, maximumFractionDigits]) => (
-                  <label key={key} className="space-y-1.5">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {label}
-                    </span>
-                    <NumberField
-                      value={preview[key]}
-                      onValueChange={(value) => setMacroValue(key, value)}
-                      minValue={0}
-                      step={step}
-                      formatOptions={{ maximumFractionDigits }}
-                    >
-                      <NumberFieldGroup className="h-11 rounded-2xl bg-background shadow-none">
-                        <NumberFieldDecrement className="w-8 border-r-border/50" />
-                        <NumberFieldInput className="text-center text-sm font-semibold" />
-                        <NumberFieldIncrement className="w-8 border-l-border/50" />
-                      </NumberFieldGroup>
-                    </NumberField>
-                  </label>
-                ))}
-              </div>
+              <IngredientServingFields
+                draft={draft}
+                onQuantityChange={setServingQuantity}
+                onUnitChange={setServingUnit}
+              />
+
+              <MacroOverrideFields preview={preview} onChange={setMacroValue} />
             </>
           ) : (
-            <NutritionPortionControlCard
-              id={draft.id || "ingredient-edit"}
-              macros={previewMacros}
-              goals={goals}
-              value={Math.max(1, toNumber(draft.grams, 100))}
-              unit="g"
-              min={0}
-              max={1000}
-              step={5}
-              gaugeMax={editGaugeMax}
-              onValueChange={handleEditGramsChange}
-              testIdPrefix="ingredient-edit"
-              sliderTestId="ingredient-grams-slider"
-            />
+            <>
+              <NutritionPortionControlCard
+                id={draft.id || "ingredient-edit"}
+                macros={previewMacros}
+                goals={goals}
+                value={Math.max(1, toNumber(draft.grams, 100))}
+                unit="g"
+                min={0}
+                max={1000}
+                step={5}
+                gaugeMax={editGaugeMax}
+                onValueChange={handleEditGramsChange}
+                testIdPrefix="ingredient-edit"
+                sliderTestId="ingredient-grams-slider"
+              />
+
+              <IngredientServingFields
+                draft={draft}
+                onQuantityChange={setServingQuantity}
+                onUnitChange={setServingUnit}
+              />
+
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-semibold">Nutrition override</p>
+                  <p className="text-xs text-muted-foreground">
+                    Qiymatlar joriy gramm va birlik uchun saqlanadi.
+                  </p>
+                </div>
+                <MacroOverrideFields
+                  preview={preview}
+                  onChange={setMacroValue}
+                />
+              </div>
+            </>
           )}
         </DrawerBody>
 

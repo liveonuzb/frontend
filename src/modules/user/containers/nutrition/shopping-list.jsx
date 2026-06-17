@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import defaultTo from "lodash/defaultTo";
 import each from "lodash/each";
 import filter from "lodash/filter";
+import find from "lodash/find";
 import get from "lodash/get";
 import isArray from "lodash/isArray";
 import isEmpty from "lodash/isEmpty";
 import size from "lodash/size";
-import sortBy from "lodash/sortBy";
 import forEach from "lodash/forEach";
 import map from "lodash/map";
 import reduce from "lodash/reduce";
@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox.jsx";
 import { Button } from "@/components/ui/button.jsx";
 import { DownloadIcon, RefreshCwIcon } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   mealPlanDaysToKanban,
@@ -32,115 +33,15 @@ import {
   useMealPlanShoppingLists,
   useUpdateShoppingListItemCheck,
 } from "@/hooks/app/use-meal-plan";
-
-const weekDays = [
-  "Dushanba",
-  "Seshanba",
-  "Chorshanba",
-  "Payshanba",
-  "Juma",
-  "Shanba",
-  "Yakshanba",
-];
-
-const priceRegions = [
-  { value: "", label: "Umumiy" },
-  { value: "uzbekistan", label: "O'zbekiston" },
-  { value: "tashkent", label: "Toshkent" },
-  { value: "samarqand", label: "Samarqand" },
-  { value: "buxoro", label: "Buxoro" },
-  { value: "fargona", label: "Farg'ona" },
-  { value: "andijon", label: "Andijon" },
-  { value: "namangan", label: "Namangan" },
-  { value: "qashqadaryo", label: "Qashqadaryo" },
-  { value: "surxondaryo", label: "Surxondaryo" },
-  { value: "xorazm", label: "Xorazm" },
-  { value: "navoiy", label: "Navoiy" },
-  { value: "jizzax", label: "Jizzax" },
-  { value: "sirdaryo", label: "Sirdaryo" },
-  { value: "qoraqalpogiston", label: "Qoraqalpog'iston" },
-];
-
-const priceSeasons = [
-  { value: "all", label: "Butun yil" },
-  { value: "spring", label: "Bahor" },
-  { value: "summer", label: "Yoz" },
-  { value: "autumn", label: "Kuz" },
-  { value: "winter", label: "Qish" },
-];
-
-export const getPlanShoppingDays = (plan) => {
-  if (isArray(plan?.days)) {
-    return map(plan.days, (day, index) => ({
-      key: `day-${day?.dayNumber || index + 1}`,
-      label: `${day?.dayNumber || index + 1}-kun`,
-    }));
-  }
-
-  const durationDays = toNumber(get(plan, "durationDays")) || 0;
-
-  if (durationDays > weekDays.length) {
-    return Array.from({ length: durationDays }, (_, index) => ({
-      key: `day-${index + 1}`,
-      label: `${index + 1}-kun`,
-    }));
-  }
-
-  return map(weekDays, (day) => ({ key: day, label: day }));
-};
-
-export const buildShoppingList = (planOrWeeklyPlan) => {
-  const hasPlanShape =
-    planOrWeeklyPlan &&
-    typeof planOrWeeklyPlan === "object" &&
-    (Object.prototype.hasOwnProperty.call(planOrWeeklyPlan, "days") ||
-      Object.prototype.hasOwnProperty.call(planOrWeeklyPlan, "weeklyKanban"));
-  const weeklyPlan = hasPlanShape
-    ? isArray(get(planOrWeeklyPlan, "days"))
-      ? mealPlanDaysToKanban(get(planOrWeeklyPlan, "days", []))
-      : get(planOrWeeklyPlan, "weeklyKanban", {})
-    : planOrWeeklyPlan || {};
-  const shoppingDays = getPlanShoppingDays(
-    hasPlanShape ? planOrWeeklyPlan : { weeklyKanban: weeklyPlan },
-  );
-  const productsMap = new Map();
-
-  each(shoppingDays, ({ key }) => {
-    each(defaultTo(weeklyPlan[key], []), (col) => {
-      each(defaultTo(get(col, "items"), []), (item) => {
-        const name = trim(String(get(item, "name", "")));
-        if (!name) return;
-
-        const qty = toNumber(get(item, "qty")) || 1;
-        const grams =
-          toNumber(get(item, "grams")) ||
-          toNumber(get(item, "defaultAmount")) ||
-          0;
-        const unit = get(item, "unit", "g");
-
-        const existing = productsMap.get(name) || {
-          name,
-          count: 0,
-          totalCal: 0,
-          totalAmount: 0,
-          unit,
-          emoji: get(item, "emoji", "🛒"),
-          category: get(item, "category", ""),
-        };
-
-        existing.count += qty;
-        existing.totalCal += (toNumber(get(item, "cal")) || 0) * qty;
-        existing.totalAmount += grams * qty;
-        productsMap.set(name, existing);
-      });
-    });
-  });
-
-  return sortBy(Array.from(productsMap.values()), [
-    (item) => -item.count,
-    (item) => item.name,
-  ]);
-};
+import {
+  NUTRITION_PRICE_REGIONS,
+  NUTRITION_PRICE_SEASONS,
+} from "./nutrition-price-context.js";
+import {
+  SHOPPING_WEEK_DAYS,
+  buildShoppingList,
+  getPlanShoppingDays,
+} from "./shopping-list-utils.js";
 
 const getItemAmountLabel = (item) => {
   const amount =
@@ -172,12 +73,107 @@ const getFileSafeName = (value, fallback) => {
   return safe || fallback;
 };
 
+const toDateKeyFromValue = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return value.slice(0, 10);
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+};
+
+const addDaysToDateKey = (dateKey, daysToAdd) => {
+  const date = new Date(`${dateKey}T12:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + daysToAdd);
+  return date.toISOString().slice(0, 10);
+};
+
+const getPlanDurationRangeLabel = (plan) => {
+  const durationDays =
+    toNumber(get(plan, "durationDays")) || size(getPlanShoppingDays(plan)) || 7;
+  const startDate = toDateKeyFromValue(get(plan, "startDate"));
+
+  if (!startDate) {
+    return `day-1-day-${durationDays}`;
+  }
+
+  return `${startDate}-${addDaysToDateKey(startDate, durationDays - 1)}`;
+};
+
+export const buildShoppingListPdfFileName = ({
+  plan,
+  planName = get(plan, "name", ""),
+  language = "uz",
+} = {}) => {
+  const safePlanName = getFileSafeName(planName || get(plan, "name"), "haftalik-menyu");
+  const safeLanguage = getFileSafeName(String(language).split("-")[0], "uz");
+
+  return `${safePlanName}-${safeLanguage}-${getPlanDurationRangeLabel(plan)}.pdf`;
+};
+
 const formatCurrency = (value, currency = "UZS") => {
   const amount = toNumber(value) || 0;
 
   return `${new Intl.NumberFormat("uz-UZ", {
     maximumFractionDigits: 0,
   }).format(amount)} ${currency || "UZS"}`;
+};
+
+const getOptionLabel = (options, value, fallback) =>
+  find(options, (option) => option.value === value)?.label || fallback;
+
+const formatShoppingListDate = (value, fallback) => {
+  if (!value) {
+    return fallback;
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  return date.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "short",
+  });
+};
+
+const getSavedShoppingListLabel = (list, index) => {
+  const items = get(list, "items", []);
+  const checkedCount = size(filter(items, (item) => item.isChecked === true));
+  const itemCount = size(items);
+  const estimatedCost = toNumber(get(list, "totals.estimatedCost")) || 0;
+  const currency =
+    get(list, "totals.currency") ||
+    get(list, "priceContext.currency") ||
+    "UZS";
+  const costLabel = estimatedCost
+    ? formatCurrency(estimatedCost, currency)
+    : "narx yo'q";
+
+  return `${formatShoppingListDate(
+    get(list, "createdAt"),
+    `${index + 1}-ro'yxat`,
+  )} - ${checkedCount}/${itemCount} - ${costLabel}`;
+};
+
+const getPriceSourceLabel = (source) => {
+  if (source === "regional") {
+    return "Hududiy narx";
+  }
+
+  if (source === "base") {
+    return "Bazaviy narx";
+  }
+
+  if (source === "manual") {
+    return "Manual narx";
+  }
+
+  return "Narx manbasi noma'lum";
 };
 
 const getBudgetStatusLabel = (budget) => {
@@ -263,13 +259,13 @@ const buildCheckedItemMap = (items = []) =>
     {},
   );
 
-const downloadPDF = (plan, shoppingList, planName, checkedItems) => {
+const downloadPDF = (plan, shoppingList, planName, checkedItems, language) => {
   const weeklyPlan = isArray(get(plan, "days"))
     ? mealPlanDaysToKanban(get(plan, "days", []))
     : get(plan, "weeklyKanban", {});
   const shoppingDays = getPlanShoppingDays(plan);
   const isDurationPlan =
-    (toNumber(get(plan, "durationDays")) || 0) > weekDays.length;
+    (toNumber(get(plan, "durationDays")) || 0) > SHOPPING_WEEK_DAYS.length;
   const planLabel = isDurationPlan ? "30 kunlik" : "Haftalik";
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -506,7 +502,7 @@ const downloadPDF = (plan, shoppingList, planName, checkedItems) => {
     });
   }
 
-  const fileName = `${getFileSafeName(planName, "haftalik-menyu")}.pdf`;
+  const fileName = buildShoppingListPdfFileName({ plan, planName, language });
   doc.save(fileName);
 };
 
@@ -517,8 +513,10 @@ export const ShoppingList = ({
   isLoading = false,
   isFetching = false,
 }) => {
+  const { i18n } = useTranslation();
   const [checkedShoppingItems, setCheckedShoppingItems] = useState({});
   const [generatedShoppingList, setGeneratedShoppingList] = useState(null);
+  const [selectedShoppingListId, setSelectedShoppingListId] = useState("");
   const [priceRegionKey, setPriceRegionKey] = useState("");
   const [priceSeason, setPriceSeason] = useState("all");
   const generatedPlanIdRef = React.useRef(null);
@@ -560,6 +558,28 @@ export const ShoppingList = ({
   const familyEstimatedCost =
     toNumber(get(familyBudget, "familyEstimatedCost")) || 0;
   const familyMemberCount = toNumber(get(familyBudget, "memberCount")) || 0;
+  const knownItemsTotal = get(generatedShoppingList, "totals.knownItems");
+  const unknownItemsTotal = get(generatedShoppingList, "totals.unknownItems");
+  const knownPriceCount =
+    knownItemsTotal === null || knownItemsTotal === undefined
+      ? size(filter(generatedItems, (item) => item.estimatedCost != null))
+      : toNumber(knownItemsTotal) || 0;
+  const unknownPriceCount =
+    unknownItemsTotal === null || unknownItemsTotal === undefined
+      ? size(filter(generatedItems, (item) => item.estimatedCost == null))
+      : toNumber(unknownItemsTotal) || 0;
+  const priceContextRegionLabel = getOptionLabel(
+    NUTRITION_PRICE_REGIONS,
+    get(generatedShoppingList, "priceContext.regionKey") || "",
+    "Umumiy",
+  );
+  const priceContextSeasonLabel = getOptionLabel(
+    NUTRITION_PRICE_SEASONS,
+    get(generatedShoppingList, "priceContext.season") || "all",
+    "Butun yil",
+  );
+  const selectedSavedListId =
+    get(generatedShoppingList, "id") || selectedShoppingListId;
   const isGenerating =
     Boolean(planId) && isGeneratingShoppingList && !generatedShoppingList;
   const isLoadingSavedShoppingLists =
@@ -568,12 +588,23 @@ export const ShoppingList = ({
 
   useEffect(() => {
     if (!planId || generatedPlanIdRef.current !== planId) {
-      setGeneratedShoppingList(null);
-      setCheckedShoppingItems({});
-      setPriceRegionKey("");
-      setPriceSeason("all");
-      generatedPlanIdRef.current = null;
+      let isCancelled = false;
+      queueMicrotask(() => {
+        if (isCancelled) return;
+        setGeneratedShoppingList(null);
+        setCheckedShoppingItems({});
+        setSelectedShoppingListId("");
+        setPriceRegionKey("");
+        setPriceSeason("all");
+        generatedPlanIdRef.current = null;
+      });
+
+      return () => {
+        isCancelled = true;
+      };
     }
+
+    return undefined;
   }, [planId]);
 
   useEffect(() => {
@@ -585,21 +616,39 @@ export const ShoppingList = ({
       return undefined;
     }
 
-    if (latestShoppingList) {
-      setGeneratedShoppingList(latestShoppingList);
-      setCheckedShoppingItems(buildCheckedItemMap(latestShoppingList.items));
-      setPriceRegionKey(get(latestShoppingList, "priceContext.regionKey") || "");
-      setPriceSeason(get(latestShoppingList, "priceContext.season") || "all");
-      generatedPlanIdRef.current = planId;
-      return undefined;
-    }
-
-    if (generatedPlanIdRef.current === planId && generatedShoppingList) {
-      return undefined;
-    }
-
     let isCancelled = false;
-    setGeneratedShoppingList(null);
+
+    if (latestShoppingList) {
+      const activeSavedList =
+        find(
+          shoppingLists,
+          (list) => String(list.id) === String(selectedShoppingListId),
+        ) || latestShoppingList;
+
+      queueMicrotask(() => {
+        if (isCancelled) return;
+        setGeneratedShoppingList(activeSavedList);
+        setCheckedShoppingItems(buildCheckedItemMap(activeSavedList.items));
+        setSelectedShoppingListId(get(activeSavedList, "id", ""));
+        setPriceRegionKey(get(activeSavedList, "priceContext.regionKey") || "");
+        setPriceSeason(get(activeSavedList, "priceContext.season") || "all");
+        generatedPlanIdRef.current = planId;
+      });
+
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    if (generatedPlanIdRef.current === planId) {
+      return undefined;
+    }
+
+    queueMicrotask(() => {
+      if (!isCancelled) {
+        setGeneratedShoppingList(null);
+      }
+    });
 
     generateShoppingList(planId)
       .then((list) => {
@@ -620,11 +669,12 @@ export const ShoppingList = ({
     };
   }, [
     generateShoppingList,
-    generatedShoppingList,
     isLoadingShoppingLists,
     latestShoppingList,
     open,
     planId,
+    selectedShoppingListId,
+    shoppingLists,
   ]);
 
   const checkedShoppingCount = useMemo(
@@ -652,6 +702,7 @@ export const ShoppingList = ({
       );
       setGeneratedShoppingList(list);
       setCheckedShoppingItems(buildCheckedItemMap(list.items));
+      setSelectedShoppingListId(get(list, "id", ""));
       setPriceRegionKey(get(list, "priceContext.regionKey") || priceRegionKey);
       setPriceSeason(get(list, "priceContext.season") || priceSeason || "all");
       generatedPlanIdRef.current = planId;
@@ -659,6 +710,24 @@ export const ShoppingList = ({
     } catch {
       toast.error("Xarid ro'yxatini qayta yaratib bo'lmadi");
     }
+  };
+
+  const selectSavedShoppingList = (listId) => {
+    const nextList = find(
+      shoppingLists,
+      (list) => String(list.id) === String(listId),
+    );
+
+    if (!nextList) {
+      return;
+    }
+
+    setGeneratedShoppingList(nextList);
+    setCheckedShoppingItems(buildCheckedItemMap(nextList.items));
+    setSelectedShoppingListId(get(nextList, "id", ""));
+    setPriceRegionKey(get(nextList, "priceContext.regionKey") || "");
+    setPriceSeason(get(nextList, "priceContext.season") || "all");
+    generatedPlanIdRef.current = planId;
   };
 
   const toggleShoppingItem = async (item) => {
@@ -744,6 +813,46 @@ export const ShoppingList = ({
               {familyBudgetStatusLabel}
             </p>
           ) : null}
+          {generatedShoppingList ? (
+            <div className="mt-3 grid grid-cols-2 gap-2 text-left">
+              <div className="rounded-xl border bg-muted/30 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Narx konteksti
+                </p>
+                <p className="mt-1 text-xs font-black text-foreground">
+                  {priceContextRegionLabel} / {priceContextSeasonLabel}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-muted/30 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground">
+                  Narx qamrovi
+                </p>
+                <p className="mt-1 text-xs font-black text-foreground">
+                  {knownPriceCount} aniq, {unknownPriceCount} noma'lum
+                </p>
+              </div>
+            </div>
+          ) : null}
+          {size(shoppingLists) > 1 ? (
+            <label className="mt-3 block text-left text-[11px] font-bold text-muted-foreground">
+              Saqlangan ro'yxatlar
+              <select
+                aria-label="Saqlangan xarid ro'yxati"
+                className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground"
+                value={String(selectedSavedListId || "")}
+                onChange={(event) => selectSavedShoppingList(event.target.value)}
+              >
+                {map(shoppingLists, (list, index) => (
+                  <option
+                    key={get(list, "id", index)}
+                    value={String(get(list, "id", ""))}
+                  >
+                    {getSavedShoppingListLabel(list, index)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <div className="mt-3 grid grid-cols-2 gap-2 text-left">
             <label className="text-[11px] font-bold text-muted-foreground">
               Hudud
@@ -752,7 +861,7 @@ export const ShoppingList = ({
                 value={priceRegionKey}
                 onChange={(event) => setPriceRegionKey(event.target.value)}
               >
-                {map(priceRegions, (region) => (
+                {map(NUTRITION_PRICE_REGIONS, (region) => (
                   <option key={region.value || "all"} value={region.value}>
                     {region.label}
                   </option>
@@ -766,7 +875,7 @@ export const ShoppingList = ({
                 value={priceSeason}
                 onChange={(event) => setPriceSeason(event.target.value)}
               >
-                {map(priceSeasons, (season) => (
+                {map(NUTRITION_PRICE_SEASONS, (season) => (
                   <option key={season.value} value={season.value}>
                     {season.label}
                   </option>
@@ -829,6 +938,15 @@ export const ShoppingList = ({
                           item.totalCal
                         } kcal`}
                   </span>
+                  <span
+                    className={
+                      item.estimatedCost == null || item.priceSource === "unknown"
+                        ? "text-[10px] font-semibold text-amber-600 whitespace-nowrap dark:text-amber-300"
+                        : "text-[10px] font-semibold text-muted-foreground whitespace-nowrap"
+                    }
+                  >
+                    {getPriceSourceLabel(item.priceSource)}
+                  </span>
                 </div>
               </label>
             ))
@@ -867,7 +985,13 @@ export const ShoppingList = ({
               variant="outline"
               className="gap-2"
               onClick={() =>
-                downloadPDF(plan, shoppingList, planName, checkedShoppingItems)
+                downloadPDF(
+                  plan,
+                  shoppingList,
+                  planName,
+                  checkedShoppingItems,
+                  i18n.language,
+                )
               }
             >
               <DownloadIcon className="size-3.5" />

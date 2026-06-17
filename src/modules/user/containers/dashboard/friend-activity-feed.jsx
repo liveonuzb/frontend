@@ -116,7 +116,7 @@ const FriendActivityFeed = ({
   );
 
   return (
-    <Card className="group/card relative h-full overflow-hidden border border-border/60 py-4 ring-0 transition-colors hover:border-primary/30">
+    <Card className="group/card relative h-full overflow-hidden border border-border/60 py-4 ring-0">
       <div className="absolute -right-4 -top-4 size-20 rounded-full bg-primary/10 blur-[24px]" />
       <CardHeader className="relative z-10 px-4 pb-2">
         <div className="flex items-center justify-between gap-3">
@@ -129,7 +129,7 @@ const FriendActivityFeed = ({
           <Button
             type="button"
             variant="ghost"
-            className="h-7 shrink-0 rounded-full px-2 text-xs font-bold text-primary hover:bg-primary/10"
+            className="h-7 shrink-0 rounded-full px-2 text-xs font-bold text-primary hover:bg-transparent hover:text-primary dark:hover:bg-transparent"
             onClick={handleOpenFriends}
           >
             Barchasi

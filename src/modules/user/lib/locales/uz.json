@@ -35,7 +35,7 @@
         "breakfast": "Nonushta",
         "lunch": "Tushlik",
         "dinner": "Kechki ovqat",
-        "snack": "Snack"
+        "snack": "Tamaddi"
       },
       "mealTime": {
         "breakfast": "06:00 - 10:00",
@@ -67,11 +67,55 @@
       "audioAdd": "Ovoz bilan",
       "textAdd": "Matn bilan",
       "nav": {
+        "ariaLabel": "Ovqatlanish bo'limlari",
         "overview": "Umumiy",
         "plans": "Rejalar",
         "recipes": "Retseptlar",
         "history": "Tarix",
         "report": "Hisobot"
+      },
+      "overview": {
+        "title": "Umumiy ko'rinish",
+        "todayTracking": "Bugungi kuzatuv",
+        "selectedDay": "Tanlangan kun",
+        "pickDate": "Sana tanlash: {{date}}",
+        "dateShortcuts": "Sana shortcutlari"
+      },
+      "plansPage": {
+        "popularTemplates": "Mashhur shablonlar",
+        "viewAll": "Barchasini ko'rish",
+        "templatesLoading": "Shablonlar yuklanmoqda...",
+        "noTemplates": "Hozircha admin shablonlari yo'q.",
+        "myPlans": "Mening rejalarim",
+        "statusFilter": "Reja statuslari",
+        "filters": {
+          "all": "Barchasi",
+          "active": "Faol",
+          "draft": "Qoralama",
+          "paused": "Pauza",
+          "archived": "Arxiv"
+        }
+      },
+      "historyPage": {
+        "filter": "Filtr",
+        "allMeals": "Barcha bo'limlar",
+        "allSources": "Barcha manbalar"
+      },
+      "reportPage": {
+        "title": "Hisobot",
+        "description": "Kaloriya, makro, suv va ovqat kiritish odatlarini trendlar orqali kuzating.",
+        "aiTitle": "AI tavsiya",
+        "aiDescription": "Hisobotdagi kaloriya, suv va makro trendlar asosida keyingi hafta uchun aniqroq reja tuzing.",
+        "viewPlans": "Rejalarni ko'rish",
+        "scopeTitle": "Hisobot scope",
+        "scopeDescription": "Ma'lumotlar kiritilgan ovqatlar, suv loglari va maqsadlar asosida hisoblanadi.",
+        "quickCheckTitle": "Tez tekshiruv",
+        "quickGoal": "Maqsadga rioya qilish",
+        "quickMacro": "Makro balans",
+        "quickTrends": "Trend insightlar",
+        "compare": "Taqqoslash",
+        "export": "Eksport qilish",
+        "footerNote": "Hisobot ma'lumotlari kiritilgan ovqatlar va maqsadlar asosida hisoblanadi. Oxirgi yangilanish tanlangan sana oralig'i qayta yuklanganda yangilanadi."
       },
       "recipes": {
         "common": {
@@ -84,14 +128,22 @@
           "breakfast": "Nonushta",
           "lunch": "Tushlik",
           "dinner": "Kechki ovqat",
-          "snack": "Snack"
+          "snack": "Tamaddi"
         },
         "page": {
           "badge": "Retseptlar",
+          "headerTitle": "Bugungi retseptlar",
           "title": "Bugungi ovqat uchun retseptlar",
+          "description": "Sog'liq uchun foydali va mazali retseptlarni kashf eting",
           "selectRecipe": "Retsept tanlang",
           "empty": "Retsept topilmadi",
           "totalCount": "{{count}} ta retsept"
+        },
+        "tabs": {
+          "explore": "Kashf etish",
+          "mine": "Mening retseptlarim",
+          "ai": "Rasmdan AI retsept",
+          "favorites": "Sevimlilar"
         },
         "search": {
           "label": "Retsept qidirish",
@@ -113,6 +165,7 @@
           "featuredAria": "Tavsiya etilgan",
           "featured": "Tavsiya",
           "savedOnly": "Saqlanganlar",
+          "pantryOnly": "Ombordagilar",
           "clearAria": "Filterlarni tozalash",
           "clear": "Tozalash",
           "apply": "Filterlarni qo'llash",
@@ -141,19 +194,39 @@
         },
         "nutrition": {
           "calories": "kcal",
-          "protein": "protein",
+          "protein": "oqsil",
           "carbs": "uglevod",
           "fat": "yog'",
-          "fiber": "fiber",
-          "sugar": "sugar",
-          "sodium": "sodium"
+          "fiber": "tola",
+          "sugar": "shakar",
+          "sodium": "natriy"
         },
         "buttons": {
           "addToMealLog": "Bugungi logga qo'shish",
           "addToMealPlan": "Rejaga qo'shish",
           "createShoppingList": "Xarid ro'yxati yaratish",
+          "create": "Retsept yaratish",
+          "add": "Qo'shish",
           "save": "Saqlash",
           "saved": "Saqlangan"
+        },
+        "empty": {
+          "explore": {
+            "title": "Retseptlar topilmadi",
+            "description": "Birinchi retseptingizni yarating"
+          },
+          "filtered": {
+            "title": "Retseptlar topilmadi",
+            "description": "Filterlarni o'zgartiring yoki yangi retsept yarating"
+          },
+          "mine": {
+            "title": "Retseptlar topilmadi",
+            "description": "Birinchi retseptingizni yarating"
+          },
+          "favorites": {
+            "title": "Sevimli retseptlar topilmadi",
+            "description": "Birinchi retseptingizni yarating"
+          }
         },
         "card": {
           "ingredientsCount": "{{count}} masalliq",

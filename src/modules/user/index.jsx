@@ -1,11 +1,12 @@
 import React, { Suspense, lazy } from "react";
-import { Navigate, Route, Routes, useSearchParams } from "react-router";
+import { Navigate, Route, useSearchParams } from "react-router";
 import Layout from "@/modules/user/layout/index.jsx";
 import PageLoader from "@/components/page-loader/index.jsx";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
 import { DEFAULT_PROFILE_TAB } from "@/modules/profile/hooks/use-profile-overlay";
 import { normalizeProfileOverlayTab } from "@/modules/profile/lib/profile-tab-registry";
-import { getStandaloneProfileTabPath } from "@/modules/profile/lib/profile-tab-navigation";
+import { buildProfileRoutePath } from "@/modules/profile/lib/profile-route-state";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import {
   USER_CHALLENGES_ENABLED,
   USER_LEADERBOARD_ENABLED,
@@ -76,28 +77,24 @@ const NotFound = lazy(() => import("@/pages/not-found/index.jsx"));
 export const ProfileRedirect = () => {
   const [searchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab") ?? DEFAULT_PROFILE_TAB;
-  const standalonePath = getStandaloneProfileTabPath(
-    requestedTab,
-    searchParams.toString(),
-  );
-
-  if (standalonePath) {
-    return <Navigate to={standalonePath} replace />;
-  }
-
-  const profileParams = new URLSearchParams(searchParams);
-  profileParams.delete("tab");
-  profileParams.set("profile", "open");
-  profileParams.set("profileTab", normalizeProfileOverlayTab(requestedTab));
+  const nextParams = new URLSearchParams(searchParams);
+  nextParams.delete("tab");
 
   return (
-    <Navigate to={`/user/dashboard?${profileParams.toString()}`} replace />
+    <Navigate
+      to={buildProfileRoutePath({
+        pathname: "/user/dashboard",
+        search: nextParams.toString(),
+        tab: normalizeProfileOverlayTab(requestedTab),
+      })}
+      replace
+    />
   );
 };
 
 const Index = () => {
   return (
-    <Routes>
+    <ProfileAwareRoutes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route
@@ -337,7 +334,7 @@ const Index = () => {
           }
         />
       </Route>
-    </Routes>
+    </ProfileAwareRoutes>
   );
 };
 

@@ -8,6 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useGetQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 
 const EMPTY_ANALYTICS_SUMMARY = {
   averageMl: 0,
@@ -18,7 +22,7 @@ const EMPTY_ANALYTICS_SUMMARY = {
 
 export default function WaterAnalyticsSection({ days = 7 }) {
   const { data, isLoading } = useGetQuery({
-    url: "/daily-tracking/water/analytics",
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, "water/analytics"),
     params: { days },
     queryProps: {
       queryKey: ["water", "analytics", days],

@@ -371,6 +371,47 @@ describe("FoodDetailPortionDrawer", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("blocks save when serving size or nutrition values are invalid", () => {
+    const onSave = vi.fn();
+    const firstRender = render(
+      <FoodDetailPortionDrawer
+        item={baseItem}
+        type="food"
+        grams={0}
+        goals={{ protein: 140, carbs: 424, fat: 84 }}
+        onGramsChange={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Porsiya hajmi 0 dan katta bo'lishi kerak.",
+    );
+    expect(screen.getByRole("button", { name: "Saqlash" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(onSave).not.toHaveBeenCalled();
+
+    firstRender.unmount();
+
+    render(
+      <FoodDetailPortionDrawer
+        item={{ ...baseItem, cal: -100 }}
+        type="food"
+        grams={100}
+        goals={{ protein: 140, carbs: 424, fat: 84 }}
+        onGramsChange={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Kaloriya va makro qiymatlar 0 yoki undan katta bo'lishi kerak.",
+    );
+    expect(screen.getByRole("button", { name: "Saqlash" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it("renders normalized recipe instruction steps for cook mode", () => {
     render(
       <FoodDetailPortionDrawer

@@ -27,12 +27,20 @@ import {
   UtensilsIcon,
 } from "lucide-react";
 import filter from "lodash/filter";
+import every from "lodash/every";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
 import toNumber from "lodash/toNumber";
 import toPairs from "lodash/toPairs";
 import trim from "lodash/trim";
 import IngredientEditDrawer from "./ingredient-edit-drawer.jsx";
+import {
+  GRAM_BASED_UNITS,
+  calculateFoodPortionMacros,
+  getFoodItemUnit as getItemUnit,
+  getFoodSliderMax,
+  normalizeNutritionNumber as normalizeNumber,
+} from "./food-portion-utils.js";
 import {
   addMealIngredient,
   getIngredientNutritionPreview,
@@ -45,17 +53,12 @@ import {
 import NutritionPortionControlCard from "./nutrition-portion-control-card.jsx";
 import { useNutritionAiPantry } from "@/hooks/app/use-nutrition-ai.js";
 
-const GRAM_BASED_UNITS = new Set(["g", "ml"]);
 const DEFAULT_GOALS = {
   protein: 0,
   carbs: 0,
   fat: 0,
 };
-
-const normalizeNumber = (value, fallback = 0) => {
-  const normalized = toNumber(value);
-  return Number.isFinite(normalized) ? normalized : fallback;
-};
+const NUTRITION_VALUE_KEYS = ["cal", "protein", "carbs", "fat", "fiber"];
 
 const formatNumber = (value) => {
   const normalized = normalizeNumber(value);
@@ -65,31 +68,6 @@ const formatNumber = (value) => {
 };
 
 const formatAmount = (value, unit) => `${formatNumber(value)}${unit || "g"}`;
-
-const getItemUnit = (item) => item?.unit || item?.servingUnit || "g";
-
-export const calculateFoodPortionMacros = (food, amount) => {
-  const unit = getItemUnit(food);
-  const isUnit = unit && !GRAM_BASED_UNITS.has(unit);
-  const factor = isUnit ? amount / (food?.defaultAmount || 1) : amount / 100;
-
-  return {
-    cal: Math.round(
-      normalizeNumber(food?.baseCal ?? food?.cal ?? food?.calories) * factor,
-    ),
-    protein: Math.round(
-      normalizeNumber(food?.baseProtein ?? food?.protein) * factor,
-    ),
-    carbs: Math.round(normalizeNumber(food?.baseCarbs ?? food?.carbs) * factor),
-    fat: Math.round(normalizeNumber(food?.baseFat ?? food?.fat) * factor),
-  };
-};
-
-export const getFoodSliderMax = (food) => {
-  const unit = getItemUnit(food);
-  const isUnit = unit && !GRAM_BASED_UNITS.has(unit);
-  return isUnit ? (food?.step || 1) * 20 : 1000;
-};
 
 const getIngredientName = (ingredient) =>
   trim(ingredient?.name || ingredient?.label || ingredient?.foodName || "");
@@ -159,6 +137,12 @@ const buildIngredientMacros = (totals) => ({
   fiber: normalizeNumber(totals?.fiber, 0),
 });
 
+const isNonNegativeFinite = (value) => {
+  if (value == null) return true;
+  const normalized = toNumber(value);
+  return Number.isFinite(normalized) && normalized >= 0;
+};
+
 const getCatalogFoodId = (item) => {
   const direct = toNumber(item?.catalogFoodId ?? item?.foodId);
   if (Number.isFinite(direct) && direct > 0) return direct;
@@ -225,6 +209,22 @@ export default function FoodDetailPortionDrawer({
   const macros = hasIngredients
     ? buildIngredientMacros(ingredientTotals)
     : fallbackMacros;
+  const validationMessage = React.useMemo(() => {
+    const servingAmount = toNumber(currentGrams);
+    if (!Number.isFinite(servingAmount) || servingAmount <= 0) {
+      return "Porsiya hajmi 0 dan katta bo'lishi kerak.";
+    }
+
+    if (
+      !macros ||
+      !every(NUTRITION_VALUE_KEYS, (key) => isNonNegativeFinite(macros[key]))
+    ) {
+      return "Kaloriya va makro qiymatlar 0 yoki undan katta bo'lishi kerak.";
+    }
+
+    return null;
+  }, [currentGrams, macros]);
+  const canSave = Boolean(item && !isSaving && !validationMessage);
   const maxForGauge =
     gaugeMax ??
     (hasIngredients
@@ -240,82 +240,79 @@ export default function FoodDetailPortionDrawer({
         : 0) ??
     0;
   React.useEffect(() => {
-    setLocalGrams(propGrams);
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (!isCancelled) {
+        setLocalGrams(propGrams);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [item?.barcode, item?.id, propGrams]);
 
   React.useEffect(() => {
-    setEditableIngredients(normalizeIngredients(ingredients, item));
-    setIngredientsOpen(false);
-    setInstructionsOpen(false);
-    setIngredientEditor(null);
-    setAssistantCards([]);
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (isCancelled) return;
+      setEditableIngredients(normalizeIngredients(ingredients, item));
+      setIngredientsOpen(false);
+      setInstructionsOpen(false);
+      setIngredientEditor(null);
+      setAssistantCards([]);
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [ingredients, item?.barcode, item?.id]);
 
-  const syncIngredients = React.useCallback(
-    (nextIngredients) => {
-      const normalized = normalizeMealIngredients(nextIngredients);
-      setEditableIngredients(normalized);
-      const nextGrams = getMealIngredientsGrams(normalized);
-      setLocalGrams(nextGrams);
-      onGramsChange?.(nextGrams);
-    },
-    [onGramsChange],
-  );
+  const syncIngredients = (nextIngredients) => {
+    const normalized = normalizeMealIngredients(nextIngredients);
+    setEditableIngredients(normalized);
+    const nextGrams = getMealIngredientsGrams(normalized);
+    setLocalGrams(nextGrams);
+    onGramsChange?.(nextGrams);
+  };
 
-  const handleIngredientSave = React.useCallback(
-    (ingredient) => {
-      const nextIngredients =
-        ingredientEditor?.mode === "add"
-          ? addMealIngredient(normalizedIngredients, ingredient)
-          : updateMealIngredient(
-              normalizedIngredients,
-              ingredientEditor?.ingredient?.id,
-              ingredient,
-            );
-      setIngredientsOpen(true);
-      syncIngredients(nextIngredients);
-      setIngredientEditor(null);
-    },
-    [ingredientEditor, normalizedIngredients, syncIngredients],
-  );
+  const handleIngredientSave = (ingredient) => {
+    const nextIngredients =
+      ingredientEditor?.mode === "add"
+        ? addMealIngredient(normalizedIngredients, ingredient)
+        : updateMealIngredient(
+            normalizedIngredients,
+            ingredientEditor?.ingredient?.id,
+            ingredient,
+          );
+    setIngredientsOpen(true);
+    syncIngredients(nextIngredients);
+    setIngredientEditor(null);
+  };
 
-  const handleIngredientRemove = React.useCallback(
-    (ingredientId) => {
-      syncIngredients(
-        removeMealIngredient(normalizedIngredients, ingredientId),
+  const handleIngredientRemove = (ingredientId) => {
+    syncIngredients(removeMealIngredient(normalizedIngredients, ingredientId));
+  };
+
+  const handleSliderChange = ([value]) => {
+    const nextGrams = normalizeNumber(value, currentGrams);
+
+    if (hasIngredients) {
+      const nextIngredients = scaleIngredientsToTotal(
+        normalizedIngredients,
+        nextGrams,
+        ingredientGrams,
       );
-    },
-    [normalizedIngredients, syncIngredients],
-  );
+      setEditableIngredients(nextIngredients);
+    } else {
+      setLocalGrams(nextGrams);
+    }
 
-  const handleSliderChange = React.useCallback(
-    ([value]) => {
-      const nextGrams = normalizeNumber(value, currentGrams);
-
-      if (hasIngredients) {
-        const nextIngredients = scaleIngredientsToTotal(
-          normalizedIngredients,
-          nextGrams,
-          ingredientGrams,
-        );
-        setEditableIngredients(nextIngredients);
-      } else {
-        setLocalGrams(nextGrams);
-      }
-
-      onGramsChange?.(nextGrams);
-    },
-    [
-      currentGrams,
-      hasIngredients,
-      ingredientGrams,
-      normalizedIngredients,
-      onGramsChange,
-    ],
-  );
+    onGramsChange?.(nextGrams);
+  };
 
   const handleSave = () => {
-    if (!item || !macros) return;
+    if (!item || !macros || validationMessage) return;
     const ingredientSnapshot = hasIngredients ? normalizedIngredients : [];
     onSave?.({
       item: hasIngredients
@@ -648,9 +645,14 @@ export default function FoodDetailPortionDrawer({
       ) : null}
 
       <DrawerFooter>
+        {validationMessage ? (
+          <p role="alert" className="px-1 text-sm font-semibold text-destructive">
+            {validationMessage}
+          </p>
+        ) : null}
         <Button
           className="h-11"
-          disabled={!item || isSaving}
+          disabled={!canSave}
           onClick={handleSave}
         >
           {isSaving ? (

@@ -30,7 +30,9 @@ vi.mock("@/hooks/app/use-nutrition-recipes.js", () => ({
   useNutritionRecipeDetail: (...args) => mockUseNutritionRecipeDetail(...args),
   useNutritionRecipeActions: () => ({
     toggleFavorite: vi.fn(),
+    addToMealLog: vi.fn(),
     addToMealPlan: vi.fn(),
+    createShoppingList: vi.fn(),
     isUpdating: false,
   }),
 }));

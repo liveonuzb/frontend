@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route } from "react-router";
 import PageLoader from "@/components/page-loader/index.jsx";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import NutritionShell from "./nutrition-shell.jsx";
 
 const NutritionOverviewPage = lazy(() => import("./home/index.jsx"));
@@ -18,7 +19,7 @@ const withSuspense = (element) => (
 
 const NutritionRoutes = () => {
   return (
-    <Routes>
+    <ProfileAwareRoutes>
       <Route element={<NutritionShell />}>
         <Route index element={<Navigate to="overview" replace />} />
         <Route
@@ -48,7 +49,7 @@ const NutritionRoutes = () => {
         />
         <Route path="report" element={withSuspense(<NutritionReportPage />)} />
       </Route>
-    </Routes>
+    </ProfileAwareRoutes>
   );
 };
 

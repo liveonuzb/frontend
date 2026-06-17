@@ -11,7 +11,7 @@ import RecipeImage from "./recipe-image.jsx";
 import {
   formatQuantity,
   getRecipeNutrition,
-} from "../recipe-mock-data.js";
+} from "../recipe-ui-utils.js";
 
 const TimeInfo = ({ icon: Icon, value, label }) => (
   <div className="flex items-center gap-2 rounded-2xl border border-border bg-background px-3 py-3">

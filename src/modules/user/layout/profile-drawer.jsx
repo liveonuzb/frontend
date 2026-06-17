@@ -1,7 +1,6 @@
 import find from "lodash/find";
 import React from "react";
 import { ArrowLeftIcon } from "lucide-react";
-import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -20,11 +19,10 @@ import {
   useProfileOverlay,
 } from "@/modules/profile/hooks/use-profile-overlay";
 import { isProfileNestedDrawerTab } from "@/modules/profile/lib/profile-tab-registry";
+import { userCardScopeClassName } from "@/modules/user/lib/card-styles";
 import { cn } from "@/lib/utils";
 
 const ProfileDrawer = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { isProfileOpen, activeProfileTab, closeProfile, setProfileTab } =
     useProfileOverlay();
 
@@ -52,13 +50,8 @@ const ProfileDrawer = () => {
       return;
     }
 
-    if (!location.pathname.startsWith("/user/profile")) {
-      closeProfile();
-      return;
-    }
-
-    navigate(-1);
-  }, [closeProfile, isOverview, location.pathname, navigate, setProfileTab]);
+    closeProfile();
+  }, [closeProfile, isOverview, setProfileTab]);
 
   return (
     <Drawer
@@ -71,7 +64,10 @@ const ProfileDrawer = () => {
       }}
     >
       <DrawerContent
-        className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:max-h-[100vh] data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
         data-vaul-no-drag
       >
         <DrawerHeader
@@ -101,14 +97,12 @@ const ProfileDrawer = () => {
                 </DrawerDescription>
               </div>
             ) : (
-              <div className="min-w-0 px-12 text-center">
-                <DrawerTitle className="truncate text-base font-semibold">
-                  {activeTitle}
-                </DrawerTitle>
+              <>
+                <DrawerTitle className="sr-only">Profile</DrawerTitle>
                 <DrawerDescription className="sr-only">
                   {activeDescription}
                 </DrawerDescription>
-              </div>
+              </>
             )}
 
           </div>

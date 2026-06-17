@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 import useAuthStore from "@/store/auth-store";
 import {

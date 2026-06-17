@@ -1,7 +1,8 @@
 import React from "react";
-import { Route, Routes } from "react-router";
+import { Route } from "react-router";
 
 import Layout from "@/modules/user-onboarding/layout/index.jsx";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import EntryPage from "@/modules/user-onboarding/pages/entry/index.jsx";
 import NamePage from "@/modules/user-onboarding/pages/name/index.jsx";
 import GenderPage from "@/modules/user-onboarding/pages/gender/index.jsx";
@@ -22,7 +23,7 @@ import PersonalizationResultPage from "@/modules/user-onboarding/pages/result/in
 
 const UserOnboardingModule = () => {
   return (
-    <Routes>
+    <ProfileAwareRoutes>
       <Route element={<Layout />}>
         <Route index element={<EntryPage />} />
         <Route path="name" element={<NamePage />} />
@@ -51,7 +52,7 @@ const UserOnboardingModule = () => {
 
         <Route path="*" element={<EntryPage />} />
       </Route>
-    </Routes>
+    </ProfileAwareRoutes>
   );
 };
 

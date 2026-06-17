@@ -6,6 +6,10 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useGetQuery } from "@/hooks/api";
 import { usePostQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import AnimatedWaterWidget from "@/components/animated-water-widget";
 import { invalidateGamificationQueries } from "@/modules/user/lib/gamification-query-keys";
 import {
@@ -28,7 +32,7 @@ export default function WaterWidget({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: trackingData } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, dateKey),
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
       enabled: dayDataOverride === undefined && Boolean(dateKey),
@@ -79,7 +83,10 @@ export default function WaterWidget({
 
         try {
           await addWaterMutation.mutateAsync({
-            url: `/daily-tracking/${dateKey}/water`,
+            url: nutritionApiPath(
+              NUTRITION_TRACKING_API_ROOT,
+              `${dateKey}/water`,
+            ),
             attributes: { amountMl: cupSize },
           });
           toast.success(`Kamina yana ${cupSize}ml suv ichdi! 💧`);

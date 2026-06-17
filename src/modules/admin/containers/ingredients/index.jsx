@@ -1,5 +1,6 @@
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route } from "react-router";
 
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import CreatePage from "./create/index.jsx";
 import EditPage from "./edit/index.jsx";
 import ListPage from "./list/index.jsx";
@@ -7,7 +8,7 @@ import PricePage from "./price/index.jsx";
 import TranslationPage from "./translation/index.jsx";
 
 const IngredientsIndex = () => (
-  <Routes>
+  <ProfileAwareRoutes>
     <Route index element={<Navigate to="list" replace />} />
     <Route path="list" element={<ListPage />}>
       <Route path="create" element={<CreatePage />} />
@@ -15,7 +16,7 @@ const IngredientsIndex = () => (
       <Route path="price/:id" element={<PricePage />} />
       <Route path="translate/:id" element={<TranslationPage />} />
     </Route>
-  </Routes>
+  </ProfileAwareRoutes>
 );
 
 export default IngredientsIndex;

@@ -3,7 +3,10 @@ import { LocateFixedIcon, MapIcon, Maximize2Icon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadMapProvider } from "@/lib/maps";
-import { getAcceptedRunningRoutePoints } from "@/lib/running-metrics";
+import {
+  filterRunningRoutePoints,
+  getAcceptedRunningRoutePoints,
+} from "@/lib/running-metrics";
 import { resolveTheme } from "@/lib/user-preferences";
 import { cn } from "@/lib/utils";
 
@@ -277,6 +280,7 @@ const MapExpandButton = ({ showExpand, expandLabel, onExpand }) =>
 
 const RouteQualityCard = ({
   qualityScore,
+  qualityMeta = null,
   className,
   labels,
   compact = false,
@@ -325,6 +329,13 @@ const RouteQualityCard = ({
           <p className="mt-1 text-sm text-white/[0.55]">
             {quality.description}
           </p>
+          {qualityMeta ? (
+            <p className="mt-2 text-xs font-medium text-white/45">
+              {labels.acceptedPointsLabel}: {qualityMeta.acceptedPointCount}
+              {" · "}
+              {labels.filteredPointsLabel}: {qualityMeta.filteredPointCount}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -336,6 +347,7 @@ const RouteSvgFallback = ({
   label,
   live = false,
   qualityScore,
+  qualityMeta,
   labels,
   showQuality = true,
   showExpand = false,
@@ -460,11 +472,12 @@ const RouteSvgFallback = ({
         </p>
       ) : null}
       {showQuality ? (
-        <RouteQualityCard
-          qualityScore={qualityScore}
-          labels={labels}
-          compact={compact}
-        />
+          <RouteQualityCard
+            qualityScore={qualityScore}
+            qualityMeta={qualityMeta}
+            labels={labels}
+            compact={compact}
+          />
       ) : null}
     </div>
   );
@@ -651,6 +664,7 @@ const MapLibreRouteMap = ({
   const initialStyleUrlRef = React.useRef(styleUrl);
   const currentStyleUrlRef = React.useRef(null);
   const [isReady, setIsReady] = React.useState(false);
+  const [mapRevision, setMapRevision] = React.useState(0);
   const { maplibregl } = mapProvider ?? {};
   const coordinateCount = coordinates.length;
   const routeFeatureCount = filter(
@@ -715,6 +729,7 @@ const MapLibreRouteMap = ({
           ensureRouteLayers(map);
           readyRef.current = true;
           setIsReady(true);
+          setMapRevision((revision) => revision + 1);
           if (retryTimer) {
             window.clearTimeout(retryTimer);
             retryTimer = null;
@@ -817,7 +832,6 @@ const MapLibreRouteMap = ({
     try {
       currentStyleUrlRef.current = styleUrl;
       readyRef.current = false;
-      setIsReady(false);
       map.setStyle(styleUrl);
     } catch {
       onError?.();
@@ -827,7 +841,7 @@ const MapLibreRouteMap = ({
   React.useEffect(() => {
     const map = mapRef.current;
 
-    if (!map || !isReady) {
+    if (!map || !isReady || !readyRef.current) {
       return;
     }
 
@@ -927,6 +941,7 @@ const MapLibreRouteMap = ({
     isReady,
     live,
     maplibregl,
+    mapRevision,
     routeSegments,
   ]);
 
@@ -972,6 +987,7 @@ const MapOverlay = ({
   onExpand,
   showQuality,
   qualityScore,
+  qualityMeta,
   labels,
   compact,
 }) => (
@@ -984,6 +1000,7 @@ const MapOverlay = ({
     {showQuality ? (
       <RouteQualityCard
         qualityScore={qualityScore}
+        qualityMeta={qualityMeta}
         labels={labels}
         compact={compact}
       />
@@ -1004,6 +1021,8 @@ const defaultLabels = {
   fairDescription: "Some GPS drift",
   weakTitle: "Weak GPS",
   weakDescription: "Route was noisy",
+  acceptedPointsLabel: "Accepted",
+  filteredPointsLabel: "Filtered",
   recenterLabel: "Recenter route",
 };
 
@@ -1044,6 +1063,17 @@ const RunMapPanel = ({
     () => flattenRouteSegments(routeSegments),
     [routeSegments],
   );
+  const qualityMeta = React.useMemo(() => {
+    if (!Array.isArray(points) || points.length === 0) {
+      return null;
+    }
+
+    const routeQuality = filterRunningRoutePoints(points);
+    return {
+      acceptedPointCount: routeQuality.acceptedPoints.length,
+      filteredPointCount: routeQuality.filteredPointCount,
+    };
+  }, [points]);
   const mapTheme = useMapTheme();
   const [mapComponents, setMapComponents] = React.useState(null);
   const [loadState, setLoadState] = React.useState("idle");
@@ -1107,6 +1137,7 @@ const RunMapPanel = ({
           coordinates={routeCoordinates}
           label={labels.loading}
           qualityScore={qualityScore}
+          qualityMeta={qualityMeta}
           labels={labels}
           showQuality={showQuality}
         />
@@ -1115,6 +1146,7 @@ const RunMapPanel = ({
           coordinates={routeCoordinates}
           label={labels.error}
           qualityScore={qualityScore}
+          qualityMeta={qualityMeta}
           labels={labels}
           showQuality={showQuality}
         />
@@ -1137,6 +1169,7 @@ const RunMapPanel = ({
             onExpand={onExpand}
             showQuality={showQuality}
             qualityScore={qualityScore}
+            qualityMeta={qualityMeta}
             labels={labels}
             compact={isPreview}
           />

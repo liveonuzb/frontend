@@ -1,10 +1,11 @@
 import React, { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route } from "react-router";
 
 import Layout from "@/modules/admin/layout/index.jsx";
 import PageLoader from "@/components/page-loader/index.jsx";
 import ErrorBoundary from "@/components/error-boundary/index.jsx";
 import AdminCapabilityRoute from "@/modules/admin/components/admin-capability-route.jsx";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 
 const DashboardPage = lazy(
   () => import("@/modules/admin/pages/dashboard/index.jsx"),
@@ -117,7 +118,7 @@ const renderAdminRoute = (
 
 const Index = () => {
   return (
-    <Routes>
+    <ProfileAwareRoutes>
       <Route element={<Layout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={renderAdminRoute(DashboardPage)} />
@@ -313,7 +314,7 @@ const Index = () => {
           }
         />
       </Route>
-    </Routes>
+    </ProfileAwareRoutes>
   );
 };
 

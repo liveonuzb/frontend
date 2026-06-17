@@ -5,6 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useGetQuery } from "@/hooks/api";
 import { usePutQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getMoodMeta, MOOD_OPTIONS } from "@/lib/mood";
@@ -38,7 +42,7 @@ export function MoodWidgetView({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden py-4 pb-0 transition-all hover:ring-primary/20 hover:shadow-sm",
+        "relative overflow-hidden py-4 pb-0",
         "mood-widget",
         className,
       )}
@@ -87,11 +91,6 @@ export function MoodWidgetView({
                 type="button"
                 aria-label={moodLabel}
                 disabled={isPending || readOnly}
-                whileHover={
-                  !readOnly && !shouldReduceMotion
-                    ? { scale: 1.08, y: -3 }
-                    : undefined
-                }
                 whileTap={
                   !readOnly && !shouldReduceMotion ? { scale: 0.92 } : undefined
                 }
@@ -121,7 +120,7 @@ export function MoodWidgetView({
                   !readOnly && "cursor-pointer",
                   isSelected
                     ? "bg-primary/15 ring-1 ring-primary"
-                    : "bg-muted/30 hover:bg-muted/60",
+                    : "bg-muted/30",
                 )}
               >
                 <motion.div
@@ -169,7 +168,7 @@ export default function MoodWidget({
 }) {
   const queryClient = useQueryClient();
   const { data } = useGetQuery({
-    url: `/daily-tracking/${dateKey}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, dateKey),
     queryProps: {
       queryKey: getDashboardDayQueryKey(dateKey),
       enabled: dayDataOverride === undefined && Boolean(dateKey),
@@ -197,7 +196,7 @@ export default function MoodWidget({
       onMoodSelect={async (value) => {
         try {
           await setMoodMutation.mutateAsync({
-            url: `/daily-tracking/${dateKey}`,
+            url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, dateKey),
             attributes: {
               steps: dayData.steps,
               workoutMinutes: dayData.workoutMinutes,

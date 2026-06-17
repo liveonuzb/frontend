@@ -47,12 +47,6 @@
     "levelTitle": "Level",
     "completion": "Profile Completion",
     "completionDesc": "Completing your profile ensures messages, privacy and referral sections work accurately.",
-    "healthReport": {
-      "title": "AI health report",
-      "description": "Open the one-time wellness report built from your onboarding and health data.",
-      "badge": "AI report",
-      "action": "Open report"
-    },
     "tabs": {
       "profile": "Profile",
       "general": "Language",
@@ -62,7 +56,8 @@
       "privacy": "Privacy",
       "security": "Security",
       "premium": "Premium",
-      "referral": "Referrals"
+      "friends": "Friends",
+      "referral": "Recommendation"
     },
     "language": {
       "title": "Language",
@@ -331,8 +326,14 @@
       "activate": "Get Premium",
       "giftAction": "Gift Premium",
       "planSelectorTitle": "Choose the plan that fits you",
-      "planSelectorDescription": "Pick a plan first, then continue with payment or gift it to someone else.",
+      "planSelectorDescription": "Pick a plan first, then continue to payment.",
+      "billingTitle": "Billing",
+      "invoicesTitle": "Invoices",
+      "invoicesDescription": "Payments and invoice records live in a separate drawer.",
+      "invoicesEmpty": "There are no invoice records yet.",
       "historyTitle": "Subscription History",
+      "historyDescription": "Premium subscription periods and statuses live in a separate drawer.",
+      "historyEmpty": "There is no subscription history yet.",
       "unlimited": "Unlimited",
       "paymentsTitle": "Recent Payments",
       "premiumPayment": "Premium Payment",
@@ -401,6 +402,10 @@
       },
       "preparingCheckout": "Preparing checkout...",
       "goToPayment": "Go to Payment"
+    },
+    "friends": {
+      "description": "Friend list, requests, and new recommendations",
+      "value": "Friends"
     },
     "referral": {
       "title": "Referrals",

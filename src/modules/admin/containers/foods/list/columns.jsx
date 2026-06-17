@@ -2,6 +2,7 @@ import React from "react";
 import get from "lodash/get";
 import lodashMap from "lodash/map";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import {
   DataGridColumnHeader,
@@ -15,6 +16,19 @@ import { adminListSkeletons } from "@/modules/admin/components/admin-list-skelet
 import { tagLabel } from "@/modules/admin/lib/nutrition-tags.js";
 import ActionsMenu from "./actions-menu.jsx";
 import FoodImageCell from "./food-image-cell.jsx";
+import { buildFoodQualitySummary } from "./food-quality.js";
+
+const qualityGradeClass = {
+  good: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  danger: "border-destructive/25 bg-destructive/10 text-destructive",
+};
+
+const qualityProgressClass = {
+  good: "[&>div]:bg-emerald-500",
+  warning: "[&>div]:bg-amber-500",
+  danger: "[&>div]:bg-destructive",
+};
 
 export const useColumns = ({
   activeLanguages,
@@ -164,6 +178,45 @@ export const useColumns = ({
         ),
       },
       {
+        id: "quality",
+        header: "Sifat",
+        size: 148,
+        meta: { skeleton: adminListSkeletons.text },
+        cell: (info) => {
+          const summary = buildFoodQualitySummary(
+            info.row.original,
+            activeLanguages,
+          );
+          const firstIssue = summary.issues[0]?.label || "Tayyor";
+
+          return (
+            <div className="min-w-[126px] space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold tabular-nums">
+                  {summary.score}%
+                </span>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-5 px-1.5 text-[10px]",
+                    qualityGradeClass[summary.grade],
+                  )}
+                >
+                  {summary.gradeLabel}
+                </Badge>
+              </div>
+              <Progress
+                value={summary.score}
+                className={cn("h-1.5", qualityProgressClass[summary.grade])}
+              />
+              <div className="truncate text-[10px] text-muted-foreground">
+                {firstIssue}
+              </div>
+            </div>
+          );
+        },
+      },
+      {
         id: "nutritionTags",
         header: "Taglar",
         meta: { skeleton: adminListSkeletons.badge },
@@ -228,6 +281,29 @@ export const useColumns = ({
           <div className="text-right font-medium">{info.getValue()}</div>
         ),
         size: 90,
+      },
+      {
+        id: "macros",
+        header: "Makro",
+        meta: { skeleton: adminListSkeletons.text },
+        size: 126,
+        cell: (info) => {
+          const food = info.row.original;
+
+          return (
+            <div className="grid grid-cols-3 gap-1 text-[11px]">
+              <span className="rounded-md bg-muted px-1.5 py-1 text-center">
+                P {food.protein ?? 0}
+              </span>
+              <span className="rounded-md bg-muted px-1.5 py-1 text-center">
+                C {food.carbs ?? 0}
+              </span>
+              <span className="rounded-md bg-muted px-1.5 py-1 text-center">
+                F {food.fat ?? 0}
+              </span>
+            </div>
+          );
+        },
       },
       {
         accessorKey: "servingSize",

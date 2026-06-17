@@ -38,4 +38,19 @@ describe("template blocking reason labels", () => {
       "Mos emas: Yong'oq allergiya yoki cheklovlarda bor.",
     );
   });
+
+  it("deduplicates malformed backend reasons before building the summary", () => {
+    expect(
+      getTemplateBlockingReasonSummary({
+        isCompatible: false,
+        blockingReasons: [
+          { type: "disliked_food", foodName: " Manti " },
+          { type: "disliked_food", foodName: "Manti" },
+          { type: "avoided_ingredient", ingredientName: "   " },
+          { type: "unknown_reason", name: "legacy" },
+          null,
+        ],
+      }),
+    ).toBe("Mos emas: Manti yoqtirilmagan ovqatlar ro'yxatida bor.");
+  });
 });

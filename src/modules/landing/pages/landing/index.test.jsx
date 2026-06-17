@@ -14,34 +14,57 @@ import map from "lodash/map";
 
 const localeMap = { en, ru, uz };
 const setCurrentLanguageMock = vi.hoisted(() => vi.fn());
+const directAuthStoreMock = vi.hoisted(() => ({
+  getState: () => ({
+    completeAuthentication: vi.fn(),
+    logout: vi.fn(),
+    refreshToken: null,
+    token: null,
+  }),
+}));
+const directLanguageStoreMock = vi.hoisted(() => ({
+  getState: () => ({
+    currentLanguage: "uz",
+  }),
+}));
+const appModeMock = vi.hoisted(() => ({
+  state: { mode: "madagascar" },
+  setMode: vi.fn(),
+}));
 
 vi.mock("framer-motion", async () => {
   const React = await import("react");
   const { default: lodashForEach } = await import("lodash/forEach");
-  const createMotionComponent =
-    (Tag) =>
+  const createMotionComponent = (Tag) =>
     function MotionComponent({ children, ...props }) {
       const domProps = { ...props };
       lodashForEach(
-        ["whileHover", "whileInView", "initial", "animate", "transition", "viewport"],
+        [
+          "whileHover",
+          "whileInView",
+          "initial",
+          "animate",
+          "transition",
+          "viewport",
+        ],
         (prop) => {
           delete domProps[prop];
         },
       );
 
-      return (
-        <Tag {...domProps}>
-          {children}
-        </Tag>
-      );
+      return <Tag {...domProps}>{children}</Tag>;
     };
   const motionComponents = {
     article: createMotionComponent("article"),
+    button: createMotionComponent("button"),
     div: createMotionComponent("div"),
+    g: createMotionComponent("g"),
+    path: createMotionComponent("path"),
     section: createMotionComponent("section"),
   };
 
   return {
+    AnimatePresence: ({ children }) => <>{children}</>,
     LazyMotion: ({ children }) => <>{children}</>,
     domAnimation: {},
     m: motionComponents,
@@ -51,6 +74,10 @@ vi.mock("framer-motion", async () => {
 });
 
 vi.mock("react-i18next", () => ({
+  initReactI18next: {
+    init: vi.fn(),
+    type: "3rdParty",
+  },
   useTranslation: () => ({
     i18n: {
       getFixedT:
@@ -66,20 +93,20 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("@/store/auth-store", () => ({
+  default: directAuthStoreMock,
+}));
+
+vi.mock("@/store/language-store", () => ({
+  default: directLanguageStoreMock,
+}));
+
 vi.mock("@/components/language-drawer-picker", () => ({
   default: ({ ariaLabel, value }) => (
     <button type="button" aria-label={ariaLabel}>
       {value}
     </button>
   ),
-}));
-
-vi.mock("@/components/liveon-product-preview", () => ({
-  default: () => <div data-testid="product-preview">product preview</div>,
-  buildLiveOnProductPreviewCopy: () => ({
-    sliderLabel: "Product preview",
-    slides: [{ id: "slide-1", title: "Preview" }],
-  }),
 }));
 
 vi.mock("@/store", () => ({
@@ -92,23 +119,58 @@ vi.mock("@/store", () => ({
     hasSelectedLanguage: true,
     setCurrentLanguage: setCurrentLanguageMock,
   }),
-  useAppModeStore: (selector) => selector({ mode: "madagascar" }),
+  useAppModeStore: (selector) => {
+    const state = {
+      mode: appModeMock.state.mode,
+      setMode: appModeMock.setMode,
+    };
+
+    return typeof selector === "function" ? selector(state) : state;
+  },
+  APP_MODES: {
+    FOCUS: "focus",
+    ZEN: "zen",
+    MADAGASCAR: "madagascar",
+  },
 }));
 
 const renderLanding = () =>
   render(
-    <MemoryRouter initialEntries={["/"]}>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/auth/sign-up" element={<div>sign-up destination</div>} />
-        <Route path="/auth/select-mode" element={<div>mode destination</div>} />
-      </Routes>
-    </MemoryRouter>,
+    <TestAppModeProvider>
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/auth/sign-up"
+            element={<div>sign-up destination</div>}
+          />
+          <Route
+            path="/auth/select-mode"
+            element={<div>mode destination</div>}
+          />
+        </Routes>
+      </MemoryRouter>
+    </TestAppModeProvider>,
   );
+
+const TestAppModeProvider = ({ children }) => {
+  React.useEffect(() => {
+    document.documentElement.dataset.appMode =
+      appModeMock.state.mode || appModeMock.APP_MODES?.FOCUS || "focus";
+
+    return () => {
+      delete document.documentElement.dataset.appMode;
+    };
+  }, []);
+
+  return children;
+};
 
 describe("landing page", () => {
   beforeEach(() => {
     setCurrentLanguageMock.mockClear();
+    appModeMock.state.mode = "madagascar";
+    appModeMock.setMode.mockClear();
     document.head.innerHTML = "";
     document.documentElement.className = "";
     window.localStorage.clear();
@@ -133,8 +195,9 @@ describe("landing page", () => {
   it("does not render placeholder footer or social links", () => {
     renderLanding();
 
-    const hrefs = map(screen
-      .getAllByRole("link"), (link) => link.getAttribute("href"));
+    const hrefs = map(screen.getAllByRole("link"), (link) =>
+      link.getAttribute("href"),
+    );
 
     expect(hrefs).not.toContain("#");
     expect(hrefs).not.toContain("");
@@ -144,13 +207,41 @@ describe("landing page", () => {
     renderLanding();
 
     expect(screen.getByRole("banner").className).toContain("py-3");
-    expect(screen.getByRole("link", { name: "LiveOn" }).className).toContain("min-h-9");
-    expect(screen.getByRole("button", { name: "Dasturlar" }).className).toContain(
-      "whitespace-nowrap",
+    expect(screen.getByRole("link", { name: "LiveOn" }).className).toContain(
+      "min-h-9",
     );
+    expect(
+      screen.getByRole("button", { name: "Dasturlar" }).className,
+    ).toContain("whitespace-nowrap");
   });
 
-  it("renders the dashboard-result hero with preserved public anchors", () => {
+  it("ties landing controls and hero assets to the selected app mode", () => {
+    appModeMock.state.mode = "zen";
+
+    renderLanding();
+
+    expect(
+      screen.getByRole("button", { name: "Mode: Zen mode" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "LiveOn logotipi" }),
+    ).toHaveAttribute("src", "/zen/logo-main.webp");
+    expect(screen.getByTestId("landing-hero-mode-art")).toHaveAttribute(
+      "src",
+      "/zen/onboarding/curious.png",
+    );
+    expect(document.documentElement).toHaveAttribute("data-app-mode", "zen");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Suv va kayfiyat yonma-yon" }),
+    );
+
+    const trackingSlide = screen.getByTestId("hero-tracking-slide");
+    expect(trackingSlide.querySelector(".water-widget")).not.toBeNull();
+    expect(trackingSlide.querySelector(".mood-widget")).not.toBeNull();
+  });
+
+  it("renders the hero product swiper with preserved public anchors", () => {
     renderLanding();
 
     expect(
@@ -159,22 +250,68 @@ describe("landing page", () => {
         name: /Ozish va mashg'ulot rejangizni/i,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("product-dashboard-preview")).toBeInTheDocument();
-    expect(screen.getByText(/Mening ko'rsatkichlarim/i)).toBeInTheDocument();
+    expect(screen.getByTestId("hero-product-swiper")).toBeInTheDocument();
+    const calorieSlide = screen.getByTestId("hero-calorie-slide");
+    expect(calorieSlide).toHaveTextContent("Bugungi kaloriya");
+    expect(
+      calorieSlide.querySelectorAll('[data-slot="card"]').length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Suv va kayfiyat yonma-yon" }),
+    );
+    const trackingSlide = screen.getByTestId("hero-tracking-slide");
+    expect(trackingSlide.querySelector(".water-widget")).not.toBeNull();
+    expect(trackingSlide.querySelector(".mood-widget")).not.toBeNull();
 
-    forEach([
-      "features",
-      "how",
-      "nutrition",
-      "workouts",
-      "progress",
-      "local-market",
-      "testimonials",
-      "pricing",
-      "faq",
-    ], (id) => {
-      expect(document.getElementById(id)).not.toBeNull();
-    });
+    forEach(
+      [
+        "features",
+        "how",
+        "nutrition",
+        "workouts",
+        "progress",
+        "local-market",
+        "testimonials",
+        "pricing",
+        "faq",
+      ],
+      (id) => {
+        expect(document.getElementById(id)).not.toBeNull();
+      },
+    );
+  });
+
+  it("keeps hero preview slides equal height and includes meals", () => {
+    renderLanding();
+
+    const swiper = screen.getByTestId("hero-product-swiper");
+    expect(screen.getByTestId("hero-preview-frame")).toHaveClass(
+      "min-h-[34rem]",
+    );
+    expect(screen.getByTestId("hero-calorie-slide")).toHaveClass("h-full");
+
+    fireEvent.click(
+      within(swiper).getByRole("button", {
+        name: "Suv va kayfiyat yonma-yon",
+      }),
+    );
+    expect(screen.getByTestId("hero-tracking-slide")).toHaveClass("h-full");
+    expect(
+      screen.getByTestId("hero-tracking-slide").querySelector(".water-widget"),
+    ).not.toBeNull();
+    expect(
+      screen.getByTestId("hero-tracking-slide").querySelector(".mood-widget"),
+    ).not.toBeNull();
+
+    fireEvent.click(within(swiper).getByRole("button", { name: "Ovqatlar" }));
+    const mealsSlide = screen.getByTestId("hero-meals-slide");
+    expect(mealsSlide).toHaveClass("h-full");
+    expect(
+      screen.getByTestId("dashboard-meal-progress-ring-breakfast"),
+    ).toBeInTheDocument();
+    expect(mealsSlide).toHaveTextContent("Ovqatlar");
+    expect(mealsSlide).toHaveTextContent("Nonushta");
+    expect(mealsSlide).toHaveTextContent("Kechki ovqat");
   });
 
   it("renders the immersive product story steps", () => {
@@ -214,6 +351,27 @@ describe("landing page", () => {
         expect(screen.getByTestId(testId)).toHaveTextContent(label);
       },
     );
+  });
+
+  it("removes the final CTA section and keeps FAQ followed by footer", () => {
+    renderLanding();
+
+    expect(
+      screen.queryByRole("heading", {
+        name: /Disiplin bilan bugun boshlasangiz/i,
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("product-preview")).not.toBeInTheDocument();
+    expect(uz.landing.final).toBeUndefined();
+    expect(en.landing.final).toBeUndefined();
+    expect(ru.landing.final).toBeUndefined();
+
+    const faqSection = document.getElementById("faq");
+    const footer = screen.getByRole("contentinfo");
+    expect(
+      faqSection.compareDocumentPosition(footer) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("uses an accessible Sheet for mobile landing navigation", () => {
@@ -267,7 +425,10 @@ describe("landing page", () => {
     renderLanding();
 
     const heroSection = screen
-      .getByRole("heading", { level: 1, name: /Ozish va mashg'ulot rejangizni/i })
+      .getByRole("heading", {
+        level: 1,
+        name: /Ozish va mashg'ulot rejangizni/i,
+      })
       .closest("section");
 
     fireEvent.click(
@@ -287,12 +448,38 @@ describe("landing page", () => {
     window.removeEventListener("liveon:analytics", analyticsListener);
   });
 
+  it("keeps unauthenticated CTA behind mode selection when no mode is stored", () => {
+    appModeMock.state.mode = "";
+
+    renderLanding();
+
+    expect(
+      screen.getByRole("button", { name: "Mode: Focus mode" }),
+    ).toBeInTheDocument();
+
+    const heroSection = screen
+      .getByRole("heading", {
+        level: 1,
+        name: /Ozish va mashg'ulot rejangizni/i,
+      })
+      .closest("section");
+
+    fireEvent.click(
+      within(heroSection).getByRole("button", { name: /Bepul boshlash/i }),
+    );
+
+    expect(screen.getByText("mode destination")).toBeInTheDocument();
+  });
+
   it("emits FAQ, SoftwareApplication, and Organization structured data", () => {
     renderLanding();
 
-    const schemas = map(Array.from(
-      document.head.querySelectorAll('script[type="application/ld+json"]'),
-    ), (script) => JSON.parse(script.textContent || "{}"));
+    const schemas = map(
+      Array.from(
+        document.head.querySelectorAll('script[type="application/ld+json"]'),
+      ),
+      (script) => JSON.parse(script.textContent || "{}"),
+    );
     const graphTypes = schemas.flatMap((schema) =>
       isArray(schema["@graph"])
         ? map(schema["@graph"], (entry) => entry["@type"])
@@ -300,7 +487,11 @@ describe("landing page", () => {
     );
 
     expect(graphTypes).toEqual(
-      expect.arrayContaining(["FAQPage", "SoftwareApplication", "Organization"]),
+      expect.arrayContaining([
+        "FAQPage",
+        "SoftwareApplication",
+        "Organization",
+      ]),
     );
   });
 

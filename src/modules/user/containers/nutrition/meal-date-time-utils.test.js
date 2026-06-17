@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   formatMealTime,
   getCameraDateOptions,
+  getTimePartsFromDate,
 } from "./meal-date-time-utils.js";
 
 describe("meal date time labels", () => {
@@ -28,5 +29,13 @@ describe("meal date time labels", () => {
         period: "AM",
       }),
     ).toBe("Bugun, 8:30 AM");
+  });
+
+  it("rounds meal time parts to the next hour when minutes overflow", () => {
+    expect(getTimePartsFromDate(new Date(2026, 4, 31, 12, 58))).toEqual({
+      hour: 1,
+      minute: 0,
+      period: "PM",
+    });
   });
 });

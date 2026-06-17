@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveFoodCreateNutritionMode } from "./index.jsx";
+import { resolveFoodCreateNutritionMode } from "./food-create-utils.js";
 
 describe("food create drawer defaults", () => {
   it("can preselect recipe nutrition mode from route state", () => {

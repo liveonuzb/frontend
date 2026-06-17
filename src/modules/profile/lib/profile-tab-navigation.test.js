@@ -6,22 +6,19 @@ import {
 
 describe("profile-tab-navigation", () => {
   it("detects standalone profile tabs", () => {
-    expect(isStandaloneProfileTab("health")).toBe(true);
+    expect(isStandaloneProfileTab("health")).toBe(false);
     expect(isStandaloneProfileTab("profile")).toBe(false);
   });
 
-  it("builds the standalone health path and removes overlay params", () => {
+  it("does not build standalone paths for routed overlay tabs", () => {
     expect(
-      getStandaloneProfileTabPath(
-        "health",
-        "?profile=open&profileTab=health&source=drawer",
-      ),
-    ).toBe("/user/health?source=drawer");
+      getStandaloneProfileTabPath("health", "?source=drawer"),
+    ).toBeNull();
   });
 
-  it("returns the plain route when no extra params remain", () => {
+  it("returns null when no standalone tab route exists", () => {
     expect(getStandaloneProfileTabPath("health", "?tab=health")).toBe(
-      "/user/health",
+      null,
     );
   });
 

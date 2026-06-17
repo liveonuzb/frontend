@@ -5,6 +5,8 @@ import isArray from "lodash/isArray";
 import mean from "lodash/mean";
 import reduce from "lodash/reduce";
 import some from "lodash/some";
+import sortBy from "lodash/sortBy";
+import uniq from "lodash/uniq";
 import toNumber from "lodash/toNumber";
 
 const normalizeItems = (items) => (isArray(items) ? items : []);
@@ -86,4 +88,41 @@ export const trackNutritionScanFailed = ({
       sourceType,
       reason,
     },
+  });
+
+export const buildNutritionMealEventProperties = ({
+  date = null,
+  mealType = "unknown",
+  source = null,
+  itemCount = 1,
+  savedMealId = null,
+  hasSavedMeal = undefined,
+  hasIngredientSnapshot = false,
+  changedFields = [],
+} = {}) => ({
+  date,
+  mealType,
+  source,
+  itemCount: Math.max(1, toNumber(itemCount, 1)),
+  hasSavedMeal: Boolean(hasSavedMeal ?? savedMealId),
+  hasIngredientSnapshot: Boolean(hasIngredientSnapshot),
+  changedFields: sortBy(uniq(filter(changedFields, Boolean))),
+});
+
+export const trackNutritionMealLogged = (input = {}) =>
+  trackLaunchEvent("nutrition_meal_logged", {
+    source: "app",
+    properties: buildNutritionMealEventProperties(input),
+  });
+
+export const trackNutritionMealEdited = (input = {}) =>
+  trackLaunchEvent("nutrition_meal_edited", {
+    source: "app",
+    properties: buildNutritionMealEventProperties(input),
+  });
+
+export const trackNutritionMealDeleted = (input = {}) =>
+  trackLaunchEvent("nutrition_meal_deleted", {
+    source: "app",
+    properties: buildNutritionMealEventProperties(input),
   });

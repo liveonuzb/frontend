@@ -4,6 +4,7 @@ import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
 import get from "lodash/get";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
+import slice from "lodash/slice";
 import trim from "lodash/trim";
 import filter from "lodash/filter";
 import find from "lodash/find";
@@ -33,7 +34,13 @@ import {
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header";
 import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
 import { Filters } from "@/components/reui/filters.jsx";
-import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
+import {
+  useDeleteQuery,
+  useGetQuery,
+  usePatchQuery,
+  usePostFileQuery,
+  usePostQuery,
+} from "@/hooks/api";
 import useApi from "@/hooks/api/use-api.js";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
@@ -61,6 +68,9 @@ import {
   TEXT_OPERATORS,
 } from "../components/utils.jsx";
 import ActionsMenu from "./actions-menu.jsx";
+import IngredientDeleteAlert from "./delete-alert.jsx";
+import { getIngredientQualityIssues } from "./ingredient-quality.js";
+import IngredientImportPreviewDialog from "./import-preview-dialog.jsx";
 
 const downloadBlob = ({ blob, fileName }) => {
   const url = window.URL.createObjectURL(blob);
@@ -74,6 +84,12 @@ const downloadBlob = ({ blob, fileName }) => {
   window.URL.revokeObjectURL(url);
 };
 
+const buildIngredientImportFormData = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return formData;
+};
+
 const ListPage = () => {
   const navigate = useNavigate();
   const navigateAdminDrawer = useAdminDrawerListNavigation();
@@ -85,6 +101,13 @@ const ListPage = () => {
   const importFileInputRef = React.useRef(null);
   const [isExporting, setIsExporting] = React.useState(false);
   const [isImporting, setIsImporting] = React.useState(false);
+  const [pendingImportFile, setPendingImportFile] = React.useState(null);
+  const [importPreview, setImportPreview] = React.useState(null);
+  const [importPreviewOpen, setImportPreviewOpen] = React.useState(false);
+  const [ingredientToDelete, setIngredientToDelete] = React.useState(null);
+  const [deleteImpact, setDeleteImpact] = React.useState(null);
+  const [isLoadingDeleteImpact, setIsLoadingDeleteImpact] =
+    React.useState(false);
   const [name, setName] = useQueryState("name", parseAsString.withDefault(""));
   const [nameOp, setNameOp] = useQueryState(
     "nameOp",
@@ -283,8 +306,11 @@ const ListPage = () => {
   }, [languagesData]);
   const patchMutation = usePatchQuery({ queryKey: QUERY_KEY });
   const deleteMutation = useDeleteQuery({ queryKey: QUERY_KEY });
+  const { mutateAsync: fetchDeletionImpact } = usePostQuery({});
+  const importPreviewMutation = usePostFileQuery({});
+  const importJobMutation = usePostFileQuery({ queryKey: QUERY_KEY });
   const exportIngredients = React.useCallback(async () => {
-    const response = await request.get("/admin/ingredients/export", {
+    const response = await request.get("/admin/nutrition/ingredients/export", {
       params,
       responseType: "blob",
     });
@@ -297,41 +323,64 @@ const ListPage = () => {
         )?.[1] || "ingredients.xlsx",
     };
   }, [params, request]);
-  const importIngredients = React.useCallback(
+  const previewImportIngredients = React.useCallback(
     async (file) => {
-      const buildFormData = () => {
-        const formData = new FormData();
-        formData.append("file", file);
-        return formData;
-      };
-      const previewResponse = await request.post(
-        "/admin/ingredients/import/preview",
-        buildFormData(),
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-      const preview = get(
-        previewResponse,
-        "data.data",
-        get(previewResponse, "data"),
-      );
+      const response = await importPreviewMutation.mutateAsync({
+        url: "/admin/nutrition/ingredients/import/preview",
+        attributes: buildIngredientImportFormData(file),
+        config: { headers: { "Content-Type": "multipart/form-data" } },
+      });
 
-      if (get(preview, "invalidCount", 0) > 0) {
-        return { preview, job: null };
-      }
-
-      const jobResponse = await request.post(
-        "/admin/ingredients/import/jobs",
-        buildFormData(),
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
-
-      return {
-        preview,
-        job: get(jobResponse, "data.data", get(jobResponse, "data")),
-      };
+      return get(response, "data.data", get(response, "data"));
     },
-    [request],
+    [importPreviewMutation],
   );
+  const startImportIngredientsJob = React.useCallback(
+    async (file) => {
+      const response = await importJobMutation.mutateAsync({
+        url: "/admin/nutrition/ingredients/import/jobs",
+        attributes: buildIngredientImportFormData(file),
+        config: { headers: { "Content-Type": "multipart/form-data" } },
+      });
+
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      return get(response, "data.data", get(response, "data"));
+    },
+    [importJobMutation, queryClient],
+  );
+  React.useEffect(() => {
+    let cancelled = false;
+
+    if (!ingredientToDelete?.id) {
+      setDeleteImpact(null);
+      setIsLoadingDeleteImpact(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoadingDeleteImpact(true);
+    fetchDeletionImpact({
+      url: "/admin/ingredients/deletion-impact",
+      attributes: { ids: [ingredientToDelete.id] },
+    })
+      .then((response) => {
+        if (cancelled) return;
+        setDeleteImpact(get(response, "data.data", get(response, "data")));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDeleteImpact(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoadingDeleteImpact(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchDeletionImpact, ingredientToDelete]);
   const handleExportIngredients = React.useCallback(async () => {
     if (!canReadContent) return;
 
@@ -356,33 +405,37 @@ const ListPage = () => {
 
       try {
         setIsImporting(true);
-        const result = await importIngredients(file);
-        const invalidCount = get(result, "preview.invalidCount", 0);
+        setPendingImportFile(file);
+        const preview = await previewImportIngredients(file);
+        setImportPreview(preview);
+        setImportPreviewOpen(true);
+
+        const invalidCount = get(preview, "invalidCount", 0);
 
         if (invalidCount > 0) {
-          const firstError = get(result, "preview.errors.0.error");
-          const firstQualityTitle = get(
-            result,
-            "preview.quality.groups.0.title",
-          );
+          const firstError = get(preview, "errors.0.error");
+          const firstQualityTitle = get(preview, "quality.groups.0.title");
           toast.error(
             `${invalidCount} ta qatorda xato bor. ${
               firstQualityTitle ? `${firstQualityTitle}: ` : ""
-            }${firstError || "Import boshlanmadi."}`
+            }${firstError || "Import job bloklandi."}`,
           );
           return;
         }
 
-        const warningCount = get(result, "preview.quality.warnCount", 0);
+        const warningCount = get(preview, "quality.warnCount", 0);
         if (warningCount > 0) {
           toast.warning(
-            `${warningCount} ta Content Quality ogohlantirishi bor. /admin/content-quality sahifasida ko'rinadi.`
+            `${warningCount} ta Content Quality ogohlantirishi bor. Tasdiqlasangiz import job boshlanadi.`,
           );
+          return;
         }
 
-        await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-        toast.success("Ingredient import job sifatida boshlandi");
+        toast.success("Preview tayyor. Import jobni boshlash mumkin");
       } catch (error) {
+        setPendingImportFile(null);
+        setImportPreview(null);
+        setImportPreviewOpen(false);
         toast.error(
           getErrorMessage(error, "Ingredientlarni Excel import qilib bo'lmadi"),
         );
@@ -391,8 +444,49 @@ const ListPage = () => {
         event.target.value = "";
       }
     },
-    [canManageContent, importIngredients, queryClient],
+    [canManageContent, previewImportIngredients],
   );
+  const handleConfirmImportIngredients = React.useCallback(async () => {
+    if (!canManageContent || !pendingImportFile) return;
+
+    try {
+      await startImportIngredientsJob(pendingImportFile);
+      toast.success("Ingredient import job sifatida boshlandi");
+      setImportPreviewOpen(false);
+      setPendingImportFile(null);
+      setImportPreview(null);
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Ingredient import jobni boshlab bo'lmadi"),
+      );
+    }
+  }, [canManageContent, pendingImportFile, startImportIngredientsJob]);
+  const handleImportPreviewOpenChange = React.useCallback((open) => {
+    setImportPreviewOpen(open);
+    if (!open) {
+      setPendingImportFile(null);
+      setImportPreview(null);
+    }
+  }, []);
+  const handleDeleteIngredient = React.useCallback(async () => {
+    if (!ingredientToDelete) return;
+
+    try {
+      await deleteMutation.mutateAsync({
+        url: `/admin/ingredients/${ingredientToDelete.id}`,
+      });
+      toast.success("Ingredient o'chirildi");
+      setIngredientToDelete(null);
+      setDeleteImpact(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Ingredientni o'chirib bo'lmadi"));
+    }
+  }, [deleteMutation, ingredientToDelete]);
+  const handleDeleteOpenChange = React.useCallback((open) => {
+    if (open) return;
+    setIngredientToDelete(null);
+    setDeleteImpact(null);
+  }, []);
   const columns = React.useMemo(
     () => [
       {
@@ -596,6 +690,87 @@ const ListPage = () => {
           ),
       },
       {
+        id: "regionalPrices",
+        header: "Regional narx",
+        meta: { skeleton: adminListSkeletons.badge },
+        size: 170,
+        cell: (info) => {
+          const regionalPrices = get(info.row.original, "regionalPrices", []);
+          const visiblePrices = slice(regionalPrices, 0, 2);
+
+          return regionalPrices.length ? (
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                {regionalPrices.length} region
+              </Badge>
+              {map(visiblePrices, (price) => (
+                <Badge
+                  key={`${price.regionKey}-${price.season}`}
+                  variant="secondary"
+                  className="h-5 px-1.5 text-[10px]"
+                >
+                  {price.regionName}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Yo'q</span>
+          );
+        },
+      },
+      {
+        accessorKey: "recipeCount",
+        header: "Recipe usage",
+        meta: { skeleton: adminListSkeletons.text },
+        size: 120,
+        cell: (info) => (
+          <Badge variant="outline" className="h-6 px-2">
+            {toNumber(info.getValue()) || 0}
+          </Badge>
+        ),
+      },
+      {
+        id: "quality",
+        header: "QA",
+        meta: { skeleton: adminListSkeletons.badge },
+        size: 220,
+        cell: (info) => {
+          const issues = getIngredientQualityIssues(info.row.original);
+          const visibleIssues = slice(issues, 0, 2);
+
+          return issues.length ? (
+            <div className="flex flex-wrap gap-1">
+              {map(visibleIssues, (issue) => (
+                <Badge
+                  key={issue.code}
+                  variant="outline"
+                  className={cn(
+                    "h-5 px-1.5 text-[10px]",
+                    issue.section === "pricing"
+                      ? "border-amber-200 bg-amber-50 text-amber-700"
+                      : "border-rose-200 bg-rose-50 text-rose-700",
+                  )}
+                >
+                  {issue.label}
+                </Badge>
+              ))}
+              {issues.length > visibleIssues.length ? (
+                <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
+                  +{issues.length - visibleIssues.length}
+                </Badge>
+              ) : null}
+            </div>
+          ) : (
+            <Badge
+              variant="outline"
+              className="h-5 border-emerald-200 bg-emerald-50 px-1.5 text-[10px] text-emerald-700"
+            >
+              OK
+            </Badge>
+          );
+        },
+      },
+      {
         accessorKey: "isOnboarding",
         header: ({ column }) => (
           <DataGridColumnHeader column={column} title="Onboarding" />
@@ -664,18 +839,7 @@ const ListPage = () => {
               onEdit={(row) => navigateAdminDrawer(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
               onPrice={(row) => navigate(`price/${row.id}`)}
-              onDelete={async (row) => {
-                try {
-                  await deleteMutation.mutateAsync({
-                    url: `/admin/ingredients/${row.id}`,
-                  });
-                  toast.success("Ingredient o'chirildi");
-                } catch (error) {
-                  toast.error(
-                    getErrorMessage(error, "Ingredientni o'chirib bo'lmadi"),
-                  );
-                }
-              }}
+              onDelete={setIngredientToDelete}
             />
           </div>
         ),
@@ -685,7 +849,6 @@ const ListPage = () => {
       activeLanguages,
       canReorder,
       currentLanguage,
-      deleteMutation,
       navigate,
       navigateAdminDrawer,
       patchMutation,
@@ -982,12 +1145,20 @@ const ListPage = () => {
               <Button
                 variant="outline"
                 onClick={() => importFileInputRef.current?.click()}
-                disabled={isImporting}
+                disabled={
+                  isImporting ||
+                  importPreviewMutation.isPending ||
+                  importJobMutation.isPending
+                }
                 className="gap-1.5"
               >
                 <UploadIcon className="size-4" />
                 <span className="hidden sm:inline">
-                  {isImporting ? "Import..." : "Excel import"}
+                  {isImporting || importPreviewMutation.isPending
+                    ? "Preview..."
+                    : importJobMutation.isPending
+                      ? "Import..."
+                      : "Excel import"}
                 </span>
               </Button>
             </>
@@ -1053,6 +1224,22 @@ const ListPage = () => {
           />
         </div>
       </DataGrid>
+      <IngredientImportPreviewDialog
+        open={importPreviewOpen}
+        onOpenChange={handleImportPreviewOpenChange}
+        preview={importPreview}
+        isStarting={importJobMutation.isPending}
+        onStartImport={() => void handleConfirmImportIngredients()}
+      />
+      <IngredientDeleteAlert
+        ingredient={ingredientToDelete}
+        open={Boolean(ingredientToDelete)}
+        onOpenChange={handleDeleteOpenChange}
+        onConfirm={() => void handleDeleteIngredient()}
+        isDeleting={deleteMutation.isPending}
+        impact={deleteImpact}
+        isLoadingImpact={isLoadingDeleteImpact}
+      />
       <Outlet />
     </div>
   );

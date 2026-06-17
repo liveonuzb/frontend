@@ -1,12 +1,12 @@
 import {
   BellIcon,
-  CrownIcon,
   GlobeIcon,
   HeartPulseIcon,
   KeyIcon,
   ShieldIcon,
   SparklesIcon,
   UserIcon,
+  UsersIcon,
 } from "lucide-react";
 import { UserProfileTab } from "./tabs/user-profile-tab";
 import { GeneralTab } from "./tabs/general-tab";
@@ -14,7 +14,7 @@ import { HealthTab } from "./tabs/health-tab";
 import { NotificationsTab } from "./tabs/notifications-tab";
 import { PrivacyTab } from "./tabs/privacy-tab";
 import { SecurityTab } from "./tabs/security-tab";
-import { PremiumTab } from "./tabs/premium-tab";
+import { FriendsTab } from "./tabs/friends-tab";
 import { ReferralTab } from "./tabs/referral-tab";
 import { PROFILE_TAB_IDS } from "@/modules/profile/lib/profile-tab-registry";
 
@@ -65,11 +65,11 @@ const PROFILE_TAB_DEFINITIONS = [
     component: SecurityTab,
   },
   {
-    id: "premium",
-    labelKey: "profile.tabs.premium",
-    descriptionKey: "profile.premium.description",
-    icon: CrownIcon,
-    component: PremiumTab,
+    id: "friends",
+    labelKey: "profile.tabs.friends",
+    descriptionKey: "profile.friends.description",
+    icon: UsersIcon,
+    component: FriendsTab,
   },
   {
     id: "referral",

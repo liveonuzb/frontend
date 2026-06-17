@@ -1,9 +1,20 @@
 import React from "react";
-import get from "lodash/get";
-import isArray from "lodash/isArray";
-import map from "lodash/map";
-import trim from "lodash/trim";
-import toNumber from "lodash/toNumber";
+import {
+  clamp,
+  filter,
+  floor,
+  get,
+  includes,
+  isArray,
+  isDate,
+  isFinite as isFiniteNumber,
+  isNil,
+  isPlainObject,
+  map,
+  toLower,
+  toNumber,
+  trim,
+} from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -17,6 +28,10 @@ import {
   AI_USAGE_STATUS_QUERY_KEY,
   useAiAccessInvalidation,
 } from "@/hooks/app/use-ai-access";
+import {
+  NUTRITION_AI_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 
 export const NUTRITION_AI_QUERY_KEY = ["user", "nutrition-ai"];
 export const NUTRITION_AI_PANTRY_QUERY_KEY = [
@@ -33,10 +48,111 @@ const MIME_EXTENSION_MAP = {
 const responsePayload = (response, fallback = null) =>
   getApiResponseData(response, fallback);
 
-const toNullableNumber = (value) => {
-  if (value === null || value === undefined || value === "") return null;
+const MAX_PANTRY_AMOUNT = 1000000;
+
+const isBlankString = (value) =>
+  typeof value === "string" && trim(value).length === 0;
+
+const hasValue = (value) => !isNil(value) && !isBlankString(value);
+
+const toFiniteNumberOrNull = (value) => {
+  if (!hasValue(value)) {
+    return null;
+  }
+
   const numeric = toNumber(value);
-  return Number.isFinite(numeric) ? numeric : null;
+  return isFiniteNumber(numeric) ? numeric : null;
+};
+
+const toNonNegativeNumber = (value, fallback = 0) => {
+  const numeric = toFiniteNumberOrNull(value);
+
+  return isNil(numeric) ? fallback : clamp(numeric, 0, MAX_PANTRY_AMOUNT);
+};
+
+const toNullableNumber = (value) => {
+  const numeric = toFiniteNumberOrNull(value);
+
+  return isNil(numeric) ? null : clamp(numeric, 0, MAX_PANTRY_AMOUNT);
+};
+
+const toNullablePositiveInteger = (value) => {
+  const numeric = toFiniteNumberOrNull(value);
+
+  return !isNil(numeric) && numeric > 0 ? floor(numeric) : null;
+};
+
+const normalizeText = (value, fallback = "") => {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const normalized = trim(value);
+  return normalized || fallback;
+};
+
+const normalizeNullableText = (value) => {
+  const normalized = normalizeText(value, "");
+
+  return normalized || null;
+};
+
+const normalizeId = (value) => (hasValue(value) ? String(value) : null);
+
+const normalizeDateValue = (value) => {
+  if (!hasValue(value)) {
+    return null;
+  }
+
+  const date = isDate(value) ? value : new Date(value);
+  return isFiniteNumber(date.getTime()) ? date.toISOString() : null;
+};
+
+const normalizeConfidence = (value) => {
+  const numeric = toFiniteNumberOrNull(value);
+
+  return isNil(numeric) ? null : clamp(numeric, 0, 1);
+};
+
+const normalizeBoolean = (value) => {
+  if (value === true || value === 1) {
+    return true;
+  }
+
+  if (value === false || value === 0) {
+    return false;
+  }
+
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return includes(["true", "1", "yes"], toLower(trim(value)));
+};
+
+const getIngredientFallbackName = (ingredient) =>
+  isPlainObject(ingredient)
+    ? normalizeText(
+        get(ingredient, "name") ||
+          get(ingredient, "title") ||
+          get(ingredient, "label"),
+      )
+    : "";
+
+const getPantryItemsSource = (payload) => {
+  if (isArray(payload)) {
+    return payload;
+  }
+
+  if (isArray(get(payload, "items"))) {
+    return get(payload, "items");
+  }
+
+  if (isArray(get(payload, "data"))) {
+    return get(payload, "data");
+  }
+
+  return [];
 };
 
 const imageInputToFile = async (input, fallbackName = "pantry-scan") => {
@@ -54,19 +170,66 @@ const imageInputToFile = async (input, fallbackName = "pantry-scan") => {
   throw new Error("Invalid pantry image input");
 };
 
-export const normalizePantryItem = (item = {}) => ({
-  id: get(item, "id"),
-  ingredientId: get(item, "ingredientId", null),
-  name: trim(String(get(item, "name", ""))),
-  quantity: toNumber(get(item, "quantity"), 0),
-  unit: get(item, "unit", ""),
-  grams: toNullableNumber(get(item, "grams")),
-  source: get(item, "source", "manual"),
-  confidence: toNullableNumber(get(item, "confidence")),
-  expiresAt: get(item, "expiresAt", null),
-  notes: get(item, "notes", null),
-  ingredient: get(item, "ingredient", null),
-});
+export const normalizePantryItem = (item = {}) => {
+  if (!isPlainObject(item)) {
+    return null;
+  }
+
+  const ingredient = isPlainObject(get(item, "ingredient"))
+    ? get(item, "ingredient")
+    : null;
+  const name =
+    normalizeText(get(item, "name")) || getIngredientFallbackName(ingredient);
+
+  if (!name) {
+    return null;
+  }
+
+  return {
+    id: normalizeId(get(item, "id")),
+    ingredientId: toNullablePositiveInteger(get(item, "ingredientId")),
+    name,
+    quantity: toNonNegativeNumber(get(item, "quantity")),
+    unit: normalizeText(get(item, "unit")),
+    grams: toNullableNumber(get(item, "grams")),
+    source: normalizeText(get(item, "source"), "manual"),
+    confidence: normalizeConfidence(get(item, "confidence")),
+    expiresAt: normalizeDateValue(get(item, "expiresAt")),
+    notes: normalizeNullableText(get(item, "notes")),
+    ingredient,
+  };
+};
+
+const normalizePantryScanSuggestion = (suggestion = {}) => {
+  if (!isPlainObject(suggestion)) {
+    return null;
+  }
+
+  const name =
+    normalizeText(get(suggestion, "name")) ||
+    normalizeText(get(suggestion, "ingredientName"));
+
+  if (!name) {
+    return null;
+  }
+
+  const normalized = {
+    ...suggestion,
+    name,
+    ingredientId: toNullablePositiveInteger(get(suggestion, "ingredientId")),
+    confidence: normalizeConfidence(get(suggestion, "confidence")),
+  };
+
+  if (hasValue(get(suggestion, "category"))) {
+    normalized.category = normalizeText(get(suggestion, "category"));
+  }
+
+  if (!isNil(get(suggestion, "needsReview"))) {
+    normalized.needsReview = normalizeBoolean(get(suggestion, "needsReview"));
+  }
+
+  return normalized;
+};
 
 export const normalizeNutritionAiCards = (cards = []) =>
   map(isArray(cards) ? cards : [], (card) => ({
@@ -80,7 +243,7 @@ export const useNutritionAiPantry = (options = {}) => {
   const queryClient = useQueryClient();
   const { invalidateAiAccess } = useAiAccessInvalidation();
   const pantryQuery = useGetQuery({
-    url: "/user/nutrition-ai/pantry",
+    url: nutritionApiPath(NUTRITION_AI_API_ROOT, "pantry"),
     queryProps: {
       queryKey: NUTRITION_AI_PANTRY_QUERY_KEY,
       enabled,
@@ -95,14 +258,13 @@ export const useNutritionAiPantry = (options = {}) => {
 
   const pantryItems = React.useMemo(() => {
     const payload = responsePayload(pantryQuery.data, {});
-    const items = get(payload, "items", isArray(payload) ? payload : []);
-    return map(isArray(items) ? items : [], normalizePantryItem);
+    return filter(map(getPantryItemsSource(payload), normalizePantryItem), Boolean);
   }, [pantryQuery.data]);
 
   const createPantryItem = React.useCallback(
     async (attributes) => {
       const response = await createMutation.mutateAsync({
-        url: "/user/nutrition-ai/pantry/items",
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, "pantry/items"),
         attributes,
       });
       return normalizePantryItem(responsePayload(response, {}));
@@ -113,7 +275,7 @@ export const useNutritionAiPantry = (options = {}) => {
   const updatePantryItem = React.useCallback(
     async (id, attributes) => {
       const response = await updateMutation.mutateAsync({
-        url: `/user/nutrition-ai/pantry/items/${id}`,
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, `pantry/items/${id}`),
         attributes,
       });
       return normalizePantryItem(responsePayload(response, {}));
@@ -124,7 +286,7 @@ export const useNutritionAiPantry = (options = {}) => {
   const deletePantryItem = React.useCallback(
     async (id) =>
       deleteMutation.mutateAsync({
-        url: `/user/nutrition-ai/pantry/items/${id}`,
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, `pantry/items/${id}`),
       }),
     [deleteMutation],
   );
@@ -136,7 +298,7 @@ export const useNutritionAiPantry = (options = {}) => {
       formData.append("file", file);
 
       const response = await scanMutation.mutateAsync({
-        url: "/user/nutrition-ai/pantry/scan",
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, "pantry/scan"),
         attributes: formData,
         config: {
           headers: {
@@ -149,9 +311,15 @@ export const useNutritionAiPantry = (options = {}) => {
       await queryClient.invalidateQueries({ queryKey: AI_USAGE_STATUS_QUERY_KEY });
 
       return {
-        suggestions: isArray(get(payload, "suggestions"))
-          ? get(payload, "suggestions")
-          : [],
+        suggestions: filter(
+          map(
+            isArray(get(payload, "suggestions"))
+              ? get(payload, "suggestions")
+              : [],
+            normalizePantryScanSuggestion,
+          ),
+          Boolean,
+        ),
         reviewOnly: get(payload, "reviewOnly", true),
       };
     },
@@ -161,7 +329,7 @@ export const useNutritionAiPantry = (options = {}) => {
   const getRecipeAssistant = React.useCallback(
     async (attributes) => {
       const response = await recipeMutation.mutateAsync({
-        url: "/user/nutrition-ai/recipe-assistant",
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, "recipe-assistant"),
         attributes,
       });
       const payload = responsePayload(response, {});
@@ -177,7 +345,7 @@ export const useNutritionAiPantry = (options = {}) => {
   const getSubstitutions = React.useCallback(
     async (attributes) => {
       const response = await substitutionMutation.mutateAsync({
-        url: "/user/nutrition-ai/substitutions",
+        url: nutritionApiPath(NUTRITION_AI_API_ROOT, "substitutions"),
         attributes,
       });
       const payload = responsePayload(response, {});

@@ -70,6 +70,7 @@ import forEach from "lodash/forEach";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
 import lodashToNumber from "lodash/toNumber";
+import some from "lodash/some";
 import trim from "lodash/trim";
 import take from "lodash/take";
 
@@ -93,6 +94,11 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(normalized) ? normalized : fallback;
 };
 
+const toStrictNumber = (value) => {
+  const normalized = lodashToNumber(value);
+  return Number.isFinite(normalized) ? normalized : null;
+};
+
 const calcMacros = (food, amount) => {
   const unit = food?.unit || "g";
   const isUnit = unit !== "g" && unit !== "ml";
@@ -105,6 +111,13 @@ const calcMacros = (food, amount) => {
     fat: Math.round((food?.baseFat ?? food?.fat ?? 0) * factor),
   };
 };
+
+const hasLowConfidenceDraft = (items = []) =>
+  some(items, (item) => {
+    const confidence = toNumber(item?.confidence, 1);
+
+    return Boolean(item?.reviewNeeded) || confidence < 0.75;
+  });
 
 const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
   if (!isLoading && meals.length === 0) return null;
@@ -145,7 +158,7 @@ const RecentMealsPill = ({ meals = [], isLoading = false, onOpen }) => {
             </span>
           )}
         </span>
-        <span>Recent meals</span>
+        <span>Oxirgi ovqatlar</span>
         <ChevronUpIcon className="size-4 text-muted-foreground" />
       </button>
     </div>
@@ -410,7 +423,7 @@ const ScanCameraView = ({
                 : "text-white/75",
             )}
           >
-            Barcode
+            Shtrix-kod
           </button>
         </div>
 
@@ -484,7 +497,7 @@ const ScanCameraView = ({
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
               <ImageIcon className="size-5" />
             </span>
-            <span className="text-xs font-bold tracking-wide">Gallery</span>
+            <span className="text-xs font-bold tracking-wide">Galereya</span>
           </button>
         </div>
 
@@ -505,7 +518,7 @@ const ScanCameraView = ({
             (isPhotoScanDisabled || !ready || isScanning)
           }
           aria-label={
-            scanMode === "barcode" ? "AI rejimiga qaytish" : "Capture"
+            scanMode === "barcode" ? "AI rejimiga qaytish" : "Rasmga olish"
           }
           className="flex size-[72px] items-center justify-center rounded-full border-[5px] border-muted bg-background shadow-sm ring-1 ring-border transition-transform active:scale-95 disabled:opacity-40"
         >
@@ -526,7 +539,7 @@ const ScanCameraView = ({
             <span className="flex size-11 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
               <KeyboardIcon className="size-5" />
             </span>
-            <span className="text-xs font-bold tracking-wide">Type</span>
+            <span className="text-xs font-bold tracking-wide">Matn</span>
           </button>
         </div>
       </div>
@@ -700,7 +713,7 @@ export default function CameraDrawer({
   const handleCapture = async (dataUrl) => {
     if (photoScanCreditStatus.isDisabled) {
       toast.error(
-        "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+        "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring.",
       );
       return;
     }
@@ -713,7 +726,7 @@ export default function CameraDrawer({
     setScannedItems([]);
     setScanError(null);
     setResultType("ai");
-    setAiResultStatus("analyzing");
+    setAiResultStatus("uploading");
     setResultDrawerVisibility(true);
     void trackNutritionScanStarted({
       sourceType: "camera",
@@ -726,6 +739,7 @@ export default function CameraDrawer({
       const uploadedImageUrl = await uploadMealCapture(dataUrl);
       if (aiScanRequestRef.current !== requestId) return;
       setCapturedImageUrl(uploadedImageUrl);
+      setAiResultStatus("analyzing");
       scanPhase = "analysis";
 
       const response = await analyzeMealImageDraft({
@@ -738,11 +752,17 @@ export default function CameraDrawer({
       if (items.length === 0) {
         setScanError("AI bu rasm uchun draft tayyorlay olmadi.");
       }
-      setAiResultStatus(items.length > 0 ? "ready" : "empty");
+      setAiResultStatus(
+        items.length > 0
+          ? hasLowConfidenceDraft(items)
+            ? "low-confidence"
+            : "ready"
+          : "empty",
+      );
     } catch (error) {
       if (aiScanRequestRef.current !== requestId) return;
       const message = isAiAccessLimitError(error)
-        ? "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin."
+        ? "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring."
         : error?.response?.data?.message ||
           "Ovqatni AI orqali aniqlab bo'lmadi";
       setScanError(message);
@@ -792,10 +812,14 @@ export default function CameraDrawer({
   );
 
   const handleBarcodeScan = useCallback(
-    async (code) => {
+    async (code, options = {}) => {
       const normalizedCode = trim(String(code || ""));
 
-      if (!normalizedCode || barcodeStatus === "loading") {
+      if (
+        !normalizedCode ||
+        barcodeStatus === "loading" ||
+        (!options.retry && barcodeStatus !== "scanning")
+      ) {
         return;
       }
 
@@ -828,11 +852,16 @@ export default function CameraDrawer({
         }
 
         setBarcodeStatus("error");
-        toast.error("Barcode bo'yicha ovqatni tekshirib bo'lmadi");
+        toast.error("Shtrix-kod bo'yicha ovqatni tekshirib bo'lmadi");
       }
     },
     [barcodeStatus, lookupFoodByBarcode, setResultDrawerVisibility],
   );
+
+  const handleBarcodeRetry = useCallback(() => {
+    if (!scannedBarcode) return;
+    void handleBarcodeScan(scannedBarcode, { retry: true });
+  }, [handleBarcodeScan, scannedBarcode]);
 
   const handleBarcodeManualFieldChange = useCallback((key, value) => {
     setBarcodeManualFood((current) => ({
@@ -878,9 +907,31 @@ export default function CameraDrawer({
 
   const handleAddManualBarcodeFood = useCallback(async () => {
     const name = trim(barcodeManualFood.name);
+    const grams = toStrictNumber(barcodeManualFood.grams);
+    const cal = toStrictNumber(barcodeManualFood.cal);
+    const protein = toStrictNumber(barcodeManualFood.protein);
+    const carbs = toStrictNumber(barcodeManualFood.carbs);
+    const fat = toStrictNumber(barcodeManualFood.fat);
 
     if (!name) {
       toast.error("Ovqat nomini kiriting");
+      return;
+    }
+    if (grams == null || grams <= 0) {
+      toast.error("Miqdor 0 dan katta bo'lishi kerak");
+      return;
+    }
+    if (
+      cal == null ||
+      protein == null ||
+      carbs == null ||
+      fat == null ||
+      cal < 0 ||
+      protein < 0 ||
+      carbs < 0 ||
+      fat < 0
+    ) {
+      toast.error("Kaloriya va makro qiymatlar 0 yoki undan katta bo'lishi kerak");
       return;
     }
 
@@ -891,12 +942,12 @@ export default function CameraDrawer({
         barcode: scannedBarcode || null,
         source: "barcode-manual",
         qty: 1,
-        grams: Math.max(1, toNumber(barcodeManualFood.grams, 100)),
+        grams,
         unit: barcodeManualFood.unit || "g",
-        cal: Math.max(0, Math.round(toNumber(barcodeManualFood.cal))),
-        protein: Math.max(0, toNumber(barcodeManualFood.protein)),
-        carbs: Math.max(0, toNumber(barcodeManualFood.carbs)),
-        fat: Math.max(0, toNumber(barcodeManualFood.fat)),
+        cal: Math.round(cal),
+        protein,
+        carbs,
+        fat,
         addedAt: loggedAt || undefined,
         addedFromPlan: false,
       });
@@ -1074,7 +1125,7 @@ export default function CameraDrawer({
       setRecentMealsOpen(false);
       onClose();
     } catch {
-      toast.error("Recent mealni qo'shib bo'lmadi");
+      toast.error("Oxirgi ovqatni qo'shib bo'lmadi");
     } finally {
       setIsCopyingRecentMeal(false);
     }
@@ -1132,7 +1183,7 @@ export default function CameraDrawer({
             <div className="flex w-full flex-col items-center gap-1">
               <DrawerTitle className="text-base font-semibold">
                 {scanMode === "barcode"
-                  ? "Barcode skanerlash"
+                  ? "Shtrix-kod skanerlash"
                   : "Ovqatni aniqlash"}
               </DrawerTitle>
               <DrawerDescription>
@@ -1205,6 +1256,7 @@ export default function CameraDrawer({
             onAmountChange: setBarcodeAmount,
             onManualFieldChange: handleBarcodeManualFieldChange,
             onReset: resetBarcodeScanner,
+            onRetry: handleBarcodeRetry,
             scannedCode: scannedBarcode,
             status: barcodeStatus,
           }}

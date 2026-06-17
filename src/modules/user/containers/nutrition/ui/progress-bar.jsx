@@ -1,7 +1,6 @@
 import React from "react";
-import clamp from "lodash/clamp";
-import round from "lodash/round";
 import { cn } from "@/lib/utils";
+import { getProgressPercent } from "./progress-bar-utils.js";
 
 const toneClassName = {
   primary: "bg-primary",
@@ -10,14 +9,6 @@ const toneClassName = {
   fat: "bg-emerald-500",
   water: "bg-sky-500",
   success: "bg-emerald-500",
-};
-
-export const getProgressPercent = (value, target) => {
-  if (!target || target <= 0) {
-    return 0;
-  }
-
-  return clamp(round((value / target) * 100), 0, 100);
 };
 
 export default function ProgressBar({
@@ -50,4 +41,3 @@ export default function ProgressBar({
     </div>
   );
 }
-

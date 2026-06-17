@@ -35,7 +35,6 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import useProfileSettings, {
   getRequestErrorMessage,
@@ -44,6 +43,7 @@ import {
   getAuthErrorMessage,
   getOtpToastDescription,
 } from "@/modules/auth/lib/auth-utils";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
 const MAX_AVATAR_FILE_SIZE = 3 * 1024 * 1024;
 const ACCEPTED_AVATAR_MIME_TYPES = new Set([
@@ -53,38 +53,6 @@ const ACCEPTED_AVATAR_MIME_TYPES = new Set([
   "image/gif",
 ]);
 const AVATAR_FILE_ACCEPT = Array.from(ACCEPTED_AVATAR_MIME_TYPES).join(",");
-
-const calcCompletionPct = (form) => {
-  let pct = 0;
-  if (trim(form.avatar)) pct += 20;
-  if (trim(form.firstName)) pct += 10;
-  if (trim(form.lastName)) pct += 10;
-  if (trim(form.bio)) pct += 15;
-  if (trim(form.username)) pct += 20;
-  if (trim(form.phone)) pct += 25;
-  return pct;
-};
-
-const ProfileCompletionBar = ({ form }) => {
-  const pct = calcCompletionPct(form);
-  if (pct >= 100) return null;
-  return (
-    <div className="rounded-2xl border bg-primary/5 px-4 py-3">
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="font-medium">Profil to&apos;ldirilishi</span>
-        <span className="font-bold text-primary">{pct}%</span>
-      </div>
-      <Progress value={pct} className="h-1.5" />
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        {pct < 50
-          ? "Profilingizni to'liq to'ldiring — bu boshqalar sizni topishiga yordam beradi."
-          : pct < 80
-            ? "Yaxshi boshlang'ich! Yana bir nechta qism to'ldirilmagan."
-            : "Deyarli tayyor! Profilingizni yakunlang."}
-      </p>
-    </div>
-  );
-};
 
 const validateUsername = (username) => {
   const trimmed = trim(username).replace(/^@+/, "");
@@ -168,6 +136,14 @@ export const UserProfileTab = ({ embedded = false }) => {
   const [otpError, setOtpError] = React.useState("");
   const [pendingContact, setPendingContact] = React.useState(null);
   const [resendCountdown, setResendCountdown] = React.useState(0);
+  const {
+    activeProfileDrawer,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
+  const isContactDrawerOpen =
+    contactDrawerOpen || activeProfileDrawer === "contact";
+  const isOtpDrawerOpen = otpDrawerOpen || activeProfileDrawer === "otp";
 
   React.useEffect(() => {
     if (resendCountdown <= 0) return;
@@ -176,6 +152,14 @@ export const UserProfileTab = ({ embedded = false }) => {
     }, 1000);
     return () => clearInterval(timer);
   }, [resendCountdown]);
+
+  React.useEffect(() => {
+    if (activeProfileDrawer !== "otp" || pendingContact?.value) {
+      return;
+    }
+
+    closeProfileDrawer();
+  }, [activeProfileDrawer, closeProfileDrawer, pendingContact]);
 
   const startResendCountdown = React.useCallback(() => {
     setResendCountdown(60);
@@ -273,8 +257,9 @@ export const UserProfileTab = ({ embedded = false }) => {
       setPendingContact(null);
       setContactValue(normalizedForm.phone);
       setContactDrawerOpen(true);
+      openProfileDrawer("contact", "profile");
     },
-    [normalizedForm.phone],
+    [normalizedForm.phone, openProfileDrawer],
   );
 
   const closeContactDrawers = React.useCallback(() => {
@@ -284,7 +269,8 @@ export const UserProfileTab = ({ embedded = false }) => {
     setOtpError("");
     setOtpCode("");
     setPendingContact(null);
-  }, []);
+    closeProfileDrawer();
+  }, [closeProfileDrawer]);
 
   const handleRequestContactChange = React.useCallback(async () => {
     try {
@@ -298,6 +284,7 @@ export const UserProfileTab = ({ embedded = false }) => {
       });
       setContactDrawerOpen(false);
       setOtpDrawerOpen(true);
+      openProfileDrawer("otp", "profile");
       startResendCountdown();
       toast.success(
         responseData?.message || t("profile.user.contactChange.otpTitle"),
@@ -310,7 +297,14 @@ export const UserProfileTab = ({ embedded = false }) => {
         getAuthErrorMessage(error, t("profile.user.contactChange.sendError")),
       );
     }
-  }, [contactType, contactValue, requestPhoneChange]);
+  }, [
+    contactType,
+    contactValue,
+    openProfileDrawer,
+    requestPhoneChange,
+    startResendCountdown,
+    t,
+  ]);
 
   const handleVerifyContactChange = React.useCallback(async () => {
     if (trim(otpCode).length !== 6) {
@@ -323,6 +317,7 @@ export const UserProfileTab = ({ embedded = false }) => {
       const responseData = await verifyPhoneChange(otpCode);
 
       setOtpDrawerOpen(false);
+      closeProfileDrawer();
       setPendingContact(null);
       setOtpCode("");
       toast.success(
@@ -333,7 +328,7 @@ export const UserProfileTab = ({ embedded = false }) => {
         getAuthErrorMessage(error, t("profile.user.contactChange.verifyError")),
       );
     }
-  }, [otpCode, verifyPhoneChange]);
+  }, [closeProfileDrawer, otpCode, t, verifyPhoneChange]);
 
   const handleResendOtp = React.useCallback(async () => {
     if (!pendingContact?.value || !pendingContact?.type) {
@@ -360,7 +355,6 @@ export const UserProfileTab = ({ embedded = false }) => {
       <>
         <div className="flex h-full min-h-0 flex-col">
           <div className="flex-1 overflow-y-auto px-3 pb-6 pt-4 sm:px-4 space-y-4">
-            <ProfileCompletionBar form={form} />
             <div className="flex flex-col items-center gap-5 text-center">
               <div className="relative">
                 <Avatar className="size-24 border">
@@ -495,11 +489,15 @@ export const UserProfileTab = ({ embedded = false }) => {
           </DrawerFooter>
         </div>
         <Drawer
-          open={contactDrawerOpen}
+          open={isContactDrawerOpen}
           onOpenChange={(open) => {
             setContactDrawerOpen(open);
+            if (open) {
+              openProfileDrawer("contact", "profile");
+            }
             if (!open) {
               setContactError("");
+              closeProfileDrawer();
             }
           }}
           direction="bottom"
@@ -531,12 +529,16 @@ export const UserProfileTab = ({ embedded = false }) => {
           </DrawerContent>
         </Drawer>
         <Drawer
-          open={otpDrawerOpen}
+          open={isOtpDrawerOpen}
           onOpenChange={(open) => {
             setOtpDrawerOpen(open);
+            if (open) {
+              openProfileDrawer("otp", "profile");
+            }
             if (!open) {
               setOtpError("");
               setOtpCode("");
+              closeProfileDrawer();
             }
           }}
           direction="bottom"
@@ -615,7 +617,6 @@ export const UserProfileTab = ({ embedded = false }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-6 sm:p-8">
-        <ProfileCompletionBar form={form} />
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <Avatar className="size-24 rounded-full border border-border/60">

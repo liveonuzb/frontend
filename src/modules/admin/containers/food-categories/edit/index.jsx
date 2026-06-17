@@ -96,7 +96,7 @@ const EditFoodCategory = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: categoryData, isLoading } = useGetQuery({
-    url: `/admin/food-categories/${id}`,
+    url: `/admin/nutrition/food-categories/${id}`,
     queryProps: {
       queryKey: ["admin", "food-categories", id],
       enabled: Boolean(id),
@@ -132,7 +132,7 @@ const EditFoodCategory = () => {
 
     try {
       await patchMutation.mutateAsync({
-        url: `/admin/food-categories/${id}`,
+        url: `/admin/nutrition/food-categories/${id}`,
         attributes: {
           name,
           color: getStoredColorValue(form),
@@ -302,6 +302,5 @@ const EditFoodCategory = () => {
 };
 
 export default EditFoodCategory;
-
 
 

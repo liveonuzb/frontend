@@ -44,7 +44,7 @@ describe("RecipeCard", () => {
 
     expect(screen.getByText("Toshkent palovi")).toBeInTheDocument();
     expect(screen.getByText("Uy sharoitida tayyorlanadigan to'yimli palov.")).toBeInTheDocument();
-    expect(screen.getAllByText("80 min")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("80 daq")[0]).toBeInTheDocument();
     expect(screen.getByText("540")).toBeInTheDocument();
     expect(screen.getByText("18g")).toBeInTheDocument();
     expect(screen.getByText("4")).toBeInTheDocument();
@@ -59,7 +59,9 @@ describe("RecipeCard", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Toshkent palovi" })[0]);
     expect(onSelect).toHaveBeenCalledWith(recipe);
 
-    fireEvent.click(screen.getByRole("button", { name: "Detail" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Toshkent palovi batafsil" }),
+    );
     expect(onDetail).toHaveBeenCalledWith(recipe);
 
     fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));

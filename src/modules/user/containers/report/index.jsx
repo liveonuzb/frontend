@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
@@ -461,12 +461,9 @@ const Index = () => {
               )}
             </div>
             {!limits?.isPremium ? (
-              <Button asChild variant="outline">
-                <Link to="/user/payments">
-                  <LockIcon data-icon="inline-start" />
-                  Premiumga o'tish
-                </Link>
-              </Button>
+              <p className="max-w-xs text-sm leading-6 text-muted-foreground">
+                Limit tugasa bugungi saqlangan reportlarni ochishingiz mumkin.
+              </p>
             ) : null}
           </CardContent>
         </Card>
@@ -558,7 +555,7 @@ const Index = () => {
               <CardContent className="grid gap-3 text-sm leading-6 text-muted-foreground">
                 <p>Free: haftalik/oylik, oyiga 2 ta yangi report.</p>
                 <Separator />
-                <p>Premium: barcha davrlar, oyiga 20 ta yangi report.</p>
+                <p>Qo'shimcha davrlar: limit mavjud bo'lsa ochiladi.</p>
               </CardContent>
             </Card>
           </div>

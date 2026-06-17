@@ -189,7 +189,7 @@ vi.mock("./meal-date-time-drawer.jsx", () => ({
 const renderDrawer = (props = {}) => {
   const onClose = vi.fn();
 
-  render(
+  const result = render(
     <CameraDrawer
       dateKey="2026-05-24"
       mealType="breakfast"
@@ -200,7 +200,7 @@ const renderDrawer = (props = {}) => {
     />,
   );
 
-  return { onClose };
+  return { ...result, onClose };
 };
 
 const foundFood = {
@@ -280,9 +280,9 @@ describe("CameraDrawer nutrition scanner", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
 
-    expect(screen.getByText("Barcode natijasi")).toBeInTheDocument();
-    expect(screen.getByText("Barcode tekshirilmoqda")).toBeInTheDocument();
-    expect(screen.getByText("Barcode skanerlash")).toBeInTheDocument();
+    expect(screen.getByText("Shtrix-kod natijasi")).toBeInTheDocument();
+    expect(screen.getByText("Shtrix-kod tekshirilmoqda")).toBeInTheDocument();
+    expect(screen.getByText("Shtrix-kod skanerlash")).toBeInTheDocument();
 
     resolveLookup(foundFood);
 
@@ -313,11 +313,36 @@ describe("CameraDrawer nutrition scanner", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps manual barcode draft open when nutrition values are invalid", async () => {
+    mocks.lookupFoodByBarcode.mockResolvedValue(null);
+    const { onClose } = renderDrawer({ initialMode: "barcode" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
+    await screen.findByText("Ovqatni qo'l bilan kiriting");
+    fireEvent.change(screen.getByPlaceholderText("Ovqat nomi"), {
+      target: { value: "Manual snack" },
+    });
+    fireEvent.change(screen.getByLabelText("Kcal"), {
+      target: { value: "-10" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /Qo'l bilan qo'shish/i }),
+    );
+
+    expect(mocks.addMeal).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "Kaloriya va makro qiymatlar 0 yoki undan katta bo'lishi kerak",
+    );
+    expect(screen.getByDisplayValue("Manual snack")).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("opens manual barcode form after lookup miss and adds manual food", async () => {
     mocks.lookupFoodByBarcode.mockResolvedValue(null);
     const { onClose } = renderDrawer({ initialMode: "barcode" });
 
     fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
+    expect(await screen.findByText("Topilmadi")).toBeInTheDocument();
     await screen.findByText("Ovqatni qo'l bilan kiriting");
     fireEvent.change(screen.getByPlaceholderText("Ovqat nomi"), {
       target: { value: "Manual snack" },
@@ -339,6 +364,30 @@ describe("CameraDrawer nutrition scanner", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("shows barcode lookup error and retries the same scanned code", async () => {
+    mocks.lookupFoodByBarcode
+      .mockRejectedValueOnce({ response: { status: 500 } })
+      .mockResolvedValueOnce(foundFood);
+    renderDrawer({ initialMode: "barcode" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
+
+    expect(await screen.findByText("Xatolik")).toBeInTheDocument();
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "Shtrix-kod bo'yicha ovqatni tekshirib bo'lmadi",
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Shtrix-kodni qayta tekshirish" }),
+    );
+
+    expect(screen.getByText("Shtrix-kod tekshirilmoqda")).toBeInTheDocument();
+    expect(await screen.findByText("Coca Cola")).toBeInTheDocument();
+    expect(screen.getByText("Topildi")).toBeInTheDocument();
+    expect(mocks.lookupFoodByBarcode).toHaveBeenCalledTimes(2);
+    expect(mocks.lookupFoodByBarcode).toHaveBeenLastCalledWith("5449000000996");
+  });
+
   it("opens AI gallery scan in nested drawer and renders draft result", async () => {
     const { onClose } = renderDrawer();
 
@@ -351,24 +400,131 @@ describe("CameraDrawer nutrition scanner", () => {
 
     expect(screen.getByText("AI topgan ovqatlar")).toBeInTheDocument();
     expect(screen.getByTestId("nested-drawer")).toBeInTheDocument();
-    expect(screen.getByText("AI tahlil qilmoqda")).toBeInTheDocument();
+    expect(screen.getByText("Rasm yuklanmoqda")).toBeInTheDocument();
     expect(await screen.findByText("Chicken rice")).toBeInTheDocument();
     expect(screen.getByText("Ovqatni aniqlash")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("shows separate AI upload and analysis states before draft ready", async () => {
+    const upload = deferred();
+    const analysis = deferred();
+    mocks.uploadMealCapture.mockReturnValue(upload.promise);
+    mocks.analyzeMealImageDraft.mockReturnValue(analysis.promise);
+    renderDrawer();
+
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["meal"], "meal.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(screen.getByText("Rasm yuklanmoqda")).toBeInTheDocument();
+
+    await act(async () => {
+      upload.resolve("https://cdn.test/meal.jpg");
+      await upload.promise;
+    });
+
+    expect(screen.getByText("AI tahlil qilmoqda")).toBeInTheDocument();
+
+    await act(async () => {
+      analysis.resolve({
+        items: [
+          {
+            id: "draft-1",
+            title: "Chicken rice",
+            confidence: 0.91,
+            reviewNeeded: false,
+            ingredients: [],
+          },
+        ],
+      });
+      await analysis.promise;
+    });
+
+    expect(await screen.findByText("Chicken rice")).toBeInTheDocument();
+  });
+
+  it("shows low-confidence AI drafts as reviewable results", async () => {
+    mocks.analyzeMealImageDraft.mockResolvedValueOnce({
+      items: [
+        {
+          id: "draft-low",
+          title: "Blurry soup",
+          confidence: 0.52,
+          reviewNeeded: true,
+          ingredients: [],
+        },
+      ],
+    });
+    renderDrawer();
+
+    const input = document.querySelector('input[type="file"]');
+    fireEvent.change(input, {
+      target: {
+        files: [new File(["meal"], "meal.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(await screen.findByText("Blurry soup")).toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: "Past ishonch ogohlantirishi" }),
+    ).toHaveTextContent("Past ishonch");
+    expect(screen.getByText("Save meal")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tasdiqlash va qo'shish" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no-food and AI error states for image scans", async () => {
+    mocks.analyzeMealImageDraft.mockResolvedValueOnce({ items: [] });
+    const first = renderDrawer();
+
+    const firstInput = document.querySelector('input[type="file"]');
+    fireEvent.change(firstInput, {
+      target: {
+        files: [new File(["meal"], "empty.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(await screen.findByText("Ovqat aniqlanmadi")).toBeInTheDocument();
+    expect(
+      screen.getByText("AI bu rasm uchun draft tayyorlay olmadi."),
+    ).toBeInTheDocument();
+
+    first.unmount();
+
+    mocks.analyzeMealImageDraft.mockRejectedValueOnce({
+      response: { data: { message: "AI servis ishlamadi" } },
+    });
+    renderDrawer();
+
+    const secondInput = document.querySelector('input[type="file"]');
+    fireEvent.change(secondInput, {
+      target: {
+        files: [new File(["meal"], "error.jpg", { type: "image/jpeg" })],
+      },
+    });
+
+    expect(await screen.findByText("AI xatoligi")).toBeInTheDocument();
+    expect(screen.getByText("AI servis ishlamadi")).toBeInTheDocument();
+    expect(mocks.toastError).toHaveBeenCalledWith("AI servis ishlamadi");
   });
 
   it("closing barcode result drawer returns to scanner", async () => {
     const { onClose } = renderDrawer({ initialMode: "barcode" });
 
     fireEvent.click(screen.getByRole("button", { name: "Mock barcode scan" }));
-    await screen.findByText("Barcode natijasi");
+    await screen.findByText("Shtrix-kod natijasi");
     expect(screen.getByTestId("nested-drawer")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Natijani yopish" }),
     );
 
-    expect(screen.queryByText("Barcode natijasi")).not.toBeInTheDocument();
-    expect(screen.getByText("Barcode skanerlash")).toBeInTheDocument();
+    expect(screen.queryByText("Shtrix-kod natijasi")).not.toBeInTheDocument();
+    expect(screen.getByText("Shtrix-kod skanerlash")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -384,7 +540,7 @@ describe("CameraDrawer nutrition scanner", () => {
       screen.getByRole("button", { name: "Natijani yopish" }),
     );
 
-    expect(screen.queryByText("Barcode natijasi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Shtrix-kod natijasi")).not.toBeInTheDocument();
     expect(screen.queryByTestId("nutrition-scan-lock-line")).not.toBeInTheDocument();
 
     await act(async () => {
@@ -408,7 +564,7 @@ describe("CameraDrawer nutrition scanner", () => {
       },
     });
 
-    expect(screen.getByText("AI tahlil qilmoqda")).toBeInTheDocument();
+    expect(screen.getByText("Rasm yuklanmoqda")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Natijani yopish" }),
     );
@@ -429,18 +585,18 @@ describe("CameraDrawer nutrition scanner", () => {
     mocks.aiAccessDisabled = true;
     renderDrawer();
 
-    fireEvent.click(screen.getByRole("button", { name: "Gallery" }));
-    fireEvent.click(screen.getByRole("button", { name: "Capture" }));
+    fireEvent.click(screen.getByRole("button", { name: "Galereya" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rasmga olish" }));
 
     expect(mocks.uploadMealCapture).not.toHaveBeenCalled();
     expect(mocks.toastError).toHaveBeenCalledTimes(2);
     expect(mocks.toastError).toHaveBeenNthCalledWith(
       1,
-      "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+      "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring.",
     );
     expect(mocks.toastError).toHaveBeenNthCalledWith(
       2,
-      "Bugungi AI limitingiz tugagan. Premium orqali cheksiz AI ishlatishingiz mumkin.",
+      "Bugungi AI limitingiz tugagan. Keyinroq qayta urinib ko'ring.",
     );
   });
 });

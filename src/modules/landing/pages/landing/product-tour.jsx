@@ -8,6 +8,12 @@ import {
 import { cn } from "@/lib/utils";
 import map from "lodash/map";
 
+const accentIconClassName =
+  "bg-[rgb(var(--accent-rgb)/0.12)] text-[rgb(var(--accent-strong-rgb))] dark:bg-[rgb(var(--accent-rgb)/0.14)] dark:text-[rgb(var(--accent-rgb))]";
+
+const accentHoverBorderClassName =
+  "hover:border-[rgb(var(--accent-rgb)/0.34)] dark:hover:border-[rgb(var(--accent-rgb)/0.42)]";
+
 const SectionHeader = ({ copy }) => (
   <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
     {copy?.eyebrow ? (
@@ -39,15 +45,25 @@ const StepCopyCard = ({ step, className }) => {
       whileHover={{ y: -3 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
     >
-      <Card className="group h-full border-border/80 bg-card shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors hover:border-[#bfe8c8] dark:hover:border-primary/35">
+      <Card
+        className={cn(
+          "group h-full border-border/80 bg-card shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors",
+          accentHoverBorderClassName,
+        )}
+      >
         <CardHeader>
           <div className="flex min-w-0 flex-col gap-5">
             <div className="flex items-start justify-between gap-4">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#2f9e44] text-sm font-semibold text-white dark:bg-primary dark:text-primary-foreground">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-r from-[var(--btn-from)] to-[var(--btn-to)] text-sm font-semibold text-white">
                 {step?.kicker}
               </span>
               {Icon ? (
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf8ee] text-[#2f9e44] transition-colors dark:bg-primary/10 dark:text-primary">
+                <span
+                  className={cn(
+                    "grid size-11 shrink-0 place-items-center rounded-xl transition-colors",
+                    accentIconClassName,
+                  )}
+                >
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
               ) : null}
@@ -56,7 +72,9 @@ const StepCopyCard = ({ step, className }) => {
               <CardTitle className="text-base font-semibold leading-tight">
                 {step?.title}
               </CardTitle>
-              <CardDescription className="leading-6">{step?.body}</CardDescription>
+              <CardDescription className="leading-6">
+                {step?.body}
+              </CardDescription>
             </div>
           </div>
         </CardHeader>

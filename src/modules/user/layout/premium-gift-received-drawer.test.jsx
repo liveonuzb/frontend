@@ -83,7 +83,7 @@ const premiumGiftNotification = {
   type: "premium_gift_received",
   title: "Premium sovg'a qilindi",
   message: "Sizga Premium obuna sovg'a qilindi.",
-  target: "/user/dashboard?profile=open&profileTab=premium",
+  target: "/user/dashboard/profile/premium",
   createdAt: "2026-05-23T10:00:00.000Z",
   metadata: {
     planName: "Premium",
@@ -111,7 +111,7 @@ describe("PremiumGiftReceivedDrawer", () => {
     vi.unstubAllGlobals();
   });
 
-  it("opens an unread premium gift notification and navigates to premium tab", async () => {
+  it("opens an unread premium gift notification and acknowledges it without premium navigation", async () => {
     markNotificationReadMock.mockResolvedValue({});
     useUserNotificationsFeedMock.mockReturnValue({
       items: [premiumGiftNotification],
@@ -125,13 +125,11 @@ describe("PremiumGiftReceivedDrawer", () => {
     expect(screen.queryByText(/AI credit/i)).not.toBeInTheDocument();
     expect(screen.getByText("Welcome")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Premiumni ko'rish" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tushunarli" }));
 
     await waitFor(() => {
       expect(markNotificationReadMock).toHaveBeenCalledWith("notification-1");
-      expect(navigateMock).toHaveBeenCalledWith(
-        "/user/dashboard?profile=open&profileTab=premium",
-      );
+      expect(navigateMock).not.toHaveBeenCalled();
     });
   });
 

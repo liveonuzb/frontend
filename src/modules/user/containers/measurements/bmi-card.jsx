@@ -1,6 +1,7 @@
 import React from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getUserInteractiveCardClassName } from "@/modules/user/lib/card-styles";
 
 import map from "lodash/map";
 import toNumber from "lodash/toNumber";
@@ -83,7 +84,9 @@ export const BmiCard = ({ bmi, onOpenModal, heightCm, currentW }) => {
         }
       }}
       className={cn(
-        "relative h-full rounded-[1.75rem] border bg-card overflow-hidden flex flex-col cursor-pointer transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        getUserInteractiveCardClassName(
+          "relative flex h-full cursor-pointer flex-col overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        ),
         meta && meta.tw.bg,
       )}
     >

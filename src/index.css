@@ -20,7 +20,7 @@
   --accent-rgb: 245 158 11;
   --accent-strong-rgb: 234 88 12;
 
-  --background: oklch(1 0 0);
+  --background: oklch(0.976 0.012 155);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -131,7 +131,7 @@ html[data-app-mode="focus"] {
   --accent-strong-rgb: 71 85 105;
 
   /* Surfaces & borders (slate-tinted) */
-  --background: oklch(0.992 0.003 256);
+  --background: oklch(0.972 0.006 256);
   --card: oklch(1 0.002 256);
   --card-foreground: oklch(0.16 0.01 256);
   --popover: oklch(1 0.002 256);
@@ -213,7 +213,7 @@ html[data-app-mode="zen"] {
   --accent-strong-rgb: 13 148 136;
 
   /* Surfaces & borders (sage-tinted) */
-  --background: oklch(0.992 0.005 162);
+  --background: oklch(0.97 0.018 162);
   --card: oklch(1 0.004 162);
   --card-foreground: oklch(0.16 0.014 162);
   --popover: oklch(1 0.004 162);
@@ -284,7 +284,7 @@ html[data-app-mode="madagascar"] {
   --accent-strong-rgb: 234 88 12;
 
   /* Surfaces & borders (warm-tinted) */
-  --background: oklch(0.992 0.005 58);
+  --background: oklch(0.976 0.012 155);
   --card: oklch(1 0.004 58);
   --card-foreground: oklch(0.16 0.014 58);
   --popover: oklch(1 0.004 58);
@@ -808,6 +808,105 @@ html {
 /*}*/
 
 /* Removed aggressive global focus visible */
+
+.user-phone-shell [class*="sm:grid-cols-"],
+.user-phone-shell [class*="md:grid-cols-"],
+.user-phone-shell [class*="lg:grid-cols-"],
+.user-phone-shell [class*="xl:grid-cols-"],
+.user-phone-shell [class*="2xl:grid-cols-"] {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.user-phone-shell [class*="sm:col-span-"],
+.user-phone-shell [class*="md:col-span-"],
+.user-phone-shell [class*="lg:col-span-"],
+.user-phone-shell [class*="xl:col-span-"],
+.user-phone-shell [class*="2xl:col-span-"] {
+  grid-column: auto / span 1 !important;
+}
+
+.user-phone-shell [class*="sm:flex-row"],
+.user-phone-shell [class*="md:flex-row"],
+.user-phone-shell [class*="lg:flex-row"],
+.user-phone-shell [class*="xl:flex-row"],
+.user-phone-shell [class*="2xl:flex-row"] {
+  flex-direction: column !important;
+}
+
+.user-card-scope [data-slot="card"],
+.user-card-scope .user-card,
+.user-card-scope .user-surface {
+  border-radius: 1rem !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+}
+
+.user-card-scope [data-slot="card"] {
+  border-width: 0 !important;
+  border-color: transparent !important;
+}
+
+.user-card-scope [class*="shadow-"].user-card,
+.user-card-scope [class*="shadow-"].user-surface,
+.user-card-scope [data-slot="card"][class*="shadow-"] {
+  box-shadow: none !important;
+}
+
+.user-card-scope [class*="ring-"].user-card,
+.user-card-scope [class*="ring-"].user-surface,
+.user-card-scope [data-slot="card"][class*="ring-"] {
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+.user-card-scope [class*="rounded-3xl"].user-card,
+.user-card-scope [class*="rounded-3xl"].user-surface,
+.user-card-scope [class*="rounded-["].user-card,
+.user-card-scope [class*="rounded-["].user-surface {
+  border-radius: 1rem !important;
+}
+
+.user-card-scope
+  :is(
+    [class*="bg-card"],
+    [class*="bg-background"],
+    [class*="bg-muted"],
+    [class*="bg-white"],
+    [class*="bg-zinc"]
+  )[class*="rounded-"][class*="shadow-"],
+.user-card-scope
+  :is(
+    [class*="bg-card"],
+    [class*="bg-background"],
+    [class*="bg-muted"],
+    [class*="bg-white"],
+    [class*="bg-zinc"]
+  )[class*="rounded-"][class*="ring-"] {
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+}
+
+.user-card-scope
+  :is(
+    [class*="bg-card"],
+    [class*="bg-background"],
+    [class*="bg-muted"],
+    [class*="bg-white"],
+    [class*="bg-zinc"]
+  )[class*="rounded-["][class*="border"],
+.user-card-scope
+  :is(
+    [class*="bg-card"],
+    [class*="bg-background"],
+    [class*="bg-muted"],
+    [class*="bg-white"],
+    [class*="bg-zinc"]
+  )[class*="rounded-3xl"][class*="border"] {
+  border-radius: 1rem !important;
+}
 
 /* ═══════════════════════════════════════════
    DARK MODE ENHANCEMENTS

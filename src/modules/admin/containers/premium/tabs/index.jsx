@@ -1,7 +1,8 @@
 import map from "lodash/map";
 import React, { lazy, Suspense } from "react";
-import { Route, Routes, Navigate, NavLink } from "react-router";
+import { Route, Navigate, NavLink } from "react-router";
 import { CreditCardIcon, CrownIcon, TicketIcon, UsersIcon } from "lucide-react";
+import ProfileAwareRoutes from "@/modules/profile/components/profile-aware-routes.jsx";
 import { cn } from "@/lib/utils";
 
 import PlansListPage from "../plans/list/index.jsx";
@@ -45,7 +46,7 @@ const PremiumIndex = () => {
         ))}
       </div>
 
-      <Routes>
+      <ProfileAwareRoutes>
         <Route index element={<Navigate to="plans" replace />} />
         <Route path="plans" element={<PlansListPage />}>
           <Route path="create" element={<PlansCreatePage />} />
@@ -65,7 +66,7 @@ const PremiumIndex = () => {
             </Suspense>
           }
         />
-      </Routes>
+      </ProfileAwareRoutes>
     </div>
   );
 };

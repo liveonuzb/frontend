@@ -28,32 +28,8 @@ import SmartAddSheet from "./smart-add-sheet.jsx";
 
 import filter from "lodash/filter";
 import reduce from "lodash/reduce";
-import split from "lodash/split";
 import toNumber from "lodash/toNumber";
 import trim from "lodash/trim";
-
-const toIsoByDateKeyAndTimeHint = (dateKey, timeHint) => {
-  if (
-    !dateKey ||
-    !timeHint ||
-    timeHint.hour == null ||
-    timeHint.minute == null
-  ) {
-    return null;
-  }
-  const safeHour = Math.max(0, Math.min(23, toNumber(timeHint.hour) || 0));
-  const safeMinute = Math.max(0, Math.min(59, toNumber(timeHint.minute) || 0));
-  return new Date(
-    `${dateKey}T${String(safeHour).padStart(2, "0")}:${String(safeMinute).padStart(2, "0")}:00`,
-  ).toISOString();
-};
-
-const shiftDateKeyByDays = (dateKey, offsetDays) => {
-  if (!dateKey || typeof offsetDays !== "number") return dateKey;
-  const baseDate = new Date(`${dateKey}T12:00:00`);
-  baseDate.setDate(baseDate.getDate() + offsetDays);
-  return split(baseDate.toISOString(), "T")[0];
-};
 
 const formatDateKeyLabel = (dateKey) => {
   if (!dateKey) return null;
@@ -132,7 +108,15 @@ const ActionDrawer = ({
   /* eslint-disable react-hooks/set-state-in-effect */
   useLayoutEffect(() => {
     if (open && initialNested) {
-      setActiveNested(initialNested);
+      if (initialNested === "barcode") {
+        setCameraInitialMode("barcode");
+        setActiveNested("camera");
+      } else {
+        if (initialNested === "camera") {
+          setCameraInitialMode("camera");
+        }
+        setActiveNested(initialNested);
+      }
     }
     if (!open) {
       setActiveNested(null);
@@ -365,68 +349,24 @@ const ActionDrawer = ({
           onCloseAll?.();
         }}
       />
-      {/* AudioAddDrawer */}
-      <Drawer
+      {/* AudioAddDrawer — has its own Drawer wrapper */}
+      <AudioAddDrawer
         open={activeNested === "audio"}
         onOpenChange={(value) => !value && setActiveNested(null)}
-        direction="bottom"
-      >
-        <NutritionDrawerContent size="sm">
-          <AudioAddDrawer
-            onClose={() => setActiveNested(null)}
-            onTranscriptReady={(
-              transcript,
-              suggestedMealType,
-              suggestedTimeHint,
-              suggestedDateHint,
-              transcriptConfidenceValue,
-            ) => {
-              const safeTranscript = trim(String(transcript || ""));
-              const resolvedMealType = suggestedMealType || selectedMealType;
-              const resolvedLoggedAt = toIsoByDateKeyAndTimeHint(
-                selectedDateKey,
-                suggestedTimeHint,
-              );
-              const resolvedTargetDateKey =
-                typeof suggestedDateHint?.offsetDays === "number"
-                  ? shiftDateKeyByDays(
-                      selectedDateKey,
-                      suggestedDateHint.offsetDays,
-                    )
-                  : null;
-              setTranscriptText((current) =>
-                filter(
-                  [trim(String(current || "")), safeTranscript],
-                  Boolean,
-                ).join("\n"),
-              );
-              setInputSource("audio");
-              setTranscriptSegments((current) => [
-                ...(current || []),
-                safeTranscript,
-              ]);
-              setTranscriptConfidenceScores((current) =>
-                typeof transcriptConfidenceValue === "number"
-                  ? [...(current || []), transcriptConfidenceValue]
-                  : current,
-              );
-              setAudioLoggedAtHint((current) => resolvedLoggedAt || current);
-              setAudioTargetDateKey(
-                (current) => resolvedTargetDateKey || current,
-              );
-              setTextAddVariant("audio");
-              setSelectedMealType(resolvedMealType);
-              void pushAudioTranscriptHistory(
-                safeTranscript,
-                resolvedMealType,
-                resolvedLoggedAt,
-              );
-              setActiveNested(null);
-              setTimeout(() => setActiveNested("text"), 450);
-            }}
-          />
-        </NutritionDrawerContent>
-      </Drawer>
+        dateKey={selectedDateKey}
+        mealType={activeMealType}
+        loggedAt={selectedLoggedAt}
+        onClose={() => setActiveNested(null)}
+        onSubmitted={(result) => {
+          void pushAudioTranscriptHistory(
+            result?.originalText || result?.transcript || "",
+            activeMealType,
+            selectedLoggedAt,
+          );
+          setActiveNested(null);
+          onCloseAll?.();
+        }}
+      />
       {/* Transcript drawers */}
       <Drawer
         open={activeNested === "text" || isCameraTextFlow}

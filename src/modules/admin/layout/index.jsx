@@ -65,6 +65,7 @@ import LayoutHeader from "@/components/layout-header.jsx";
 import { useMobileChromeHidden } from "@/hooks/app/use-mobile-chrome-hidden";
 import { isNavItemActive } from "@/lib/navigation";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
+import { contentNav } from "./admin-layout-navigation.js";
 
 const mainNav = [
   {
@@ -89,118 +90,6 @@ const mainNav = [
     to: "/admin/challenges/list",
     label: "Musobaqalar",
     icon: TrophyIcon,
-    capability: "content.read",
-  },
-];
-
-export const contentNav = [
-  {
-    to: "/admin/content-quality",
-    label: "Content Quality",
-    icon: ClipboardCheckIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/food-categories/list",
-    label: "Ovqat Kategoriyalari",
-    icon: TagIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/foods/list",
-    label: "Ovqatlar bazasi",
-    icon: UtensilsIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/recipes/list",
-    label: "Retseptlar",
-    icon: BookOpenIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/ingredients/list",
-    label: "Ingredientlar",
-    icon: SoupIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/cuisines/list",
-    label: "Oshxonalar",
-    icon: GlobeIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/locations",
-    label: "Locations",
-    icon: MapPinnedIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/achievements/list",
-    label: "Achievements",
-    icon: AwardIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/health-constraints/list",
-    label: "Health Constraints",
-    icon: HeartPulseIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/user-goals/list",
-    label: "Maqsadlar",
-    icon: TargetIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/nutrition-preferences/list",
-    label: "Ovqatlanish talablari",
-    icon: LeafIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/meal-plans/list",
-    label: "Meal plan shablonlari",
-    icon: CalendarDaysIcon,
-    capability: "content.read",
-  },
-
-  {
-    to: "/admin/workouts/list",
-    label: "Mashg'ulotlar",
-    icon: DumbbellIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/workout-plans",
-    label: "Workout rejalari",
-    icon: DumbbellIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/workout-categories/list",
-    label: "Mashg'ulot Kategoriyalari",
-    icon: TagIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/workout-muscles",
-    label: "Mashq muskullari",
-    icon: DumbbellIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/workout-body-parts",
-    label: "Tana qismlari",
-    icon: TagIcon,
-    capability: "content.read",
-  },
-  {
-    to: "/admin/equipments/list",
-    label: "Jihozlar",
-    icon: WrenchIcon,
     capability: "content.read",
   },
 ];

@@ -215,7 +215,7 @@ export const filterRunningRoutePoints = (points = []) => {
         elapsedSeconds > 0 &&
         distanceMeters / elapsedSeconds > IMPOSSIBLE_SPEED_THRESHOLD_MPS
       ) {
-        rejectedPoints.push({ ...point, isFilteredOut: true, rejectionReason: "impossible_jump" });
+        rejectedPoints.push({ ...point, isFilteredOut: true, rejectionReason: "impossible_speed" });
         continue;
       }
     }
@@ -250,26 +250,52 @@ export const calculateRunningDistanceMeters = (points = []) => {
   }, 0);
 };
 
+export const calculateRunningMovingDurationSeconds = (points = []) => {
+  const orderedPoints = getAcceptedRunningRoutePoints(points);
+
+  return reduce(orderedPoints, (total, point, index) => {
+    if (index === 0) {
+      return total;
+    }
+
+    const previousPoint = orderedPoints[index - 1];
+    if (!isSameSegment(previousPoint, point)) {
+      return total;
+    }
+
+    const elapsedSeconds = getElapsedSecondsBetweenPoints(previousPoint, point);
+    return total + (elapsedSeconds ?? 0);
+  }, 0);
+};
+
 export const calculateLiveRunningMetrics = ({
   baseMetrics = {},
   elapsedSeconds = 0,
   points = [],
 } = {}) => {
   const baseDistanceMeters = toNumber(baseMetrics.distanceMeters ?? 0) || 0;
+  const baseMovingDurationSeconds =
+    toNumber(
+      baseMetrics.movingDurationSeconds ?? baseMetrics.durationSeconds ?? 0,
+    ) || 0;
   const liveDistanceMeters = calculateRunningDistanceMeters(points);
+  const liveMovingDurationSeconds = calculateRunningMovingDurationSeconds(points);
   const distanceMeters = baseDistanceMeters + liveDistanceMeters;
   const durationSeconds = Math.max(
     toNumber(baseMetrics.durationSeconds ?? 0) || 0,
     toNumber(elapsedSeconds) || 0,
   );
+  const movingDurationSeconds =
+    baseMovingDurationSeconds + liveMovingDurationSeconds;
 
   return {
     ...baseMetrics,
     distanceMeters,
     durationSeconds,
+    movingDurationSeconds,
     averagePaceSecondsPerKm:
-      distanceMeters > 0 && durationSeconds > 0
-        ? durationSeconds / (distanceMeters / 1000)
+      distanceMeters > 0 && movingDurationSeconds > 0
+        ? movingDurationSeconds / (distanceMeters / 1000)
         : baseMetrics.averagePaceSecondsPerKm,
   };
 };

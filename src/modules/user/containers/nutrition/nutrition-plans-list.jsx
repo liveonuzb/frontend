@@ -4,6 +4,10 @@ import toNumber from "lodash/toNumber";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
+  getUserSurfaceClassName,
+  userInteractiveCardClassName,
+} from "@/modules/user/lib/card-styles";
+import {
   CheckIcon,
   ChevronRightIcon,
   MoreVerticalIcon,
@@ -44,7 +48,11 @@ export default function NutritionPlansList({
 }) {
   if (orderedPlans.length === 0) {
     return (
-      <div className="rounded-[1.5rem] border border-dashed p-5 text-sm text-muted-foreground">
+      <div
+        className={getUserSurfaceClassName(
+          "border border-dashed border-border/60 bg-muted/20 p-5 text-sm text-muted-foreground",
+        )}
+      >
         Bu bo&apos;limda hozircha reja yo&apos;q.
       </div>
     );
@@ -66,10 +74,11 @@ export default function NutritionPlansList({
       <div
         key={plan.id}
         className={cn(
-          "rounded-[1.5rem] border bg-card p-4 shadow-sm transition-all",
+          userInteractiveCardClassName,
+          "p-4",
           isSelected
-            ? "border-primary bg-primary/5 shadow-primary/10"
-            : "hover:border-primary/25 hover:bg-accent/60",
+            ? "border border-primary/35 bg-primary/5"
+            : "hover:bg-muted/40",
         )}
       >
         <button
@@ -249,7 +258,7 @@ export default function NutritionPlansList({
               <th className="px-5 py-4 font-bold">Taomlar</th>
               <th className="px-5 py-4 font-bold">Kaloriya / kun</th>
               <th className="px-5 py-4 font-bold">Yangilangan</th>
-              <th className="px-5 py-4 font-bold">Status</th>
+              <th className="px-5 py-4 font-bold">Holat</th>
               <th className="px-5 py-4 text-right font-bold" aria-label="Amallar" />
             </tr>
           </thead>

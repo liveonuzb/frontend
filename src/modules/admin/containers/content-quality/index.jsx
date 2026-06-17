@@ -44,6 +44,10 @@ import useApi from "@/hooks/api/use-api.js";
 import { cn } from "@/lib/utils";
 import { useBreadcrumbStore } from "@/store";
 import { toast } from "sonner";
+import { getIssueActionPath } from "./content-quality-utils.js";
+
+const ADMIN_NUTRITION_CONTENT_QUALITY_API_ROOT =
+  "/admin/nutrition/content-quality";
 
 const sectionIcons = {
   translations: LanguagesIcon,
@@ -128,132 +132,6 @@ const QualitySkeleton = () => (
   </div>
 );
 
-const catalogListRoutes = {
-  foods: "/admin/foods/list",
-  foodCategories: "/admin/food-categories/list",
-  ingredients: "/admin/ingredients/list",
-  cuisines: "/admin/cuisines/list",
-  workouts: "/admin/workouts/list",
-  workoutCategories: "/admin/workout-categories/list",
-  workoutEquipments: "/admin/equipments/list",
-  workoutMuscles: "/admin/workout-muscles",
-  workoutBodyParts: "/admin/workout-body-parts",
-  achievements: "/admin/achievements/list",
-  healthConstraints: "/admin/health-constraints/list",
-  userGoals: "/admin/user-goals/list",
-  challenges: "/admin/challenges/list",
-  equipments: "/admin/equipments/list",
-  mealPlanTemplates: "/admin/meal-plans/list",
-  mealPlanTemplatesWithoutMeals: "/admin/meal-plans/list",
-  mealPlanTemplatesWithSparseCoverage: "/admin/meal-plans/list",
-  mealPlanTemplatesWithCalorieIssues: "/admin/meal-plans/list",
-  mealPlanTemplateDietaryConflicts: "/admin/meal-plans/list",
-  foodImportValidationFailed: "/admin/foods/list",
-  foodImportMacroWarnings: "/admin/foods/list",
-  ingredientImportValidationFailed: "/admin/ingredients/list",
-  ingredientImportMacroWarnings: "/admin/ingredients/list",
-  ingredientImportMissingPrices: "/admin/ingredients/list",
-  ingredientRegionalPriceImportValidationFailed: "/admin/ingredients/list",
-  ingredientRegionalPriceImportMissingPrices: "/admin/ingredients/list",
-};
-
-const mealPlanTemplateQualityGroups = new Set([
-  "mealPlanTemplatesWithoutMeals",
-  "mealPlanTemplatesWithSparseCoverage",
-  "mealPlanTemplatesWithCalorieIssues",
-  "mealPlanTemplateDietaryConflicts",
-]);
-
-const importPreviewQualityGroups = new Set([
-  "foodImportValidationFailed",
-  "foodImportMacroWarnings",
-  "ingredientImportValidationFailed",
-  "ingredientImportMacroWarnings",
-  "ingredientImportMissingPrices",
-  "ingredientRegionalPriceImportValidationFailed",
-  "ingredientRegionalPriceImportMissingPrices",
-]);
-
-export const getIssueActionPath = ({ sectionKey, groupKey, issueId }) => {
-  if (sectionKey === "safety") {
-    if (mealPlanTemplateQualityGroups.has(groupKey)) {
-      return catalogListRoutes.mealPlanTemplates;
-    }
-
-    return issueId
-      ? `${catalogListRoutes.workouts}/edit/${issueId}`
-      : catalogListRoutes.workouts;
-  }
-
-  const listPath = catalogListRoutes[groupKey];
-
-  if (!listPath || !issueId) {
-    return listPath || "/admin/content-quality";
-  }
-
-  if (sectionKey === "translations") {
-    const translationRoutes = new Set([
-      "foods",
-      "foodCategories",
-      "ingredients",
-      "cuisines",
-      "achievements",
-      "healthConstraints",
-      "userGoals",
-      "challenges",
-    ]);
-
-    return translationRoutes.has(groupKey)
-      ? `${listPath}/translate/${issueId}`
-      : listPath;
-  }
-
-  if (sectionKey === "images") {
-    if (groupKey === "achievements") {
-      return `${listPath}/images/${issueId}`;
-    }
-
-    return `${listPath}/edit/${issueId}`;
-  }
-
-  if (sectionKey === "prices") {
-    if (importPreviewQualityGroups.has(groupKey)) {
-      return listPath || catalogListRoutes.ingredients;
-    }
-
-    return `${catalogListRoutes.ingredients}/price/${issueId}`;
-  }
-
-  if (sectionKey === "nutrition") {
-    if (importPreviewQualityGroups.has(groupKey)) {
-      return listPath || catalogListRoutes.foods;
-    }
-
-    if (mealPlanTemplateQualityGroups.has(groupKey)) {
-      return catalogListRoutes.mealPlanTemplates;
-    }
-
-    if (
-      groupKey === "recipeFoodsWithoutItems" ||
-      groupKey === "recipeFoodsWithUnknownCost" ||
-      groupKey === "recipeFoodsWithInvalidNutrition"
-    ) {
-      return `${catalogListRoutes.foods}/recipe/${issueId}`;
-    }
-
-    if (
-      groupKey === "ingredientsWithoutNutrition" ||
-      groupKey === "ingredientsWithImpossibleCalories"
-    ) {
-      return `${catalogListRoutes.ingredients}/edit/${issueId}`;
-    }
-
-    return `${catalogListRoutes.foods}/edit/${issueId}`;
-  }
-
-  return listPath;
-};
-
 const IssueList = ({ items = [], sectionKey, groupKey }) => {
   if (!items.length) {
     return (
@@ -270,6 +148,7 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
           sectionKey,
           groupKey,
           issueId: example.id,
+          action: example.action,
         });
 
         return (
@@ -297,7 +176,7 @@ const IssueList = ({ items = [], sectionKey, groupKey }) => {
                 {example.severity ? (
                   <Badge
                     variant={
-                      example.severity === "fail"
+                      includes(["blocker", "error", "fail"], example.severity)
                         ? "destructive"
                         : "secondary"
                     }
@@ -361,10 +240,37 @@ const QualityGroup = ({ section, group, isExpanded, onToggle }) => {
             {group.total} ta itemdan {issueCount} tasida muammo bor
           </p>
         </div>
-        <Badge variant={issueCount > 0 ? "destructive" : "secondary"}>
-          {issueCount}
-        </Badge>
+        <div className="flex shrink-0 flex-wrap justify-end gap-1">
+          {group.severity ? (
+            <Badge
+              variant={
+                includes(["blocker", "error", "fail"], group.severity)
+                  ? "destructive"
+                  : "secondary"
+              }
+            >
+              {group.severity}
+            </Badge>
+          ) : null}
+          <Badge variant={issueCount > 0 ? "destructive" : "secondary"}>
+            {issueCount}
+          </Badge>
+        </div>
       </div>
+      {get(group, "action.path") ? (
+        <Button
+          asChild
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mb-3 h-8 gap-1 text-xs"
+        >
+          <Link to={get(group, "action.path")}>
+            {get(group, "action.label", "Ochish")}
+            <ArrowRightIcon className="size-3.5" />
+          </Link>
+        </Button>
+      ) : null}
       <IssueList
         items={visibleItems}
         sectionKey={section.key}
@@ -520,12 +426,13 @@ const Index = () => {
   const [isExporting, setIsExporting] = React.useState(false);
   const [isRecalculatingRecipes, setIsRecalculatingRecipes] =
     React.useState(false);
+  const [recalculationReport, setRecalculationReport] = React.useState(null);
   const [expandedGroups, setExpandedGroups] = React.useState({});
   const [search, setSearch] = React.useState("");
   const [sectionFilter, setSectionFilter] = React.useState("all");
   const [onlyIssues, setOnlyIssues] = React.useState(false);
   const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/content-quality",
+    url: ADMIN_NUTRITION_CONTENT_QUALITY_API_ROOT,
     queryProps: {
       queryKey: ["admin", "content-quality"],
     },
@@ -578,9 +485,12 @@ const Index = () => {
   const handleExport = React.useCallback(async () => {
     try {
       setIsExporting(true);
-      const response = await request.get("/admin/content-quality/export", {
-        responseType: "blob",
-      });
+      const response = await request.get(
+        `${ADMIN_NUTRITION_CONTENT_QUALITY_API_ROOT}/export`,
+        {
+          responseType: "blob",
+        },
+      );
       const fileName =
         response.headers?.["content-disposition"]?.match(
           /filename="?([^"]+)"?/,
@@ -604,11 +514,18 @@ const Index = () => {
     try {
       setIsRecalculatingRecipes(true);
       const response = await request.post(
-        "/admin/content-quality/actions/recalculate-recipes",
+        `${ADMIN_NUTRITION_CONTENT_QUALITY_API_ROOT}/actions/recalculate-recipes`,
         {},
       );
       const result = get(response, "data.data", get(response, "data", {}));
 
+      setRecalculationReport({
+        status: "completed",
+        recalculated: toNumber(result.recalculated),
+        skipped: toNumber(result.skipped),
+        foods: isArray(result.foods) ? result.foods : [],
+        skippedFoods: isArray(result.skippedFoods) ? result.skippedFoods : [],
+      });
       toast.success(
         `Recipe nutrition qayta hisoblandi: ${toNumber(
           result.recalculated,
@@ -622,6 +539,12 @@ const Index = () => {
           ? message.join(", ")
           : message || "Recipe nutrition qayta hisoblanmadi",
       );
+      setRecalculationReport({
+        status: "failed",
+        error: isArray(message)
+          ? message.join(", ")
+          : message || "Recipe nutrition qayta hisoblanmadi",
+      });
     } finally {
       setIsRecalculatingRecipes(false);
     }
@@ -757,6 +680,35 @@ const Index = () => {
           </div>
         </CardContent>
       </Card>
+      {recalculationReport ? (
+        <Card className="border-border/60 shadow-sm">
+          <CardContent className="flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-medium">
+                Recipe recalculation: {recalculationReport.status}
+              </p>
+              {recalculationReport.status === "completed" ? (
+                <p className="text-sm text-muted-foreground">
+                  {toNumber(recalculationReport.recalculated)} ta recipe qayta
+                  hisoblandi, {toNumber(recalculationReport.skipped)} ta
+                  o'tkazildi.
+                </p>
+              ) : (
+                <p className="text-sm text-destructive">
+                  {recalculationReport.error}
+                </p>
+              )}
+            </div>
+            {recalculationReport.status === "completed" ? (
+              <Badge variant="secondary">
+                {toNumber(get(recalculationReport, "foods.length", 0))} updated
+              </Badge>
+            ) : (
+              <Badge variant="destructive">failed</Badge>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
       <Card className="border-border/60 shadow-sm">
         <CardContent className="flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative min-w-0 flex-1">

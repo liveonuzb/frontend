@@ -52,7 +52,7 @@ describe("useMealPlanTemplateConflictPreview", () => {
     );
 
     expect(mockUseGetQuery).toHaveBeenCalledWith({
-      url: "/meal-plans/templates/template-30/conflicts/preview",
+      url: "/user/nutrition/meal-plan-templates/template-30/conflicts/preview",
       queryProps: {
         queryKey: getMealPlanTemplateConflictPreviewQueryKey("template-30"),
         enabled: true,

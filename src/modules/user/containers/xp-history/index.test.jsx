@@ -77,7 +77,7 @@ describe("XpHistoryPage", () => {
     });
   });
 
-  it("renders all XP logs from the history API and paginates", async () => {
+  it("renders all XP logs from the history API and loads the next page on scroll", async () => {
     renderPage();
 
     expect(await screen.findByText("XP tarixi")).toBeInTheDocument();
@@ -93,7 +93,13 @@ describe("XpHistoryPage", () => {
       }),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Ko'proq ko'rish" }));
+    const scroller = screen.getByTestId("xp-history-scroll");
+    Object.defineProperties(scroller, {
+      clientHeight: { configurable: true, value: 400 },
+      scrollHeight: { configurable: true, value: 800 },
+      scrollTop: { configurable: true, value: 380 },
+    });
+    fireEvent.scroll(scroller);
 
     await waitFor(() => {
       expect(screen.getByText("Suv qayd qilindi")).toBeInTheDocument();

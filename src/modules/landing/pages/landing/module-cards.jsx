@@ -14,6 +14,15 @@ import map from "lodash/map";
 
 const EMPTY_MODULE_COPY = {};
 
+const accentIconClassName =
+  "bg-[rgb(var(--accent-rgb)/0.12)] text-[rgb(var(--accent-strong-rgb))] dark:bg-[rgb(var(--accent-rgb)/0.14)] dark:text-[rgb(var(--accent-rgb))]";
+
+const accentTextClassName =
+  "text-[rgb(var(--accent-strong-rgb))] dark:text-[rgb(var(--accent-rgb))]";
+
+const accentHoverBorderClassName =
+  "hover:border-[rgb(var(--accent-rgb)/0.34)] dark:hover:border-[rgb(var(--accent-rgb)/0.42)]";
+
 const SectionHeader = ({ copy = EMPTY_MODULE_COPY }) => (
   <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
     {copy.eyebrow ? (
@@ -49,14 +58,20 @@ const ModuleCard = ({ item, className, size, testId }) => {
         data-testid={testId}
         size={size}
         className={cn(
-          "group h-full border-border/80 bg-card text-center shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors hover:border-[#bfe8c8] dark:hover:border-primary/35",
+          "group h-full border-border/80 bg-card text-center shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors",
+          accentHoverBorderClassName,
           className,
         )}
       >
         <CardHeader className="items-center">
           <div className="flex min-w-0 flex-col items-center gap-3">
             {Icon ? (
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf8ee] text-[#2f9e44] transition-colors dark:bg-primary/10 dark:text-primary">
+              <span
+                className={cn(
+                  "grid size-11 shrink-0 place-items-center rounded-xl transition-colors",
+                  accentIconClassName,
+                )}
+              >
                 <Icon className="size-5" aria-hidden="true" />
               </span>
             ) : null}
@@ -64,7 +79,9 @@ const ModuleCard = ({ item, className, size, testId }) => {
               <CardTitle className="text-sm font-semibold leading-tight">
                 {item?.title}
               </CardTitle>
-              <CardDescription className="text-xs leading-5">{item?.body}</CardDescription>
+              <CardDescription className="text-xs leading-5">
+                {item?.body}
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -90,11 +107,10 @@ const ModuleProgressPreview = ({ item }) => (
         <div>
           <CardDescription>{item?.title}</CardDescription>
           <CardTitle className="mt-2 text-3xl font-semibold leading-none">
-            78.6 kg <span className="text-sm text-[#2f9e44]">-2.4 kg</span>
+            78.6 kg{" "}
+            <span className={cn("text-sm", accentTextClassName)}>-2.4 kg</span>
           </CardTitle>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {item?.body}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{item?.body}</p>
         </div>
         <Badge variant="outline" className="shrink-0">
           kg
@@ -104,10 +120,13 @@ const ModuleProgressPreview = ({ item }) => (
     <CardContent className="flex flex-col gap-5">
       <div className="grid h-32 grid-cols-7 items-end gap-2 rounded-2xl border border-border/70 bg-background p-4">
         {map(progressPreview, ([label, value]) => (
-          <div key={label} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
+          <div
+            key={label}
+            className="flex h-full min-w-0 flex-col items-center justify-end gap-2"
+          >
             <div className="flex h-full w-full items-end rounded-full bg-muted">
               <div
-                className="w-full rounded-full bg-[#2f9e44] dark:bg-primary"
+                className="w-full rounded-full bg-[rgb(var(--accent-strong-rgb))] dark:bg-[rgb(var(--accent-rgb))]"
                 style={{ height: `${value}%` }}
               />
             </div>
@@ -127,7 +146,10 @@ const ModuleProgressPreview = ({ item }) => (
           <p className="mt-1 font-semibold text-foreground">68.0 kg</p>
         </div>
       </div>
-      <Progress value={72} className="h-2 bg-[#eaf8ee] [&>div]:bg-[#2f9e44] dark:bg-primary/15 dark:[&>div]:bg-primary" />
+      <Progress
+        value={72}
+        className="h-2 bg-[rgb(var(--accent-rgb)/0.12)] [&>div]:bg-[rgb(var(--accent-strong-rgb))] dark:bg-[rgb(var(--accent-rgb)/0.14)] dark:[&>div]:bg-[rgb(var(--accent-rgb))]"
+      />
     </CardContent>
   </Card>
 );

@@ -34,6 +34,7 @@ import useProfileSettings, {
 import { useQuietHours } from "@/hooks/app/use-notifications";
 import useMe from "@/hooks/app/use-me";
 import useUserTelegram from "@/hooks/app/use-user-telegram";
+import { useProfileOverlay } from "@/modules/profile/hooks/use-profile-overlay";
 
 const openTelegramLink = (url) => {
   if (!url) return;
@@ -445,7 +446,23 @@ export const NotificationSettingsDrawer = ({
 
 export const NotificationsTab = ({ embedded = false }) => {
   const { t } = useTranslation();
-  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const {
+    activeProfileDrawer,
+    closeProfileDrawer,
+    openProfileDrawer,
+  } = useProfileOverlay();
+  const settingsOpen = activeProfileDrawer === "settings";
+  const handleSettingsOpenChange = React.useCallback(
+    (nextOpen) => {
+      if (nextOpen) {
+        openProfileDrawer("settings", "notifications");
+        return;
+      }
+
+      closeProfileDrawer();
+    },
+    [closeProfileDrawer, openProfileDrawer],
+  );
 
   return (
     <>
@@ -474,7 +491,7 @@ export const NotificationsTab = ({ embedded = false }) => {
               variant="outline"
               size="sm"
               className="shrink-0"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => openProfileDrawer("settings", "notifications")}
             >
               <Settings2Icon className="size-4" />
               Sozlamalar
@@ -485,7 +502,7 @@ export const NotificationsTab = ({ embedded = false }) => {
 
       <NotificationSettingsDrawer
         open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        onOpenChange={handleSettingsOpenChange}
       />
     </>
   );

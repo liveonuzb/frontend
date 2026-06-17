@@ -1,12 +1,8 @@
 import React from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import DashboardContainer from "./index.jsx";
-
-const mocks = vi.hoisted(() => ({
-  calendarBottomDrawer: vi.fn(),
-  openProfile: vi.fn(),
-}));
+import { UserLayoutDateProvider } from "@/modules/user/layout/user-layout-date-context.jsx";
 
 vi.mock("react-i18next", () => ({
   initReactI18next: {
@@ -28,29 +24,6 @@ vi.mock("@/store", () => ({
 
 vi.mock("@/components/page-transition", () => ({
   default: ({ children }) => <div>{children}</div>,
-}));
-
-vi.mock("@/components/calendar-bottom-drawer.jsx", () => ({
-  default: (props) => {
-    mocks.calendarBottomDrawer(props);
-
-    return props.open ? <div data-testid="calendar-bottom-drawer" /> : null;
-  },
-}));
-
-vi.mock("@/components/notification-center", () => ({
-  default: () => (
-    <button type="button" data-testid="notification-center">
-      Notifications
-    </button>
-  ),
-}));
-
-vi.mock("@/modules/profile/hooks/use-profile-overlay", () => ({
-  PROFILE_OVERVIEW_TAB: "overview",
-  useProfileOverlay: () => ({
-    openProfile: mocks.openProfile,
-  }),
 }));
 
 vi.mock("./use-dashboard-data.js", () => ({
@@ -133,72 +106,97 @@ vi.mock("./ten-day-popup-drawer.jsx", () => ({ default: () => null }));
 vi.mock("./challenge-reminder-drawer.jsx", () => ({ default: () => null }));
 vi.mock("./challenge-completion-drawer.jsx", () => ({ default: () => null }));
 
+const DashboardWithDate = ({ initialDate }) => {
+  const [selectedDate, setSelectedDate] = React.useState(initialDate);
+
+  return (
+    <UserLayoutDateProvider
+      selectedDate={selectedDate}
+      setSelectedDate={setSelectedDate}
+    >
+      <DashboardContainer />
+    </UserLayoutDateProvider>
+  );
+};
+
 describe("DashboardContainer", () => {
-  beforeEach(() => {
-    mocks.calendarBottomDrawer.mockClear();
-    mocks.openProfile.mockClear();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it("keeps the top card row at the target desktop height", () => {
+  it("renders every dashboard card as a single-column row", () => {
     render(<DashboardContainer />);
 
-    expect(screen.getByTestId("dashboard-top-card-row")).toHaveClass(
-      "lg:h-[400px]",
-    );
-  });
+    const cardList = screen.getByTestId("dashboard-card-list");
+    const className = cardList.getAttribute("class") ?? "";
+    const cardRows = Array.from(cardList.children);
 
-  it("shows a mobile profile greeting before notification and calendar actions", () => {
-    render(<DashboardContainer />);
-
-    const topBar = screen.getByTestId("dashboard-mobile-top-bar");
-    const profileButton = screen.getByRole("button", {
-      name: /Profilni ochish/i,
-    });
-    const notificationButton = within(topBar).getByTestId(
-      "notification-center",
-    );
-    const calendarButton = within(topBar).getByRole("button", {
-      name: /Sana tanlash/i,
-    });
-
-    expect(topBar).toHaveClass("md:hidden");
-    expect(screen.getByTestId("dashboard-mobile-greeting-line")).toHaveTextContent(
-      "Salom Fazliddin Liveon",
-    );
-    const streakRow = screen.getByTestId("dashboard-mobile-streak");
-    expect(streakRow).toHaveTextContent("7 kun");
-    expect(streakRow.querySelector(".lucide-flame")).toBeInTheDocument();
+    expect(cardList).toHaveClass("grid", "grid-cols-1", "gap-4");
+    expect(className).not.toMatch(/\b(md|lg|xl):grid-cols-/);
+    expect(className).not.toContain("lg:h-[400px]");
+    expect(cardRows).toHaveLength(9);
     expect(
-      profileButton.compareDocumentPosition(notificationButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+      cardRows.every((row) => {
+        const rowClassName = row.getAttribute("class") ?? "";
+
+        return !/\b(md|lg|xl):col-span-/.test(rowClassName);
+      }),
+    ).toBe(true);
+
+    expect(within(cardList).getByTestId("calorie-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("meals-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("water-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("mood-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("bmi-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("weight-widget")).toBeInTheDocument();
+    expect(within(cardList).getByTestId("workout-widget")).toBeInTheDocument();
     expect(
-      notificationButton.compareDocumentPosition(calendarButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-
-    fireEvent.click(profileButton);
-
-    expect(mocks.openProfile).toHaveBeenCalledWith("overview");
+      within(cardList).getByTestId("achievements-widget"),
+    ).toBeInTheDocument();
+    expect(
+      within(cardList).getByTestId("friend-activity-widget"),
+    ).toBeInTheDocument();
   });
 
-  it("opens the calendar bottom drawer from the dashboard date button", () => {
+  it("leaves profile and date controls to the shared user layout", () => {
     render(<DashboardContainer />);
 
-    const dateButton = within(
-      screen.getByTestId("dashboard-mobile-top-bar"),
-    ).getByRole("button", { name: /Sana tanlash/i });
-
-    expect(dateButton).toHaveTextContent("");
+    expect(
+      screen.queryByTestId("dashboard-mobile-top-bar"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByTestId("calendar-bottom-drawer"),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Sana tanlash/i }),
+    ).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(dateButton);
+  it("renders a compact scrollable date picker with past days", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2022, 5, 24, 12));
+    render(<DashboardWithDate initialDate={new Date(2022, 5, 24)} />);
 
-    expect(screen.getByTestId("calendar-bottom-drawer")).toBeInTheDocument();
-    expect(mocks.calendarBottomDrawer.mock.calls.at(-1)[0]).toEqual(
-      expect.objectContaining({ open: true }),
-    );
+    const picker = screen.getByTestId("dashboard-week-date-picker");
+    const pastButton = within(picker).getByRole("button", {
+      name: "Thu 26",
+    });
+    const fridayButton = within(picker).getByRole("button", {
+      name: "Fri 24",
+    });
+    const thursdayButton = within(picker).getByRole("button", {
+      name: "Thu 23",
+    });
+
+    expect(picker).toHaveClass("overflow-x-auto");
+    expect(pastButton).toHaveAttribute("aria-pressed", "false");
+    expect(fridayButton).toHaveClass("h-[48px]", "w-10");
+    expect(fridayButton).toHaveAttribute("aria-pressed", "true");
+    expect(fridayButton).toHaveClass("bg-primary", "text-primary-foreground");
+
+    fireEvent.click(thursdayButton);
+
+    expect(thursdayButton).toHaveAttribute("aria-pressed", "true");
+    expect(fridayButton).toHaveAttribute("aria-pressed", "false");
   });
 });

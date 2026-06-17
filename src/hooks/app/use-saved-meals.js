@@ -13,15 +13,25 @@ import {
 } from "@/modules/user/containers/nutrition/meal-ingredients.js";
 import { normalizeSavedMeal } from "@/modules/user/lib/nutrition-normalizers";
 import { toast } from "sonner";
+import {
+  NUTRITION_SAVED_MEALS_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
+import {
+  NUTRITION_SAVED_MEALS_QUERY_KEY,
+  invalidateSavedMeals,
+} from "@/hooks/app/nutrition-query-keys";
 
-export const SAVED_MEALS_QUERY_KEY = ["user", "saved-meals"];
+export const SAVED_MEALS_QUERY_KEY = NUTRITION_SAVED_MEALS_QUERY_KEY;
+const nutritionSavedMealsPath = (path) =>
+  nutritionApiPath(NUTRITION_SAVED_MEALS_API_ROOT, path);
 
 const getPayload = (response) =>
   get(response, "data.data", get(response, "data", null));
 
 export { normalizeSavedMeal };
 
-const buildSavedMealPayload = (meal = {}) => ({
+export const buildSavedMealPayload = (meal = {}) => ({
   name: trim(String(meal?.name || "")),
   source: meal?.source || null,
   imageUrl: meal?.imageUrl || null,
@@ -30,7 +40,7 @@ const buildSavedMealPayload = (meal = {}) => ({
 
 export const useSavedMeals = (options = {}) => {
   const { data, ...query } = useGetQuery({
-    url: "/users/me/saved-meals",
+    url: nutritionSavedMealsPath(),
     queryProps: {
       queryKey: SAVED_MEALS_QUERY_KEY,
       enabled: options.enabled ?? true,
@@ -55,10 +65,7 @@ export const useSavedMealsActions = () => {
   const deleteMutation = useDeleteQuery();
 
   const invalidate = React.useCallback(
-    () =>
-      queryClient.invalidateQueries({
-        queryKey: SAVED_MEALS_QUERY_KEY,
-      }),
+    () => invalidateSavedMeals(queryClient),
     [queryClient],
   );
 
@@ -91,7 +98,7 @@ export const useSavedMealsActions = () => {
       }
 
       const response = await postMutation.mutateAsync({
-        url: "/users/me/saved-meals",
+        url: nutritionSavedMealsPath(),
         attributes: payload,
       });
       await invalidate();
@@ -103,7 +110,7 @@ export const useSavedMealsActions = () => {
   const updateSavedMeal = React.useCallback(
     async (savedMealId, meal) => {
       const response = await patchMutation.mutateAsync({
-        url: `/users/me/saved-meals/${savedMealId}`,
+        url: nutritionSavedMealsPath(savedMealId),
         attributes: buildSavedMealPayload(meal),
       });
       await invalidate();
@@ -115,7 +122,7 @@ export const useSavedMealsActions = () => {
   const deleteSavedMeal = React.useCallback(
     async (savedMealId) => {
       await deleteMutation.mutateAsync({
-        url: `/users/me/saved-meals/${savedMealId}`,
+        url: nutritionSavedMealsPath(savedMealId),
       });
       await invalidate();
     },

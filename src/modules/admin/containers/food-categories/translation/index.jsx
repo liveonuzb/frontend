@@ -77,7 +77,7 @@ const TranslateFoodCategory = () => {
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
 
   const { data: categoryData, isLoading } = useGetQuery({
-    url: `/admin/food-categories/${id}`,
+    url: `/admin/nutrition/food-categories/${id}`,
     queryProps: {
       queryKey: ["admin", "food-categories", id],
       enabled: Boolean(id),
@@ -118,7 +118,7 @@ const TranslateFoodCategory = () => {
   const onSubmit = async (values) => {
     await mutateAsync(
       {
-        url: `/admin/food-categories/${id}`,
+        url: `/admin/nutrition/food-categories/${id}`,
         attributes: buildPayload(values, activeLanguages, get(activeLanguage, "code")),
       },
       {

@@ -1,31 +1,34 @@
 import compact from "lodash/compact";
+import get from "lodash/get";
+import map from "lodash/map";
 import some from "lodash/some";
-import reduce from "lodash/reduce";
-import lodashValues from "lodash/values";
-import isArray from "lodash/isArray";
 import split from "lodash/split";
 import React from "react";
-import { createPortal } from "react-dom";
 import {
+  AppleIcon,
+  BarcodeIcon,
   CameraIcon,
+  DumbbellIcon,
+  FootprintsIcon,
   GlassWaterIcon,
-  KeyboardIcon,
   MicIcon,
   PlusIcon,
-  SearchIcon,
   ScaleIcon,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  useDailyTrackingActions,
-  useDailyTrackingDay,
-} from "@/hooks/app/use-daily-tracking";
-import useHealthGoals from "@/hooks/app/use-health-goals";
-import useMeasurements from "@/hooks/app/use-measurements";
+import { useDailyTrackingActions } from "@/hooks/app/use-daily-tracking";
+import { useStartRunningSession } from "@/hooks/app/use-running-sessions";
 import { useAddMealOverlayStore } from "@/store";
 import { USER_CHALLENGES_ENABLED } from "@/modules/user/user-feature-flags.js";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer.jsx";
 
 const getTodayKey = () => split(new Date().toISOString(), "T")[0];
 const FAB_VISIBLE_PATHS = compact([
@@ -37,94 +40,165 @@ const FAB_VISIBLE_PATHS = compact([
   "/user/measurement",
 ]);
 
+const FabActionTile = ({ action }) => {
+  const Icon = action.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={action.onClick}
+      className={cn(
+        "flex min-h-[104px] flex-col items-center justify-center gap-3 rounded-[1.5rem] p-3 text-center transition-transform active:scale-[0.98]",
+        action.className,
+      )}
+    >
+      <span
+        className={cn(
+          "grid size-12 place-items-center rounded-full border bg-background/45",
+          action.iconClassName,
+        )}
+      >
+        <Icon className="size-5" strokeWidth={2.2} />
+      </span>
+      <span className="text-base font-medium leading-tight tracking-normal text-foreground">
+        {action.label}
+      </span>
+    </button>
+  );
+};
+
+const FabUtilityRow = ({ item, isLast }) => {
+  const Icon = item.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={item.onClick}
+      disabled={item.disabled}
+      className={cn(
+        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-background/60 active:bg-background/80",
+        item.disabled && "cursor-not-allowed opacity-60",
+        !isLast && "border-b border-border/60",
+      )}
+    >
+      <span
+        className={cn(
+          "grid size-11 shrink-0 place-items-center rounded-full bg-background",
+          item.iconClassName,
+        )}
+      >
+        <Icon className="size-5" strokeWidth={2.1} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-base font-semibold leading-tight text-foreground">
+          {item.label}
+        </span>
+        <span className="mt-0.5 block truncate text-xs font-medium leading-tight text-muted-foreground">
+          {item.description}
+        </span>
+      </span>
+    </button>
+  );
+};
+
 const FabMenuPanel = ({
-  latestWeight,
-  waterAmount,
-  remainingCalories,
   onNavigateMeasurements,
+  onNavigateWorkout,
+  onStartRun,
+  isStartingRun,
   onAddWater,
   onFoodAction,
-}) => (
-  <div className="absolute bottom-full right-0 z-[71] mb-3 w-[320px] max-w-[calc(100vw-1.5rem)] animate-in rounded-[2rem] border bg-background p-5 text-foreground shadow-2xl fade-in slide-in-from-bottom-2 duration-200">
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold">Weight</p>
-          <p className="text-2xl font-bold">
-            {latestWeight > 0 ? `${latestWeight} kg` : "—"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onNavigateMeasurements}
-          className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-        >
-          <ScaleIcon className="size-7" />
-        </button>
+}) => {
+  const foodActions = [
+    {
+      label: "Log Food",
+      icon: AppleIcon,
+      className: "bg-orange-500/10",
+      iconClassName: "border-orange-400/45 text-orange-500",
+      onClick: () => onFoodAction("text"),
+    },
+    {
+      label: "Barcode Scan",
+      icon: BarcodeIcon,
+      className: "bg-sky-500/10",
+      iconClassName: "border-sky-400/45 text-sky-500",
+      onClick: () => onFoodAction("barcode"),
+    },
+    {
+      label: "Voice Log",
+      icon: MicIcon,
+      className: "bg-violet-500/10",
+      iconClassName: "border-violet-400/45 text-violet-500",
+      onClick: () => onFoodAction("audio"),
+    },
+    {
+      label: "Meal scan",
+      icon: CameraIcon,
+      className: "bg-emerald-500/10",
+      iconClassName: "border-emerald-400/45 text-emerald-500",
+      onClick: () => onFoodAction("camera"),
+    },
+  ];
+  const utilityActions = [
+    {
+      label: "Water",
+      description: "Track daily hydration goals",
+      icon: GlassWaterIcon,
+      iconClassName: "text-sky-500",
+      onClick: onAddWater,
+    },
+    {
+      label: "Weight",
+      description: "Monitor progress over time",
+      icon: ScaleIcon,
+      iconClassName: "text-orange-500",
+      onClick: onNavigateMeasurements,
+    },
+    {
+      label: "Exercise",
+      description: "Log workouts and calories",
+      icon: DumbbellIcon,
+      iconClassName: "text-violet-500",
+      onClick: onNavigateWorkout,
+    },
+    {
+      label: "Run",
+      description: isStartingRun ? "Starting GPS run" : "Start GPS run",
+      icon: FootprintsIcon,
+      iconClassName: "text-lime-600",
+      onClick: onStartRun,
+      disabled: isStartingRun,
+    },
+  ];
+
+  return (
+    <div className="px-5 pb-5 pt-3">
+      <div className="grid grid-cols-2 gap-2.5">
+        {map(foodActions, (action) => (
+          <FabActionTile key={action.label} action={action} />
+        ))}
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold">Water</p>
-          <p className="text-2xl font-bold">{waterAmount} ml</p>
-        </div>
-        <button
-          type="button"
-          onClick={onAddWater}
-          className="flex size-16 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-        >
-          <GlassWaterIcon className="size-7" />
-        </button>
-      </div>
-
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold">Food</p>
-          <p className="text-2xl font-bold">{remainingCalories} kcal left</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => onFoodAction("text")}
-            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-          >
-            <KeyboardIcon className="size-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onFoodAction("manual")}
-            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-          >
-            <SearchIcon className="size-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onFoodAction("camera")}
-            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-          >
-            <CameraIcon className="size-6" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onFoodAction("audio")}
-            className="flex size-14 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
-          >
-            <MicIcon className="size-6" />
-          </button>
-        </div>
+      <div className="mt-4 overflow-hidden rounded-[1.5rem] bg-muted/45">
+        {map(utilityActions, (item, index) => (
+          <FabUtilityRow
+            key={item.label}
+            item={item}
+            isLast={index === utilityActions.length - 1}
+          />
+        ))}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FloatingActionButton = () => {
   const [openRouteKey, setOpenRouteKey] = React.useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { addWaterCup } = useDailyTrackingActions();
-  const { goals } = useHealthGoals();
-  const { getLatest } = useMeasurements();
-  const { dayData } = useDailyTrackingDay(getTodayKey());
+  const { startRunningSession, isPending: isStartingRun } =
+    useStartRunningSession();
   const openActionDrawer = useAddMealOverlayStore(
     (state) => state.openActionDrawer,
   );
@@ -134,55 +208,13 @@ const FloatingActionButton = () => {
   const routeKey = location.key || location.pathname;
   const isOpen = isVisible && openRouteKey === routeKey;
 
-  const latestWeight = getLatest()?.weight || 0;
-  const waterAmount = React.useMemo(() => {
-    const waterLog = dayData?.waterLog || [];
-    const cupSize = goals?.cupSize || 250;
-    return waterLog.length > 0
-      ? reduce(waterLog, (sum, entry) => sum + (entry?.amountMl || 0), 0)
-      : (dayData?.waterCups || 0) * cupSize;
-  }, [dayData?.waterLog, dayData?.waterCups, goals?.cupSize]);
-  const consumedCalories = React.useMemo(() => {
-    const meals = dayData?.meals || {};
-    return reduce(
-      lodashValues(meals),
-      (sectionSum, foods) => {
-        return (
-          sectionSum +
-          (isArray(foods)
-            ? reduce(
-                foods,
-                (sum, food) => sum + (food?.cal || 0) * (food?.qty || 1),
-                0,
-              )
-            : 0)
-        );
-      },
-      0,
-    );
-  }, [dayData?.meals]);
-  const remainingCalories = Math.max(
-    0,
-    (goals?.calories || 0) - consumedCalories,
-  );
-
   const closeFab = React.useCallback(() => setOpenRouteKey(null), []);
-  const closeFabEvent = React.useEffectEvent(closeFab);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
-        closeFabEvent();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  const setFabOpen = React.useCallback(
+    (nextOpen) => {
+      setOpenRouteKey(nextOpen ? routeKey : null);
+    },
+    [routeKey],
+  );
 
   if (!isVisible) {
     return null;
@@ -203,6 +235,35 @@ const FloatingActionButton = () => {
     closeFab();
   };
 
+  const handleNavigateWorkout = () => {
+    navigate("/user/workout/overview");
+    closeFab();
+  };
+
+  const handleStartRun = async () => {
+    try {
+      const session = await startRunningSession({ source: "fab" });
+      const workoutSessionId = get(
+        session,
+        "workoutSessionId",
+        get(session, "id"),
+      );
+
+      if (workoutSessionId) {
+        navigate(`/user/workout/running/live/${workoutSessionId}`);
+      } else {
+        navigate("/user/workout/history");
+      }
+
+      closeFab();
+    } catch (error) {
+      toast.error(
+        get(error, "response.data.message") ||
+          "Yugurishni boshlash imkoni bo'lmadi.",
+      );
+    }
+  };
+
   const handleFoodAction = (type) => {
     openActionDrawer({
       dateKey: getTodayKey(),
@@ -219,44 +280,11 @@ const FloatingActionButton = () => {
         "flex size-[60px] items-center justify-center rounded-full bg-primary text-white shadow-[0_20px_45px_rgba(132,204,22,0.35)] transition-transform duration-300 hover:shadow-[0_24px_52px_rgba(132,204,22,0.42)] active:scale-95 dark:text-white",
         isOpen ? "rotate-45" : "rotate-0",
       )}
-      onClick={() =>
-        setOpenRouteKey((currentRouteKey) =>
-          currentRouteKey === routeKey ? null : routeKey,
-        )
-      }
+      onClick={() => setFabOpen(!isOpen)}
     >
       <PlusIcon className="size-6 @max-2xs:size-7" />
     </button>
   );
-
-  const portalContent =
-    isOpen && typeof document !== "undefined"
-      ? createPortal(
-          <>
-            <button
-              type="button"
-              data-testid="fab-overlay"
-              aria-label="Close quick actions"
-              className="fixed inset-0 z-[70] bg-background/70 backdrop-blur-sm md:hidden"
-              onClick={closeFab}
-            />
-            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[71] flex justify-end px-3 pb-6 pb-safe-or-4 md:hidden">
-              <div className="relative pointer-events-auto">
-                <FabMenuPanel
-                  latestWeight={latestWeight}
-                  waterAmount={waterAmount}
-                  remainingCalories={remainingCalories}
-                  onNavigateMeasurements={handleNavigateMeasurements}
-                  onAddWater={handleAddWater}
-                  onFoodAction={handleFoodAction}
-                />
-                {toggleButton}
-              </div>
-            </div>
-          </>,
-          document.body,
-        )
-      : null;
 
   return (
     <>
@@ -265,7 +293,29 @@ const FloatingActionButton = () => {
       ) : (
         toggleButton
       )}
-      {portalContent}
+      <Drawer
+        direction="bottom"
+        open={isOpen}
+        onOpenChange={setFabOpen}
+        shouldScaleBackground={false}
+      >
+        <DrawerContent className="before:bg-[#f3f7f5] data-[vaul-drawer-direction=bottom]:max-h-[calc(100vh-4rem)] data-[vaul-drawer-direction=bottom]:md:max-w-sm dark:before:bg-[#111a16]">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>Quick actions</DrawerTitle>
+            <DrawerDescription>
+              Log food, hydration, weight, and workouts.
+            </DrawerDescription>
+          </DrawerHeader>
+          <FabMenuPanel
+            onNavigateMeasurements={handleNavigateMeasurements}
+            onNavigateWorkout={handleNavigateWorkout}
+            onStartRun={handleStartRun}
+            isStartingRun={isStartingRun}
+            onAddWater={handleAddWater}
+            onFoodAction={handleFoodAction}
+          />
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };

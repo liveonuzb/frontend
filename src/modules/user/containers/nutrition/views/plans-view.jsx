@@ -1,13 +1,16 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRightIcon,
+  AlertCircleIcon,
   BookOpenIcon,
   CalendarDaysIcon,
   CheckCircle2Icon,
   FlameIcon,
   DumbbellIcon,
   LightbulbIcon,
+  Loader2Icon,
   LeafIcon,
   PencilIcon,
   ScaleIcon,
@@ -15,7 +18,23 @@ import {
   TargetIcon,
   UtensilsIcon,
   WalletIcon,
+  XCircleIcon,
 } from "lucide-react";
+import {
+  Drawer,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  NutritionDrawerBody,
+  NutritionDrawerContent,
+} from "../nutrition-drawer-layout.jsx";
+import {
+  useMealPlanTemplateConflictPreview,
+  useMealPlanTemplateDetail,
+} from "@/hooks/app/use-meal-plan";
 import NutritionPlansList from "../nutrition-plans-list.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
@@ -23,11 +42,16 @@ import FilterChips from "../ui/filter-chips.jsx";
 import PlanTemplateCard from "../ui/plan-template-card.jsx";
 import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { cn } from "@/lib/utils.js";
-import { getTemplateBlockingReasonSummary } from "../template-blocking-reasons.js";
+import {
+  getTemplateBlockingReasonLabels,
+  getTemplateBlockingReasonSummary,
+} from "../template-blocking-reasons.js";
 
 import filter from "lodash/filter";
 import isArray from "lodash/isArray";
 import map from "lodash/map";
+import range from "lodash/range";
+import reduce from "lodash/reduce";
 import take from "lodash/take";
 import toNumber from "lodash/toNumber";
 
@@ -85,6 +109,52 @@ const getTemplateMealsPerDay = (template) =>
 
 const getTemplateMealsCount = (template) =>
   toNumber(template?.mealsCount || template?.totalMeals || 0) || null;
+
+const getMealCalories = (meal) => {
+  const quantity = toNumber(meal?.qty ?? meal?.quantity ?? 1) || 1;
+  const calories = toNumber(
+    meal?.calories ??
+      meal?.cal ??
+      meal?.totalCalories ??
+      meal?.food?.calories ??
+      meal?.food?.cal ??
+      0,
+  );
+
+  return Math.max(0, Math.round(calories * quantity));
+};
+
+const buildTemplateDayPreview = (template, durationDays) => {
+  const sourceDays = isArray(template?.days) ? template.days : [];
+  const dayByNumber = reduce(
+    sourceDays,
+    (result, day, index) => {
+      const dayNumber = toNumber(day?.dayNumber) || index + 1;
+      result[dayNumber] = day;
+      return result;
+    },
+    {},
+  );
+  const maxDays = Math.min(Math.max(toNumber(durationDays) || 30, 1), 30);
+
+  return map(range(1, maxDays + 1), (dayNumber) => {
+    const day = dayByNumber[dayNumber] || null;
+    const meals = isArray(day?.meals) ? day.meals : [];
+    const calories = reduce(
+      meals,
+      (total, meal) => total + getMealCalories(meal),
+      0,
+    );
+
+    return {
+      dayNumber,
+      mealCount: meals.length,
+      calories,
+      hasDetails: Boolean(day),
+      isSparse: Boolean(day) && (meals.length === 0 || calories <= 0),
+    };
+  });
+};
 
 const buildTemplateCard = (template) => ({
   ...template,
@@ -328,6 +398,289 @@ const AIRecommendationsPanel = ({ onAction }) => (
   </NutritionCard>
 );
 
+const TemplateCompatibilityDrawer = ({
+  template,
+  open,
+  onOpenChange,
+  onSelect,
+}) => {
+  const {
+    template: detailTemplate,
+    isLoading: isDetailLoading,
+    isFetching: isDetailFetching,
+  } = useMealPlanTemplateDetail(template?.id, {
+    enabled: open && Boolean(template?.id),
+  });
+  const { preview, isLoading, isFetching, isError, refetch } =
+    useMealPlanTemplateConflictPreview(template?.id, {
+      enabled: open && Boolean(template?.id),
+    });
+  const isBusy = isLoading || isFetching;
+  const isDetailBusy = isDetailLoading || isDetailFetching;
+  const templateForPreview = detailTemplate?.id ? detailTemplate : template;
+  const previewReasons = isArray(preview?.blockingReasons)
+    ? preview.blockingReasons
+    : [];
+  const templateReasons = isArray(templateForPreview?.blockingReasons)
+    ? templateForPreview.blockingReasons
+    : [];
+  const blockingReasons = previewReasons.length
+    ? previewReasons
+    : templateReasons;
+  const reasonLabels = getTemplateBlockingReasonLabels({
+    isCompatible: false,
+    blockingReasons,
+  });
+  const canSelect =
+    Boolean(template?.id) &&
+    !isError &&
+    templateForPreview?.isCompatible !== false &&
+    preview?.isCompatible !== false &&
+    preview?.canApply !== false &&
+    preview?.canActivate !== false;
+  const days = getTemplateDays(templateForPreview);
+  const dayPreviews = React.useMemo(
+    () => buildTemplateDayPreview(templateForPreview, days),
+    [templateForPreview, days],
+  );
+  const computedDaysWithMeals = filter(
+    dayPreviews,
+    (day) => day.mealCount > 0,
+  ).length;
+  const computedMealsCount = reduce(
+    dayPreviews,
+    (total, day) => total + day.mealCount,
+    0,
+  );
+  const daysWithMeals =
+    toNumber(templateForPreview?.daysWithMeals) || computedDaysWithMeals;
+  const mealsCount =
+    getTemplateMealsCount(templateForPreview) || computedMealsCount;
+  const mealsPerDay = getTemplateMealsPerDay(templateForPreview);
+  const hasDayDetails = isArray(templateForPreview?.days)
+    ? templateForPreview.days.length > 0
+    : false;
+  const sparseDays = filter(dayPreviews, (day) => day.isSparse);
+  const sparseDayText = map(
+    take(sparseDays, 4),
+    (day) => `${day.dayNumber}-kun`,
+  ).join(", ");
+  const StatusIcon = canSelect ? CheckCircle2Icon : XCircleIcon;
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <NutritionDrawerContent size="md">
+        <DrawerHeader>
+          <DrawerTitle>Shablon mosligi</DrawerTitle>
+          <DrawerDescription>
+            {template?.title || template?.name || "Tanlangan shablon"}
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <NutritionDrawerBody className="space-y-4 pb-5">
+          {isBusy ? (
+            <div className="flex min-h-40 items-center justify-center gap-3 rounded-2xl border border-dashed bg-muted/20 text-sm font-semibold text-muted-foreground">
+              <Loader2Icon className="size-4 animate-spin" />
+              Moslik tekshirilmoqda...
+            </div>
+          ) : (
+            <>
+              <div
+                className={cn(
+                  "rounded-2xl border px-4 py-3",
+                  canSelect
+                    ? "border-primary/20 bg-primary/5 text-primary"
+                    : "border-destructive/20 bg-destructive/5 text-destructive",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <StatusIcon className="mt-0.5 size-5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-black">
+                      {canSelect ? "Bu shablon mos" : "Bu shablon mos emas"}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-current/80">
+                      {canSelect
+                        ? "Rejani tanlashdan oldin kunlar, kaloriya va ovqat qamrovini tekshiring."
+                        : "Sabablarni ko'rib chiqing yoki boshqa shablon tanlang."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {map(
+                  [
+                    ["Kun qamrovi", `${daysWithMeals}/${days}`],
+                    ["Kaloriya", `${getTemplateCalories(templateForPreview)} kcal`],
+                    ["Ovqatlar", mealsCount ? `${mealsCount} ta` : "-"],
+                    ["Mahal", mealsPerDay ? `${mealsPerDay} / kun` : "-"],
+                  ],
+                  ([label, value]) => (
+                    <div
+                      key={label}
+                      className="rounded-2xl border bg-background/60 px-3 py-3"
+                    >
+                      <p className="text-[11px] font-bold uppercase text-muted-foreground">
+                        {label}
+                      </p>
+                      <p className="mt-1 text-base font-black">{value}</p>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-black">30 kunlik preview</p>
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-black text-muted-foreground">
+                    {hasDayDetails
+                      ? `${daysWithMeals}/${days}`
+                      : "detail kutilmoqda"}
+                  </span>
+                </div>
+
+                {isDetailBusy ? (
+                  <div className="flex min-h-24 items-center justify-center gap-2 rounded-2xl border border-dashed bg-muted/20 text-sm font-semibold text-muted-foreground">
+                    <Loader2Icon className="size-4 animate-spin" />
+                    Kunlar yuklanmoqda...
+                  </div>
+                ) : (
+                  <div
+                    data-testid="template-day-preview-grid"
+                    className="grid grid-cols-5 gap-1.5 sm:grid-cols-6"
+                    role="list"
+                    aria-label="Shablon kunlari preview"
+                  >
+                    {map(dayPreviews, (day) => (
+                      <div
+                        key={day.dayNumber}
+                        role="listitem"
+                        data-testid={`template-day-preview-${day.dayNumber}`}
+                        className={cn(
+                          "min-h-16 rounded-2xl border px-2 py-2 text-center",
+                          day.hasDetails && !day.isSparse
+                            ? "border-primary/15 bg-primary/5"
+                            : day.isSparse
+                              ? "border-amber-500/25 bg-amber-500/10"
+                              : "border-dashed bg-muted/20",
+                        )}
+                      >
+                        <p className="text-[11px] font-black text-foreground">
+                          {day.dayNumber}
+                        </p>
+                        <p className="mt-1 text-[10px] font-bold text-muted-foreground">
+                          {day.hasDetails ? `${day.mealCount} ta` : "-"}
+                        </p>
+                        <p className="text-[10px] font-black tabular-nums text-primary">
+                          {day.hasDetails && day.calories > 0
+                            ? `${day.calories}`
+                            : "0"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!isDetailBusy && !hasDayDetails ? (
+                  <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
+                    Kunlar tafsiloti backenddan kelmadi. To'liq preview uchun
+                    shablon detail kontraktini tekshiring.
+                  </div>
+                ) : null}
+
+                {!isDetailBusy && sparseDays.length > 0 ? (
+                  <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-800 dark:text-amber-200">
+                    Sparse kunlar: {sparseDayText}
+                    {sparseDays.length > 4
+                      ? ` va yana ${sparseDays.length - 4} ta`
+                      : ""}
+                    . Bu kunlarda ovqat yoki kaloriya to'liq emas.
+                  </div>
+                ) : null}
+              </div>
+
+              {isError ? (
+                <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  Moslikni tekshirib bo'lmadi.
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 w-full"
+                    onClick={() => refetch()}
+                  >
+                    Qayta urinish
+                  </Button>
+                </div>
+              ) : null}
+
+              {reasonLabels.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-black">Conflict sabablari</p>
+                  {map(reasonLabels, (label) => (
+                    <div
+                      key={label}
+                      className="flex items-start gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs leading-5 text-destructive"
+                    >
+                      <AlertCircleIcon className="mt-0.5 size-3.5 shrink-0" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                  <div className="rounded-2xl border bg-background/60 px-3 py-3">
+                    <p className="text-xs font-black uppercase text-muted-foreground">
+                      Nima qilish mumkin?
+                    </p>
+                    <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">
+                      <li>
+                        Preference va allergiyalarni profil sozlamalarida
+                        yangilang.
+                      </li>
+                      <li>
+                        Boshqa shablon tanlang yoki mos ovqatlar bilan
+                        almashtiring.
+                      </li>
+                      <li>
+                        Admin substitution qo'shgandan keyin moslikni qayta
+                        tekshiring.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-primary/15 bg-primary/5 px-3 py-3 text-sm font-semibold text-primary">
+                  Conflict topilmadi. Shablonni tanlash mumkin.
+                </div>
+              )}
+            </>
+          )}
+        </NutritionDrawerBody>
+
+        <DrawerFooter>
+          <Button
+            type="button"
+            disabled={!canSelect || isBusy}
+            onClick={() => {
+              if (template) {
+                onSelect?.(template);
+              }
+            }}
+          >
+            Shablonni tanlash
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Yopish
+          </Button>
+        </DrawerFooter>
+      </NutritionDrawerContent>
+    </Drawer>
+  );
+};
+
 export default function NutritionPlansView({
   orderedPlans,
   currentPlan,
@@ -346,7 +699,9 @@ export default function NutritionPlansView({
   templates = [],
   isTemplateLoading = false,
 }) {
+  const { t } = useTranslation();
   const [planFilter, setPlanFilter] = React.useState("all");
+  const [previewTemplate, setPreviewTemplate] = React.useState(null);
   const filteredPlans = React.useMemo(() => {
     if (planFilter === "all") {
       return orderedPlans;
@@ -355,10 +710,11 @@ export default function NutritionPlansView({
     return filter(orderedPlans, (plan) => plan.status === planFilter);
   }, [orderedPlans, planFilter]);
   const filterOptions = [
-    { key: "all", label: "Barchasi" },
-    { key: "active", label: "Faol" },
-    { key: "draft", label: "Qoralama" },
-    { key: "archived", label: "Arxiv" },
+    { key: "all", label: t("user.nutrition.plansPage.filters.all") },
+    { key: "active", label: t("user.nutrition.plansPage.filters.active") },
+    { key: "draft", label: t("user.nutrition.plansPage.filters.draft") },
+    { key: "paused", label: t("user.nutrition.plansPage.filters.paused") },
+    { key: "archived", label: t("user.nutrition.plansPage.filters.archived") },
   ];
   const templateCards = React.useMemo(
     () =>
@@ -367,6 +723,12 @@ export default function NutritionPlansView({
       ),
     [templates],
   );
+  const closePreview = React.useCallback((nextOpen) => {
+    if (!nextOpen) {
+      setPreviewTemplate(null);
+    }
+  }, []);
+
   return (
     <NutritionLayout mainClassName="space-y-8">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -384,19 +746,21 @@ export default function NutritionPlansView({
 
       <section className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-black">Mashhur shablonlar</h2>
+          <h2 className="text-xl font-black">
+            {t("user.nutrition.plansPage.popularTemplates")}
+          </h2>
           <button
             type="button"
             className="inline-flex w-fit items-center gap-2 rounded-full text-sm font-black text-primary outline-none transition hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring"
             onClick={onCreateFromTemplate}
           >
-            Barchasini ko'rish
+            {t("user.nutrition.plansPage.viewAll")}
             <ArrowRightIcon className="size-4" />
           </button>
         </div>
         {isTemplateLoading ? (
           <div className="rounded-[28px] border border-dashed p-5 text-sm text-muted-foreground">
-            Shablonlar yuklanmoqda...
+            {t("user.nutrition.plansPage.templatesLoading")}
           </div>
         ) : templateCards.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
@@ -404,14 +768,14 @@ export default function NutritionPlansView({
               <PlanTemplateCard
                 key={template.id || template.title}
                 {...template}
-                onPreview={onCreateFromTemplate}
+                onPreview={() => setPreviewTemplate(template)}
                 onSelect={() => onActivateTemplate?.(template)}
               />
             ))}
           </div>
         ) : (
           <div className="rounded-[28px] border border-dashed p-5 text-sm text-muted-foreground">
-            Hozircha admin shablonlari yo'q.
+            {t("user.nutrition.plansPage.noTemplates")}
           </div>
         )}
       </section>
@@ -419,13 +783,15 @@ export default function NutritionPlansView({
       <section className="space-y-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-black">Mening rejalarim</h2>
+            <h2 className="text-xl font-black">
+              {t("user.nutrition.plansPage.myPlans")}
+            </h2>
           </div>
           <FilterChips
             options={filterOptions}
             value={planFilter}
             onChange={setPlanFilter}
-            ariaLabel="Reja statuslari"
+            ariaLabel={t("user.nutrition.plansPage.statusFilter")}
           />
         </div>
         <div
@@ -450,6 +816,13 @@ export default function NutritionPlansView({
           />
         </div>
       </section>
+
+      <TemplateCompatibilityDrawer
+        open={Boolean(previewTemplate)}
+        template={previewTemplate}
+        onOpenChange={closePreview}
+        onSelect={onActivateTemplate}
+      />
     </NutritionLayout>
   );
 }

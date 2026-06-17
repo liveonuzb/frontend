@@ -39,12 +39,19 @@ import {
   usePostFileQuery,
   usePostQuery,
 } from "@/hooks/api";
+import {
+  NUTRITION_CUSTOM_FOODS_API_ROOT,
+  NUTRITION_FOODS_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { NutritionDrawerContent } from "./nutrition-drawer-layout.jsx";
 import useHealthGoals from "@/hooks/app/use-health-goals";
 import FoodDetailPortionDrawer from "./food-detail-portion-drawer.jsx";
 
-const CUSTOM_FOODS_KEY = ["me", "custom-foods"];
+const CUSTOM_FOODS_KEY = ["user", "nutrition", "custom-foods"];
+const customFoodsApiPath = (path = "") =>
+  nutritionApiPath(NUTRITION_CUSTOM_FOODS_API_ROOT, path);
 
 const EMPTY_FORM = {
   name: "",
@@ -180,7 +187,7 @@ const CustomFoodForm = ({
       formData.append("file", file);
 
       const response = await uploadMutation.mutateAsync({
-        url: "/foods/upload-meal-capture",
+        url: nutritionApiPath(NUTRITION_FOODS_API_ROOT, "upload-meal-capture"),
         attributes: formData,
         config: {
           headers: {
@@ -383,7 +390,7 @@ const CustomFoodsDrawer = ({
   const { goals } = useHealthGoals();
 
   const { data, isLoading } = useGetQuery({
-    url: "/users/me/custom-foods",
+    url: customFoodsApiPath(),
     queryProps: {
       queryKey: CUSTOM_FOODS_KEY,
       enabled: open,
@@ -402,7 +409,7 @@ const CustomFoodsDrawer = ({
   const handleCreate = async (formData) => {
     try {
       await createMutation.mutateAsync({
-        url: "/users/me/custom-foods",
+        url: customFoodsApiPath(),
         attributes: formData,
       });
       setView("list");
@@ -416,7 +423,7 @@ const CustomFoodsDrawer = ({
     if (!editingItem) return;
     try {
       await updateMutation.mutateAsync({
-        url: `/users/me/custom-foods/${editingItem.id}`,
+        url: customFoodsApiPath(editingItem.id),
         attributes: formData,
       });
       setView("list");
@@ -431,7 +438,7 @@ const CustomFoodsDrawer = ({
     setDeletingId(id);
     try {
       await deleteMutation.mutateAsync({
-        url: `/users/me/custom-foods/${id}`,
+        url: customFoodsApiPath(id),
       });
       toast.success("Taom o'chirildi");
     } catch {

@@ -81,8 +81,8 @@ export default function ChallengeWidget({
   );
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.10)] via-card to-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[rgb(var(--accent-rgb)/0.35)] hover:shadow-xl hover:shadow-[rgb(var(--accent-rgb)/0.05)]">
-      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.10)] blur-3xl transition-opacity group-hover:opacity-90" />
+    <div className="relative h-full overflow-hidden rounded-[28px] border border-[rgb(var(--accent-rgb)/0.20)] bg-gradient-to-br from-[rgb(var(--accent-rgb)/0.10)] via-card to-card p-5 shadow-sm">
+      <div className="absolute inset-x-8 top-0 h-24 rounded-full bg-[rgb(var(--accent-rgb)/0.10)] blur-3xl" />
       <div className="relative flex h-full flex-col">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--accent-strong-rgb)/0.80)]">
@@ -98,7 +98,7 @@ export default function ChallengeWidget({
           <button
             type="button"
             onClick={() => handleOpenChallenge(currentChallenge.id)}
-            className="mt-4 flex w-full flex-1 flex-col gap-4 rounded-[22px] border border-[rgb(var(--accent-rgb)/0.15)] bg-background/85 p-4 text-left transition-colors hover:border-[rgb(var(--accent-rgb)/0.30)] hover:bg-background"
+            className="mt-4 flex w-full flex-1 flex-col gap-4 rounded-[22px] border border-[rgb(var(--accent-rgb)/0.15)] bg-background/85 p-4 text-left"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">

@@ -38,6 +38,8 @@ import { Filters } from "@/components/reui/filters.jsx";
 import { useDeleteQuery, useGetQuery, usePatchQuery } from "@/hooks/api";
 import { cn } from "@/lib/utils";
 import { adminListSkeletons } from "@/modules/admin/components/admin-list-skeletons.jsx";
+import TaxonomyDeleteImpactAlert from "@/modules/admin/components/taxonomy-delete-impact-alert.jsx";
+import TaxonomyGovernanceSummary from "@/modules/admin/components/taxonomy-governance-summary.jsx";
 import { useAdminDrawerListNavigation } from "@/modules/admin/lib/admin-drawer-navigation.js";
 import { useAdminPermissions } from "@/modules/admin/lib/permissions.js";
 import { useBreadcrumbStore, useLanguageStore } from "@/store";
@@ -63,6 +65,7 @@ const ListPage = () => {
   const { setBreadcrumbs } = useBreadcrumbStore();
   const currentLanguage = useLanguageStore((state) => state.currentLanguage);
   const [expanded, setExpanded] = React.useState({});
+  const [cuisineToDelete, setCuisineToDelete] = React.useState(null);
   const [name, setName] = useQueryState(
     "name",
     parseAsString.withDefault(""),
@@ -161,7 +164,7 @@ const ListPage = () => {
     ],
   );
   const { data, isLoading, isFetching, refetch } = useGetQuery({
-    url: "/admin/cuisines",
+    url: "/admin/nutrition/cuisines",
     params,
     queryProps: { queryKey: [...QUERY_KEY, params] },
   });
@@ -291,7 +294,7 @@ const ListPage = () => {
             disabled={!canManageContent}
             onCheckedChange={(checked) =>
               patchMutation.mutate({
-                url: `/admin/cuisines/${info.row.original.id}`,
+                url: `/admin/nutrition/cuisines/${info.row.original.id}`,
                 attributes: { isActive: checked },
               })
             }
@@ -333,19 +336,7 @@ const ListPage = () => {
               canManage={canManageContent}
               onEdit={(row) => navigateAdminDrawer(`edit/${row.id}`)}
               onTranslate={(row) => navigate(`translate/${row.id}`)}
-              onDelete={async (row) => {
-                try {
-                  if (!canManageContent) return;
-                  await deleteMutation.mutateAsync({
-                    url: `/admin/cuisines/${row.id}`,
-                  });
-                  toast.success("Oshxona o'chirildi");
-                } catch (error) {
-                  toast.error(
-                    getErrorMessage(error, "Oshxonani o'chirib bo'lmadi"),
-                  );
-                }
-              }}
+              onDelete={(row) => setCuisineToDelete(row)}
             />
           </div>
         ),
@@ -508,7 +499,7 @@ const ListPage = () => {
     const [moved] = ordered.splice(oldIndex, 1);
     ordered.splice(newIndex, 0, moved);
     await patchMutation.mutateAsync({
-      url: "/admin/cuisines/reorder",
+      url: "/admin/nutrition/cuisines/reorder",
       attributes: {
         movedId: String(moved.id),
         prevId: ordered[newIndex - 1]
@@ -554,6 +545,7 @@ const ListPage = () => {
         filters={activeFilters}
         onChange={handleFiltersChange}
       />
+      <TaxonomyGovernanceSummary groupKey="cuisines" />
       <DataGrid
         table={table}
         isLoading={isLoading}
@@ -581,6 +573,41 @@ const ListPage = () => {
           />
         </div>
       </DataGrid>
+      <TaxonomyDeleteImpactAlert
+        item={cuisineToDelete}
+        open={Boolean(cuisineToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setCuisineToDelete(null);
+        }}
+        onConfirm={async (row) => {
+          try {
+            if (!canManageContent || !row) return;
+            await deleteMutation.mutateAsync({
+              url: `/admin/nutrition/cuisines/${row.id}`,
+            });
+            toast.success("Oshxona o'chirildi");
+            setCuisineToDelete(null);
+          } catch (error) {
+            toast.error(getErrorMessage(error, "Oshxonani o'chirib bo'lmadi"));
+          }
+        }}
+        impactUrl={
+          cuisineToDelete
+            ? `/admin/nutrition/cuisines/${cuisineToDelete.id}/deletion-impact`
+            : null
+        }
+        title="Oshxonani o'chirish"
+        description={
+          cuisineToDelete
+            ? `"${resolveLabel(
+                cuisineToDelete.translations,
+                cuisineToDelete.name,
+                currentLanguage,
+              )}" oshxonasini o'chirmoqchimisiz?`
+            : "Bu oshxonani o'chirmoqchimisiz?"
+        }
+        isDeleting={deleteMutation.isPending}
+      />
       <Outlet />
     </div>
   );

@@ -6,7 +6,7 @@ import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
 import toLower from "lodash/toLower";
 
 describe("CalorieGaugeWidget", () => {
-  it("renders a burned calories and goal summary inside the gauge card", () => {
+  it("renders a food and burned calories summary inside the gauge card", () => {
     render(
       <CalorieGaugeWidget
         burnedCalories={875}
@@ -19,10 +19,11 @@ describe("CalorieGaugeWidget", () => {
       .getByText("Bugungi Kaloriya")
       .closest("[data-slot=card]");
 
+    expect(chartCard).toHaveTextContent("Food");
+    expect(chartCard).toHaveTextContent("900 kcal");
     expect(chartCard).toHaveTextContent("Yondirilgan");
     expect(chartCard).toHaveTextContent("875 kcal");
-    expect(chartCard).toHaveTextContent("Maqsad");
-    expect(chartCard).toHaveTextContent("2,400 kcal");
+    expect(chartCard).not.toHaveTextContent("Maqsad");
   });
 
   it("renders the SVG gauge without hiding it on mobile breakpoints", () => {

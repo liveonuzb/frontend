@@ -3,25 +3,31 @@ import CalorieGaugeWidget from "@/components/calorie-gauge-widget";
 import { Button } from "@/components/ui/button";
 import {
   CalendarDaysIcon,
-  ChevronDownIcon,
   CheckCircle2Icon,
   ClipboardListIcon,
+  Clock3Icon,
   DropletsIcon,
   FlameIcon,
   PlusIcon,
+  ShoppingCartIcon,
   TrophyIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import NutritionPlansSection from "../nutrition-plans-section.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
-import { getProgressPercent } from "../ui/progress-bar.jsx";
+import DashboardMealDetailsDrawer from "@/modules/user/containers/dashboard/meal-details-drawer.jsx";
+import { getProgressPercent } from "../ui/progress-bar-utils.js";
 import { buildNutritionDashboardMetrics } from "../data/nutrition-data-mappers.js";
-import { cn } from "@/lib/utils.js";
 
-import map from "lodash/map";
-import reduce from "lodash/reduce";
-import toNumber from "lodash/toNumber";
+import {
+  isArray,
+  isFinite as isFiniteNumber,
+  map,
+  reduce,
+  toNumber,
+} from "lodash";
 
 const mealPctGoal = {
   breakfast: 0.3,
@@ -29,6 +35,63 @@ const mealPctGoal = {
   dinner: 0.25,
   snack: 0.1,
 };
+
+const mealProgressRingRadius = 21;
+const mealProgressRingCircumference = 2 * Math.PI * mealProgressRingRadius;
+
+function MealProgressIcon({ type, icon, label, progress }) {
+  const safeProgress = Math.max(0, Math.min(100, progress || 0));
+  const strokeDashoffset =
+    mealProgressRingCircumference -
+    (safeProgress / 100) * mealProgressRingCircumference;
+
+  return (
+    <span
+      className="relative flex size-14 shrink-0 items-center justify-center"
+      data-testid={`nutrition-meal-progress-ring-${type}`}
+    >
+      <svg
+        role="progressbar"
+        aria-label={`${label} kaloriya progress`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={safeProgress}
+        className="absolute inset-0 size-full -rotate-90"
+        viewBox="0 0 48 48"
+        focusable="false"
+      >
+        <circle
+          cx="24"
+          cy="24"
+          r={mealProgressRingRadius}
+          className="stroke-current text-primary/10"
+          fill="none"
+          strokeWidth="4"
+        />
+        <circle
+          cx="24"
+          cy="24"
+          r={mealProgressRingRadius}
+          className="stroke-current text-primary transition-all duration-300"
+          fill="none"
+          strokeLinecap="round"
+          strokeWidth="4"
+          strokeDasharray={mealProgressRingCircumference}
+          strokeDashoffset={strokeDashoffset}
+        />
+      </svg>
+      <span className="relative flex size-11 items-center justify-center overflow-hidden rounded-full bg-background/50 shadow-sm ring-1 ring-border/60">
+        <span
+          data-testid={`nutrition-meal-icon-image-${type}`}
+          className={cn(
+            icon,
+            "size-8 bg-contain bg-center bg-no-repeat",
+          )}
+        />
+      </span>
+    </span>
+  );
+}
 
 const getMealNutritionTotals = (items = []) =>
   reduce(
@@ -46,7 +109,9 @@ const getMealNutritionTotals = (items = []) =>
   );
 
 const getRecommendedRange = (mealType, caloriesGoal) => {
-  const mealGoal = Math.round(toNumber(caloriesGoal || 0) * (mealPctGoal[mealType] || 0.25));
+  const mealGoal = Math.round(
+    toNumber(caloriesGoal || 0) * (mealPctGoal[mealType] || 0.25),
+  );
 
   if (mealGoal <= 0) {
     return "Tavsiya etiladi";
@@ -57,10 +122,16 @@ const getRecommendedRange = (mealType, caloriesGoal) => {
   return `Tavsiya etiladi | ${min} - ${max} kcal`;
 };
 
-const getMealStatusMeta = ({ isActive, foodCount, readOnly }) => {
+const getMealStatusMeta = ({
+  isActive,
+  foodCount,
+  plannedCount = 0,
+  readOnly,
+}) => {
   if (readOnly) {
     return {
-      label: foodCount > 0 ? "Yozilgan" : "Bo'sh",
+      label:
+        foodCount > 0 ? "Yozilgan" : plannedCount > 0 ? "Rejada" : "Bo'sh",
       className: "bg-muted text-muted-foreground",
     };
   }
@@ -76,6 +147,13 @@ const getMealStatusMeta = ({ isActive, foodCount, readOnly }) => {
     return {
       label: "Yozildi",
       className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    };
+  }
+
+  if (plannedCount > 0) {
+    return {
+      label: "Rejada",
+      className: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
     };
   }
 
@@ -103,16 +181,39 @@ const getHealthScoreBadge = (score) => {
   return "Yaxshi";
 };
 
-const getEmptyMealAddLabel = (label) => {
-  if (label === "Nonushta") return "Nonushtaga ovqat qo'shish";
-  if (label === "Tushlik") return "Tushlikka ovqat qo'shish";
-  if (label === "Kechki ovqat") return "Kechki ovqatga ovqat qo'shish";
-  return `${label || "Bo'lim"} uchun ovqat qo'shish`;
+const getMealAddedAtValue = (food) =>
+  food?.addedAt || food?.loggedAt || food?.createdAt || food?.updatedAt || null;
+
+const getMealTimeLabel = (value) => {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return `${String(date.getHours()).padStart(2, "0")}:${String(
+    date.getMinutes(),
+  ).padStart(2, "0")}`;
+};
+
+const getLastAddedTimeLabel = (foods = []) => {
+  const latestTimestamp = reduce(
+    foods,
+    (latest, food) => {
+      const value = getMealAddedAtValue(food);
+      const date = value instanceof Date ? value : new Date(value);
+
+      if (Number.isNaN(date.getTime())) return latest;
+      return Math.max(latest, date.getTime());
+    },
+    0,
+  );
+
+  return latestTimestamp > 0 ? getMealTimeLabel(new Date(latestTimestamp)) : null;
 };
 
 const toFiniteNumber = (value, fallback = 0) => {
   const numeric = toNumber(value);
-  return Number.isFinite(numeric) ? numeric : fallback;
+  return isFiniteNumber(numeric) ? numeric : fallback;
 };
 
 const getProgressValue = (progress = {}, fallback = {}) => ({
@@ -201,19 +302,99 @@ const buildServerBackedMetrics = (dashboard, fallbackMetrics) => {
   };
 };
 
+const getSectionFoods = (section) =>
+  isArray(section?.foods) ? section.foods : [];
+
+const getSectionPlannedItems = (section) =>
+  isArray(section?.plannedItems) ? section.plannedItems : [];
+
+const getNextPlannedMeal = (mealSections = [], mealConfig = {}) => {
+  const findPlannedMeal = (includeLogged) =>
+    reduce(
+      mealSections,
+      (selected, [type, section]) => {
+        if (selected) return selected;
+
+        const plannedItems = getSectionPlannedItems(section);
+        if (!plannedItems.length) return null;
+        if (!includeLogged && getSectionFoods(section).length > 0) return null;
+
+        return {
+          type,
+          label: mealConfig[type]?.label || type,
+          itemName: plannedItems[0]?.name || "Rejadagi ovqat",
+        };
+      },
+      null,
+    );
+
+  return findPlannedMeal(false) || findPlannedMeal(true);
+};
+
+const getPlanAdherencePercent = (mealSections = []) => {
+  const stats = reduce(
+    mealSections,
+    (acc, [, section]) => {
+      const plannedCount = getSectionPlannedItems(section).length;
+      if (!plannedCount) return acc;
+
+      return {
+        planned: acc.planned + plannedCount,
+        logged:
+          acc.logged + Math.min(getSectionFoods(section).length, plannedCount),
+      };
+    },
+    { planned: 0, logged: 0 },
+  );
+
+  return stats.planned > 0
+    ? Math.round((stats.logged / stats.planned) * 100)
+    : null;
+};
+
+const getShoppingStateLabel = (plan) => {
+  const savedLists = isArray(plan?.shoppingLists) ? plan.shoppingLists : [];
+  const directItems = isArray(plan?.shoppingList) ? plan.shoppingList : [];
+  const latestItems = isArray(savedLists[0]?.items) ? savedLists[0].items : [];
+  const itemCount = latestItems.length || directItems.length;
+
+  if (itemCount > 0) {
+    return `Xaridlar: ${itemCount} ta mahsulot`;
+  }
+
+  if (savedLists.length > 0) {
+    return `Xaridlar: ${savedLists.length} ta ro'yxat`;
+  }
+
+  return "Xaridlar: hali yaratilmagan";
+};
+
 const PlanStatusCard = ({
   plans = [],
   currentPlan,
   currentPlanDayStatus,
+  mealSections = [],
+  mealConfig = {},
   onOpen,
+  onOpenTodayPlan,
+  onOpenShopping,
 }) => {
   const hasPlan = Boolean(currentPlan?.id);
   const durationText = currentPlanDayStatus?.isDurationPlan
     ? `${currentPlanDayStatus.dayNumber || 1} / ${currentPlanDayStatus.durationDays || 1} kun`
     : `${plans.length} ta reja`;
+  const nextPlannedMeal = React.useMemo(
+    () => getNextPlannedMeal(mealSections, mealConfig),
+    [mealConfig, mealSections],
+  );
+  const adherencePercent = React.useMemo(
+    () => getPlanAdherencePercent(mealSections),
+    [mealSections],
+  );
+  const shoppingStateLabel = getShoppingStateLabel(currentPlan);
 
   return (
-    <NutritionCard className="p-4">
+    <NutritionCard className="p-4" data-testid="nutrition-active-plan-card">
       <div className="flex items-start gap-3">
         <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           <ClipboardListIcon className="size-4" />
@@ -223,243 +404,266 @@ const PlanStatusCard = ({
             Reja holati
           </p>
           <p className="mt-1 truncate text-base font-black">
-            {hasPlan ? currentPlan.name || "Ovqatlanish rejasi" : "Reja ulanmagan"}
+            {hasPlan
+              ? currentPlan.name || "Ovqatlanish rejasi"
+              : "Reja ulanmagan"}
           </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             {hasPlan
               ? `${currentPlan.status === "active" ? "Faol" : "Saqlangan"} • ${durationText}`
-              : "Meal plan tanlansa, bugungi ovqatlar shu yerda ko'rinadi."}
+              : "Reja tanlansa, bugungi ovqatlar shu yerda ko'rinadi."}
           </p>
         </div>
       </div>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="mt-4 w-full rounded-full"
-        onClick={onOpen}
-      >
-        Rejalarni ko'rish
-      </Button>
+      {hasPlan ? (
+        <div className="mt-4 grid gap-2 text-xs">
+          <div className="rounded-2xl bg-muted/35 px-3 py-2">
+            <p className="font-bold text-muted-foreground">Keyingi ovqat</p>
+            <p className="mt-1 truncate font-black">
+              {nextPlannedMeal
+                ? `${nextPlannedMeal.label}: ${nextPlannedMeal.itemName}`
+                : "Bugun uchun reja bo'sh"}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-2xl bg-muted/35 px-3 py-2">
+              <p className="font-black">
+                Adherence{" "}
+                {adherencePercent == null ? "0%" : `${adherencePercent}%`}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-muted/35 px-3 py-2">
+              <p className="truncate font-black">{shoppingStateLabel}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <Button
+          type="button"
+          size="sm"
+          className="rounded-full"
+          disabled={!hasPlan}
+          onClick={() => onOpenTodayPlan?.(nextPlannedMeal?.type || null)}
+        >
+          <CalendarDaysIcon data-icon="inline-start" />
+          Bugungi reja
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="rounded-full"
+          onClick={onOpen}
+        >
+          <ClipboardListIcon data-icon="inline-start" />
+          Rejani ko'rish
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="rounded-full"
+          disabled={!hasPlan}
+          onClick={() => onOpenShopping?.(currentPlan?.id)}
+        >
+          <ShoppingCartIcon data-icon="inline-start" />
+          Xaridlar
+        </Button>
+      </div>
     </NutritionCard>
   );
 };
-
-const OverviewHeader = ({
-  selectedDateLabel = "Bugun",
-  isPastDate,
-  onOpenCalendar = () => {},
-}) => (
-  <div className="flex items-center justify-between gap-3">
-    <div className="min-w-0">
-      <h1 className="text-2xl font-black tracking-normal">Umumiy ko'rinish</h1>
-      <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
-        {isPastDate ? "Tanlangan kun" : "Bugungi kuzatuv"} • {selectedDateLabel}
-      </p>
-    </div>
-    <Button
-      type="button"
-      variant="outline"
-      size="icon-lg"
-      className="size-11 shrink-0 rounded-full bg-card/80 shadow-none hover:shadow-none"
-      onClick={onOpenCalendar}
-      aria-label={`Sana tanlash: ${selectedDateLabel}`}
-    >
-      <CalendarDaysIcon className="size-5" />
-    </Button>
-  </div>
-);
 
 const CollapsibleMealList = ({
   filteredMealSections,
   mealConfig,
   activeMealType,
   goals,
+  dateKey,
   disabled,
   onAdd,
+  selectedDateLabel = "Bugun",
+  isPastDate = false,
 }) => {
-  const firstMealType = filteredMealSections[0]?.[0] || activeMealType;
-  const [requestedExpandedMealType, setRequestedExpandedMealType] =
-    React.useState(null);
-  const availableMealTypes = React.useMemo(
-    () => map(filteredMealSections, ([type]) => type),
+  const [selectedMealType, setSelectedMealType] = React.useState(null);
+  const completedMeals = React.useMemo(
+    () =>
+      reduce(
+        filteredMealSections,
+        (count, [, section]) =>
+          count + ((section?.foods || []).length > 0 ? 1 : 0),
+        0,
+      ),
     [filteredMealSections],
   );
-  const expandedMealType = availableMealTypes.includes(requestedExpandedMealType)
-    ? requestedExpandedMealType
-    : availableMealTypes.includes(activeMealType)
-      ? activeMealType
-      : firstMealType;
+  const selectedMealSection = React.useMemo(
+    () =>
+      reduce(
+        filteredMealSections,
+        (match, [type, section]) =>
+          match || (type === selectedMealType ? section : null),
+        null,
+      ) || {},
+    [filteredMealSections, selectedMealType],
+  );
+  const selectedMealConfig = selectedMealType
+    ? mealConfig[selectedMealType] || {}
+    : {};
+
+  React.useEffect(() => {
+    if (!selectedMealType) return;
+
+    const isSelectedMealVisible = reduce(
+      filteredMealSections,
+      (isVisible, [type]) => isVisible || type === selectedMealType,
+      false,
+    );
+
+    if (!isSelectedMealVisible) {
+      setSelectedMealType(null);
+    }
+  }, [filteredMealSections, selectedMealType]);
 
   return (
-    <NutritionCard className="overflow-hidden p-0">
-      <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
-        <div className="min-w-0">
-          <p className="text-sm font-black">Bugungi ovqatlar</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Vaqt bo'yicha yozilgan ovqatlar
-          </p>
+    <>
+      <section className="space-y-2.5" aria-labelledby="nutrition-meals-title">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <h2 id="nutrition-meals-title" className="text-base font-bold">
+              {isPastDate ? "Tanlangan kun ovqatlari" : "Bugungi ovqatlar"}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {selectedDateLabel} uchun vaqt bo'yicha yozuvlar
+            </p>
+          </div>
+          <span
+            data-testid="nutrition-meal-timeline-summary"
+            className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-black text-muted-foreground"
+          >
+            {completedMeals}/{filteredMealSections.length || 4}
+          </span>
         </div>
-      </div>
-      <div className="mt-3 divide-y divide-border/55">
-        {map(filteredMealSections, ([type, section]) => {
-          const config = mealConfig[type] || {};
-          const foods = section.foods || [];
-          const totals = getMealNutritionTotals(foods);
-          const calories = Math.round(totals.calories);
-          const isActive = type === activeMealType;
-          const isExpanded = type === expandedMealType;
-          const detailsId = `nutrition-meal-${type}-details`;
-          const statusMeta = getMealStatusMeta({
-            isActive,
-            foodCount: foods.length,
-            readOnly: disabled,
-          });
+        <div
+          data-testid="nutrition-meal-dashboard-list"
+          className="flex flex-col gap-2.5 md:gap-3"
+        >
+          {map(filteredMealSections, ([type, section]) => {
+            const config = mealConfig[type] || {};
+            const foods = section.foods || [];
+            const plannedItems = section.plannedItems || [];
+            const visibleItems = foods.length > 0 ? foods : plannedItems;
+            const totals = getMealNutritionTotals(visibleItems);
+            const calories = Math.round(totals.calories);
+            const mealGoal = Math.round(
+              toNumber(goals?.calories || 0) * (mealPctGoal[type] || 0.25),
+            );
+            const mealProgress =
+              mealGoal > 0
+                ? Math.min(100, Math.round((calories / mealGoal) * 100))
+                : 0;
+            const detailsId = `nutrition-meal-${type}-details`;
+            const lastAddedTimeLabel = getLastAddedTimeLabel(foods);
+            const statusMeta = getMealStatusMeta({
+              isActive: type === activeMealType,
+              foodCount: foods.length,
+              plannedCount: plannedItems.length,
+              readOnly: disabled,
+            });
 
-          return (
-            <div
-              key={type}
-              data-testid={`nutrition-meal-timeline-row-${type}`}
-              className="transition-colors hover:bg-muted/25"
-            >
-              <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-                <button
-                  type="button"
-                  aria-label={`${config.label || type} tafsilotlari`}
-                  aria-expanded={isExpanded}
-                  aria-controls={detailsId}
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-                  onClick={() => setRequestedExpandedMealType(type)}
-                >
-                  <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-background/50 text-lg shadow-sm ring-1 ring-border/60">
-                    <span aria-hidden="true">{config.emoji || "o"}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-bold">
-                        {config.label}
-                      </p>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusMeta.className}`}
-                      >
-                        {statusMeta.label}
-                      </span>
-                    </div>
-                    <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                      {calories > 0 ? (
-                        <>
-                          <FlameIcon className="size-3 text-primary" />
-                          <span className="shrink-0">{calories} kcal</span>
-                          <span aria-hidden="true">|</span>
-                        </>
-                      ) : null}
-                      <span className="truncate">
-                        {getRecommendedRange(type, goals?.calories)}
-                      </span>
-                    </p>
-                  </div>
-                  <ChevronDownIcon
-                    className={cn(
-                      "size-4 shrink-0 text-muted-foreground transition-transform",
-                      isExpanded && "rotate-180",
-                    )}
-                    aria-hidden="true"
-                  />
-                </button>
-                <Button
-                  type="button"
-                  size="icon-lg"
-                  variant="outline"
-                  className="size-11 shrink-0 rounded-full bg-background/70 text-primary hover:bg-primary/10"
-                  disabled={disabled}
-                  aria-label={`${config.label || type} uchun ovqat qo'shish`}
-                  onClick={() => onAdd(type)}
-                >
-                  <PlusIcon className="size-5" />
-                </Button>
-              </div>
-
-              {isExpanded ? (
+            return (
+              <div
+                key={type}
+                data-testid={`nutrition-meal-timeline-row-${type}`}
+                className="overflow-hidden rounded-2xl bg-card text-card-foreground text-sm"
+              >
                 <div
-                  id={detailsId}
-                  className="px-4 pb-4 pl-[5.25rem] pr-4 sm:px-5 sm:pl-[5.75rem]"
+                  data-testid={`nutrition-meal-dashboard-row-content-${type}`}
+                  className="flex items-center gap-2.5 px-3 py-2.5"
                 >
-                  {foods.length > 0 ? (
-                    <div className="space-y-2">
-                      {map(foods, (food, index) => (
-                        <div
-                          key={food.id || `${type}-${index}`}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/55 px-3 py-2"
+                  <button
+                    type="button"
+                    aria-label={`${config.label || type} tafsilotlari`}
+                    aria-controls={detailsId}
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setSelectedMealType(type)}
+                  >
+                    <MealProgressIcon
+                      type={type}
+                      icon={config.icon || type}
+                      label={config.label || type}
+                      progress={mealProgress}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="block min-w-0 flex-1 truncate text-sm font-bold">
+                          {config.label} qo'shish
+                        </span>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusMeta.className}`}
                         >
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-xs">
-                              {food.image ? (
-                                <img
-                                  src={food.image}
-                                  alt=""
-                                  className="size-full object-cover"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <span>{config.emoji || "o"}</span>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-bold">
-                                {food.name || "Ovqat"}
-                              </p>
-                              <p className="truncate text-[11px] font-medium text-muted-foreground">
-                                {section.time || config.time}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-sm font-black tabular-nums">
-                              {Math.round(
-                                toNumber(food.cal || 0) *
-                                  (toNumber(food.qty || 1) || 1),
-                              )}
-                            </p>
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                              kcal
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/25 p-3 text-left text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:hover:border-border/70 disabled:hover:bg-muted/25 disabled:hover:text-muted-foreground"
-                      disabled={disabled}
-                      onClick={() => onAdd(type)}
-                      aria-label={getEmptyMealAddLabel(config.label || type)}
-                    >
-                      <span>Hali ovqat qo'shilmagan</span>
-                      <span className="rounded-full bg-background px-2.5 py-1 text-[11px] font-black text-primary">
-                        Qo'shish
+                          {statusMeta.label}
+                        </span>
                       </span>
-                    </button>
-                  )}
-
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] font-bold text-muted-foreground">
-                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
-                      Oqsil {Math.round(totals.protein)}g
+                      <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                        {calories > 0 ? (
+                          <>
+                            <FlameIcon className="size-3 text-primary" />
+                            <span className="shrink-0">{calories} kcal</span>
+                            <span aria-hidden="true">|</span>
+                          </>
+                        ) : null}
+                        <span className="truncate">
+                          {getRecommendedRange(type, goals?.calories)}
+                        </span>
+                        {lastAddedTimeLabel ? (
+                          <>
+                            <span aria-hidden="true">|</span>
+                            <Clock3Icon className="size-3" />
+                            <span className="shrink-0">
+                              Oxirgi {lastAddedTimeLabel}
+                            </span>
+                          </>
+                        ) : null}
+                      </span>
                     </span>
-                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
-                      Uglevod {Math.round(totals.carbs)}g
-                    </span>
-                    <span className="rounded-full bg-muted/40 px-2.5 py-1">
-                      Yog' {Math.round(totals.fat)}g
-                    </span>
-                  </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-primary outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                    disabled={disabled}
+                    aria-label={`${config.label || type} uchun ovqat qo'shish`}
+                    onClick={() => onAdd(type)}
+                  >
+                    <PlusIcon className="size-5" />
+                  </button>
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </NutritionCard>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      {selectedMealType ? (
+        <DashboardMealDetailsDrawer
+          open={Boolean(selectedMealType)}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setSelectedMealType(null);
+            }
+          }}
+          dateKey={dateKey}
+          mealType={selectedMealType}
+          mealLabel={selectedMealConfig.label || "Ovqat"}
+          loggedItems={selectedMealSection.foods || []}
+          plannedItems={selectedMealSection.plannedItems || []}
+          addDisabled={disabled}
+          onAddMeal={(type) => {
+            onAdd(type);
+            setSelectedMealType(null);
+          }}
+        />
+      ) : null}
+    </>
   );
 };
 
@@ -469,6 +673,7 @@ export default function NutritionHomeView(props) {
     currentPlan,
     currentPlanDayStatus,
     selectedDateLabel,
+    dateKey,
     goals,
     roundedTotals,
     waterConsumedMl,
@@ -479,7 +684,7 @@ export default function NutritionHomeView(props) {
     setSelectedMealTypeForAdd,
     setIsActionDrawerOpen,
     setIsPlansDrawerOpen,
-    onOpenCalendar,
+    onOpenPlanShopping,
     filteredMealSections = [],
     mealConfig = {},
     isOnline,
@@ -512,10 +717,17 @@ export default function NutritionHomeView(props) {
     metrics.water.target,
   );
   const addDisabled = !isOnline || isPastDate;
+  const [focusedPlanMealType, setFocusedPlanMealType] = React.useState(null);
+  const timelineActiveMealType = focusedPlanMealType || activeMealType;
   const openAddMeal = (mealType = activeMealType) => {
     setSelectedMealTypeForAdd(mealType);
     setIsActionDrawerOpen(true);
   };
+  const handleOpenTodayPlan = React.useCallback((mealType) => {
+    if (mealType) {
+      setFocusedPlanMealType(mealType);
+    }
+  }, []);
   const sidebar = (
     <>
       <StatCard
@@ -554,19 +766,17 @@ export default function NutritionHomeView(props) {
         plans={plans}
         currentPlan={currentPlan}
         currentPlanDayStatus={currentPlanDayStatus}
+        mealSections={filteredMealSections}
+        mealConfig={mealConfig}
         onOpen={() => setIsPlansDrawerOpen(true)}
+        onOpenTodayPlan={handleOpenTodayPlan}
+        onOpenShopping={onOpenPlanShopping}
       />
     </>
   );
 
   return (
     <NutritionLayout sidebar={sidebar}>
-      <OverviewHeader
-        selectedDateLabel={selectedDateLabel}
-        isPastDate={isPastDate}
-        onOpenCalendar={onOpenCalendar}
-      />
-
       {!isOnline ? (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-800 dark:text-amber-200">
           Tarmoq yo&apos;q — o&apos;zgarishlar saqlanmaydi
@@ -595,10 +805,13 @@ export default function NutritionHomeView(props) {
       <CollapsibleMealList
         filteredMealSections={filteredMealSections}
         mealConfig={mealConfig}
-        activeMealType={activeMealType}
+        activeMealType={timelineActiveMealType}
         goals={goals}
+        dateKey={dateKey}
         disabled={addDisabled}
         onAdd={openAddMeal}
+        selectedDateLabel={selectedDateLabel}
+        isPastDate={isPastDate}
       />
 
       <NutritionCard>

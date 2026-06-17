@@ -53,28 +53,33 @@ export function AssignWorkoutTemplateDrawer({
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
-    setSelectedUserId("");
-    setScheduledFor("");
-    setNotes("");
+    let isCancelled = false;
+    queueMicrotask(() => {
+      if (isCancelled) return;
+      setSelectedUserId("");
+      setScheduledFor("");
+      setNotes("");
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [open, template?.id]);
 
-  const handleSubmit = React.useCallback(
-    (event) => {
-      event.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-      if (!selectedUserId || !template?.id || isAssigning) {
-        return;
-      }
+    if (!selectedUserId || !template?.id || isAssigning) {
+      return;
+    }
 
-      onAssign?.({
-        userId: selectedUserId,
-        templateId: template.id,
-        scheduledFor: scheduledFor || undefined,
-        notes: trim(String(notes ?? "")) || undefined,
-      });
-    },
-    [isAssigning, notes, onAssign, scheduledFor, selectedUserId, template?.id],
-  );
+    onAssign?.({
+      userId: selectedUserId,
+      templateId: template.id,
+      scheduledFor: scheduledFor || undefined,
+      notes: trim(String(notes ?? "")) || undefined,
+    });
+  };
 
   const isSubmitDisabled =
     !selectedUserId || !template?.id || isLoadingUsers || isAssigning;

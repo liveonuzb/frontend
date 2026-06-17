@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { userCardClassName } from "@/modules/user/lib/card-styles";
 
 export default function SectionCard({
   title,
@@ -14,7 +15,8 @@ export default function SectionCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden py-4 transition-all hover:ring-primary/20 hover:shadow-sm",
+        userCardClassName,
+        "relative overflow-hidden py-4 transition-colors hover:bg-muted/30",
         className,
       )}
     >

@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/drawer";
 import { useGetQuery } from "@/hooks/api";
 import { usePutQuery } from "@/hooks/api";
+import {
+  NUTRITION_TRACKING_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
 import { useAuthStore } from "@/store";
 import { MOOD_OPTIONS } from "@/lib/mood";
 import { cn } from "@/lib/utils";
@@ -42,7 +46,7 @@ export default function MoodReminderDrawer() {
   const previewMoodClass = selectedMood ?? "how";
 
   const { data } = useGetQuery({
-    url: `/daily-tracking/${today}`,
+    url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, today),
     queryProps: {
       queryKey: getDashboardDayQueryKey(today),
       enabled: Boolean(userId),
@@ -77,7 +81,7 @@ export default function MoodReminderDrawer() {
     if (!moodValue) return;
 
     await setMoodMutation.mutateAsync({
-      url: `/daily-tracking/${today}`,
+      url: nutritionApiPath(NUTRITION_TRACKING_API_ROOT, today),
       attributes: {
         steps: dayData?.steps,
         workoutMinutes: dayData?.workoutMinutes,

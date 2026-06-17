@@ -63,7 +63,7 @@ const MobileNav = ({ hidden = false }) => {
   return (
     <div
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 flex items-end justify-between px-3 pb-6 pb-safe-or-4 transition-transform duration-200",
+        "fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-md items-end justify-between px-3 pb-6 pb-safe-or-4 transition-transform duration-200",
         hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0",
       )}
     >

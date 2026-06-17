@@ -1,11 +1,24 @@
 import React from "react";
-import get from "lodash/get";
-import find from "lodash/find";
-import map from "lodash/map";
-import filter from "lodash/filter";
-import isArray from "lodash/isArray";
-import isPlainObject from "lodash/isPlainObject";
-import toNumber from "lodash/toNumber";
+import {
+  clamp,
+  entries,
+  filter,
+  find,
+  floor,
+  get,
+  includes,
+  isArray,
+  isFinite as isFiniteNumber,
+  isNil,
+  isPlainObject,
+  map,
+  reduce,
+  round,
+  sortBy,
+  toLower,
+  toNumber,
+  trim,
+} from "lodash";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeleteQuery,
@@ -15,24 +28,31 @@ import {
   usePutQuery,
 } from "@/hooks/api";
 import { useAiAccessInvalidation } from "@/hooks/app/use-ai-access";
+import {
+  NUTRITION_MEAL_PLAN_TEMPLATES_API_ROOT,
+  NUTRITION_MEAL_PLANS_API_ROOT,
+  NUTRITION_SHOPPING_LISTS_API_ROOT,
+  nutritionApiPath,
+} from "@/hooks/app/nutrition-api-paths";
+import {
+  invalidateNutritionDashboard,
+  invalidateNutritionMealPlans,
+  NUTRITION_MEAL_PLAN_QUERY_KEY,
+  NUTRITION_MEAL_PLAN_TEMPLATES_QUERY_KEY,
+  getNutritionMealPlanShoppingListsQueryKey,
+  getNutritionMealPlanTemplateConflictPreviewQueryKey,
+  getNutritionMealPlanTemplateDetailQueryKey,
+} from "@/hooks/app/nutrition-query-keys";
 
-export const MEAL_PLAN_QUERY_KEY = ["meal-plans", "me"];
-export const MEAL_PLAN_TEMPLATES_QUERY_KEY = ["meal-plans", "templates"];
-export const getMealPlanTemplateDetailQueryKey = (templateId) => [
-  ...MEAL_PLAN_TEMPLATES_QUERY_KEY,
-  "detail",
-  templateId,
-];
-export const getMealPlanTemplateConflictPreviewQueryKey = (templateId) => [
-  ...MEAL_PLAN_TEMPLATES_QUERY_KEY,
-  "conflict-preview",
-  templateId || "none",
-];
-export const getMealPlanShoppingListsQueryKey = (planId) => [
-  ...MEAL_PLAN_QUERY_KEY,
-  "shopping-lists",
-  planId || "none",
-];
+export const MEAL_PLAN_QUERY_KEY = NUTRITION_MEAL_PLAN_QUERY_KEY;
+export const MEAL_PLAN_TEMPLATES_QUERY_KEY =
+  NUTRITION_MEAL_PLAN_TEMPLATES_QUERY_KEY;
+export const getMealPlanTemplateDetailQueryKey =
+  getNutritionMealPlanTemplateDetailQueryKey;
+export const getMealPlanTemplateConflictPreviewQueryKey =
+  getNutritionMealPlanTemplateConflictPreviewQueryKey;
+export const getMealPlanShoppingListsQueryKey =
+  getNutritionMealPlanShoppingListsQueryKey;
 
 const defaultMealPlanState = {
   plans: [],
@@ -41,46 +61,188 @@ const defaultMealPlanState = {
 };
 
 const DAY_KEY_PREFIX = "day-";
+const nutritionMealPlansPath = (path) =>
+  nutritionApiPath(NUTRITION_MEAL_PLANS_API_ROOT, path);
+const nutritionMealPlanTemplatesPath = (path) =>
+  nutritionApiPath(NUTRITION_MEAL_PLAN_TEMPLATES_API_ROOT, path);
+const nutritionShoppingListsPath = (path) =>
+  nutritionApiPath(NUTRITION_SHOPPING_LISTS_API_ROOT, path);
 
-const getDayNumberFromKey = (value, fallback) => {
-  const match = String(value || "").match(/^day-(\d+)$/i);
-  const parsed = match ? Number(match[1]) : toNumber(value);
+const MAX_NORMALIZED_NUMBER = Number.MAX_SAFE_INTEGER;
 
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+const isBlankValue = (value) =>
+  typeof value === "string" && trim(value).length === 0;
+
+const hasNumericInput = (value) => !isNil(value) && !isBlankValue(value);
+
+const toPositiveInteger = (value, fallback = null) => {
+  if (!hasNumericInput(value)) {
+    return fallback;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized) && normalized > 0
+    ? floor(normalized)
+    : fallback;
+};
+
+const toNonNegativeInteger = (value, fallback = 0) => {
+  if (!hasNumericInput(value)) {
+    return fallback;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized)
+    ? round(clamp(normalized, 0, MAX_NORMALIZED_NUMBER))
+    : fallback;
+};
+
+const toNonNegativeNumber = (value, fallback = 0) => {
+  if (!hasNumericInput(value)) {
+    return fallback;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized)
+    ? clamp(normalized, 0, MAX_NORMALIZED_NUMBER)
+    : fallback;
+};
+
+const toNullablePositiveNumber = (value) => {
+  if (!hasNumericInput(value)) {
+    return null;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized) && normalized > 0 ? normalized : null;
+};
+
+const toNullableNonNegativeNumber = (value) => {
+  if (!hasNumericInput(value)) {
+    return null;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized)
+    ? clamp(normalized, 0, MAX_NORMALIZED_NUMBER)
+    : null;
+};
+
+const normalizeNullableNumber = (value) => {
+  if (!hasNumericInput(value)) {
+    return null;
+  }
+
+  const normalized = toNumber(value);
+  return isFiniteNumber(normalized) ? normalized : null;
+};
+
+const normalizeBoolean = (value) => {
+  if (value === true || value === 1) {
+    return true;
+  }
+
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return includes(["true", "1", "yes"], toLower(trim(value)));
+};
+
+const normalizeSourceRows = (value) =>
+  isArray(value) ? filter(value, isPlainObject) : [];
+
+const getDayNumberFromKey = (value, fallback = null) => {
+  if (!hasNumericInput(value)) {
+    return fallback;
+  }
+
+  const rawValue = trim(String(value));
+  const match = rawValue.match(/^day-(\d+)$/i);
+  const parsed = match ? toNumber(match[1]) : toNumber(rawValue);
+
+  return isFiniteNumber(parsed) && parsed > 0 ? floor(parsed) : fallback;
+};
+
+const normalizeDayMeals = (value) => {
+  if (isArray(value)) {
+    return value;
+  }
+
+  if (isPlainObject(value) && isArray(value.meals)) {
+    return value.meals;
+  }
+
+  if (isPlainObject(value) && isArray(value.columns)) {
+    return value.columns;
+  }
+
+  return [];
 };
 
 export const normalizeMealPlanDays = (value) => {
-  const days = isArray(value)
-    ? map(value, (day, index) => {
+  const candidates = isArray(value)
+    ? map(value, (day) => {
         const dayRecord = isPlainObject(day) ? day : {};
-        const dayNumber = getDayNumberFromKey(dayRecord.dayNumber, index + 1);
-        const dayKey =
-          typeof dayRecord.dayKey === "string" && dayRecord.dayKey.trim()
-            ? dayRecord.dayKey.trim()
-            : `${DAY_KEY_PREFIX}${dayNumber}`;
-        const meals = isArray(dayRecord.meals)
-          ? dayRecord.meals
-          : isArray(dayRecord.columns)
-            ? dayRecord.columns
-            : [];
-
-        return { dayNumber, dayKey, meals };
+        return {
+          requestedDayNumber:
+            getDayNumberFromKey(dayRecord.dayNumber) ??
+            getDayNumberFromKey(dayRecord.dayKey),
+          meals: normalizeDayMeals(dayRecord),
+        };
       })
     : isPlainObject(value)
-      ? map(Object.entries(value), ([dayKey, meals], index) => ({
-          dayNumber: getDayNumberFromKey(dayKey, index + 1),
-          dayKey,
-          meals: isArray(meals) ? meals : [],
+      ? map(entries(value), ([dayKey, meals]) => ({
+          requestedDayNumber: getDayNumberFromKey(dayKey),
+          meals: normalizeDayMeals(meals),
         }))
       : [];
 
-  return days.sort((left, right) => left.dayNumber - right.dayNumber);
+  const reservedDayNumbers = new Set(
+    filter(
+      map(candidates, (day) => day.requestedDayNumber),
+      (dayNumber) => !isNil(dayNumber),
+    ),
+  );
+  const assignedDayNumbers = new Set();
+  let fallbackDayNumber = 1;
+
+  const getNextFallbackDayNumber = () => {
+    while (
+      assignedDayNumbers.has(fallbackDayNumber) ||
+      reservedDayNumbers.has(fallbackDayNumber)
+    ) {
+      fallbackDayNumber += 1;
+    }
+
+    const nextDayNumber = fallbackDayNumber;
+    fallbackDayNumber += 1;
+    return nextDayNumber;
+  };
+
+  const days = map(candidates, (day) => {
+    const dayNumber =
+      !isNil(day.requestedDayNumber) &&
+      !assignedDayNumbers.has(day.requestedDayNumber)
+        ? day.requestedDayNumber
+        : getNextFallbackDayNumber();
+
+    assignedDayNumbers.add(dayNumber);
+
+    return {
+      dayNumber,
+      dayKey: `${DAY_KEY_PREFIX}${dayNumber}`,
+      meals: day.meals,
+    };
+  });
+
+  return sortBy(days, ["dayNumber"]);
 };
 
 export const normalizeMealPlanDaysForTest = normalizeMealPlanDays;
 
 export const mealPlanDaysToKanban = (value) =>
-  normalizeMealPlanDays(value).reduce((result, day) => {
+  reduce(normalizeMealPlanDays(value), (result, day) => {
     result[`${DAY_KEY_PREFIX}${day.dayNumber}`] = day.meals;
     return result;
   }, {});
@@ -101,9 +263,7 @@ const getDurationDays = (plan, fallback = null) => {
     plan?.durationDays ??
     (!isArray(plan?.days) ? plan?.days : undefined) ??
     fallback;
-  const normalized = toNumber(value);
-
-  return Number.isFinite(normalized) && normalized > 0 ? normalized : fallback;
+  return toPositiveInteger(value, fallback);
 };
 
 const normalizeBudgetTarget = (budget = null) => {
@@ -111,10 +271,10 @@ const normalizeBudgetTarget = (budget = null) => {
     return null;
   }
 
-  const amount = toNumber(budget.amount);
-  const targetCost = toNumber(budget.targetCost);
+  const amount = toNullablePositiveNumber(budget.amount);
+  const targetCost = toNullablePositiveNumber(budget.targetCost);
 
-  if (!amount || !targetCost) {
+  if (isNil(amount) || isNil(targetCost)) {
     return null;
   }
 
@@ -135,23 +295,12 @@ const normalizeBudgetAdherence = (budget = null) => {
 
   return {
     ...target,
-    estimatedCost: toNumber(budget.estimatedCost) || 0,
-    difference: toNumber(budget.difference) || 0,
+    estimatedCost: toNonNegativeNumber(budget.estimatedCost),
+    difference: normalizeNullableNumber(budget.difference) ?? 0,
     usagePercent:
-      budget.usagePercent === null || budget.usagePercent === undefined
-        ? null
-        : toNumber(budget.usagePercent),
+      toNullableNonNegativeNumber(budget.usagePercent),
     status: budget.status || "unknown",
   };
-};
-
-const normalizeNullableNumber = (value) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const normalized = toNumber(value);
-  return Number.isFinite(normalized) ? normalized : null;
 };
 
 const normalizeFamilyBudget = (familyBudget = null) => {
@@ -159,7 +308,7 @@ const normalizeFamilyBudget = (familyBudget = null) => {
     return null;
   }
 
-  const memberCount = toNumber(familyBudget.memberCount) || 0;
+  const memberCount = toPositiveInteger(familyBudget.memberCount);
 
   if (!memberCount) {
     return null;
@@ -169,16 +318,17 @@ const normalizeFamilyBudget = (familyBudget = null) => {
     groupId: familyBudget.groupId ?? null,
     name: familyBudget.name || null,
     memberCount,
-    maxMembers: normalizeNullableNumber(familyBudget.maxMembers),
-    perPersonEstimatedCost:
-      toNumber(familyBudget.perPersonEstimatedCost) || 0,
-    familyEstimatedCost: toNumber(familyBudget.familyEstimatedCost) || 0,
-    perPersonTargetCost: normalizeNullableNumber(
+    maxMembers: toPositiveInteger(familyBudget.maxMembers),
+    perPersonEstimatedCost: toNonNegativeNumber(
+      familyBudget.perPersonEstimatedCost,
+    ),
+    familyEstimatedCost: toNonNegativeNumber(familyBudget.familyEstimatedCost),
+    perPersonTargetCost: toNullableNonNegativeNumber(
       familyBudget.perPersonTargetCost,
     ),
-    familyTargetCost: normalizeNullableNumber(familyBudget.familyTargetCost),
+    familyTargetCost: toNullableNonNegativeNumber(familyBudget.familyTargetCost),
     familyDifference: normalizeNullableNumber(familyBudget.familyDifference),
-    familyUsagePercent: normalizeNullableNumber(
+    familyUsagePercent: toNullableNonNegativeNumber(
       familyBudget.familyUsagePercent,
     ),
     status: familyBudget.status || "unknown",
@@ -211,7 +361,9 @@ const normalizePlan = (plan) => {
 export const normalizeMealPlanForTest = normalizePlan;
 
 const getTemplateTranslation = (template, language = "uz") => {
-  const translations = isArray(template?.translations) ? template.translations : [];
+  const translations = isArray(template?.translations)
+    ? template.translations
+    : [];
 
   return (
     find(translations, (translation) => translation?.language === language) ||
@@ -314,26 +466,26 @@ const normalizeTemplateConflictPreview = (response) => {
   };
 };
 
-const normalizeShoppingListItem = (item = {}) => ({
-  id: item.id ?? null,
-  ingredientId: item.ingredientId ?? null,
-  name: item.name || "Ingredient",
-  grams: toNumber(item.grams) || 0,
-  unit: item.unit || "g",
-  pricePer100g:
-    item.pricePer100g === null || item.pricePer100g === undefined
-      ? null
-      : toNumber(item.pricePer100g),
-  priceSource: item.priceSource || "unknown",
-  estimatedCost:
-    item.estimatedCost === null || item.estimatedCost === undefined
-      ? null
-      : toNumber(item.estimatedCost),
-  currency: item.currency || "UZS",
-  sources: isArray(item.sources) ? item.sources : [],
-  isChecked: item.isChecked === true,
-  checkedAt: item.checkedAt ?? null,
-});
+const normalizeShoppingListItem = (item = {}) => {
+  if (!isPlainObject(item)) {
+    return null;
+  }
+
+  return {
+    id: item.id ?? null,
+    ingredientId: item.ingredientId ?? null,
+    name: item.name || "Ingredient",
+    grams: toNonNegativeNumber(item.grams),
+    unit: item.unit || "g",
+    pricePer100g: toNullableNonNegativeNumber(item.pricePer100g),
+    priceSource: item.priceSource || "unknown",
+    estimatedCost: toNullableNonNegativeNumber(item.estimatedCost),
+    currency: item.currency || "UZS",
+    sources: normalizeSourceRows(item.sources),
+    isChecked: normalizeBoolean(item.isChecked),
+    checkedAt: item.checkedAt ?? null,
+  };
+};
 
 export const normalizeMealPlanShoppingList = (payload = {}) => {
   const source = isPlainObject(payload) ? payload : {};
@@ -346,7 +498,7 @@ export const normalizeMealPlanShoppingList = (payload = {}) => {
     id: source.id ?? null,
     planId: source.planId ?? null,
     planName: source.planName || null,
-    durationDays: source.durationDays ?? null,
+    durationDays: toPositiveInteger(source.durationDays),
     createdAt: source.createdAt ?? null,
     priceContext: {
       regionKey: priceContext.regionKey ?? null,
@@ -357,12 +509,12 @@ export const normalizeMealPlanShoppingList = (payload = {}) => {
       ? filter(map(source.items, normalizeShoppingListItem), Boolean)
       : [],
     unmatchedFoods: isArray(source.unmatchedFoods)
-      ? source.unmatchedFoods
+      ? filter(source.unmatchedFoods, isPlainObject)
       : [],
     totals: {
-      estimatedCost: toNumber(totals.estimatedCost) || 0,
-      knownItems: toNumber(totals.knownItems) || 0,
-      unknownItems: toNumber(totals.unknownItems) || 0,
+      estimatedCost: toNonNegativeNumber(totals.estimatedCost),
+      knownItems: toNonNegativeInteger(totals.knownItems),
+      unknownItems: toNonNegativeInteger(totals.unknownItems),
       currency: totals.currency || priceContext.currency || "UZS",
     },
     budget: normalizeBudgetAdherence(source.budget),
@@ -427,7 +579,7 @@ export const useMealPlan = (options = {}) => {
   const queryClient = useQueryClient();
   const { invalidateAiAccess } = useAiAccessInvalidation();
   const { data, ...query } = useGetQuery({
-    url: "/meal-plans/me",
+    url: nutritionMealPlansPath(),
     queryProps: {
       queryKey: MEAL_PLAN_QUERY_KEY,
       enabled,
@@ -438,6 +590,10 @@ export const useMealPlan = (options = {}) => {
     () => ({
       onSuccess: async (response) => {
         syncMealPlanCache(queryClient, response);
+        await Promise.all([
+          invalidateNutritionDashboard(queryClient),
+          invalidateNutritionMealPlans(queryClient),
+        ]);
       },
     }),
     [queryClient],
@@ -497,11 +653,11 @@ export const useMealPlan = (options = {}) => {
       const payload = buildMealPlanPayload(plan);
       const response = plan?.id
         ? await updatePlanMutation.mutateAsync({
-            url: `/meal-plans/me/${plan.id}`,
+            url: nutritionMealPlansPath(plan.id),
             attributes: payload,
           })
         : await createDraftMutation.mutateAsync({
-            url: "/meal-plans/me",
+            url: nutritionMealPlansPath(),
             attributes: payload,
           });
 
@@ -513,7 +669,7 @@ export const useMealPlan = (options = {}) => {
   const generateAiPlan = React.useCallback(
     async (payload) => {
       const response = await generateAiMutation.mutateAsync({
-        url: "/meal-plans/me/ai-generate",
+        url: nutritionMealPlansPath("me/ai-generate"),
         attributes: payload,
       });
       const nextState = syncMealPlanCache(queryClient, response);
@@ -530,7 +686,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await applyTemplateMutation.mutateAsync({
-        url: `/meal-plans/templates/${templateId}/apply`,
+        url: nutritionMealPlanTemplatesPath(`${templateId}/apply`),
         attributes: {},
       });
       return syncMealPlanCache(queryClient, response);
@@ -547,7 +703,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await rescaleCaloriesMutation.mutateAsync({
-        url: `/meal-plans/me/${targetPlanId}/rescale-calories`,
+        url: nutritionMealPlansPath(`${targetPlanId}/rescale-calories`),
         attributes: {},
       });
       return syncMealPlanCache(queryClient, response);
@@ -568,14 +724,14 @@ export const useMealPlan = (options = {}) => {
         }
 
         const activatedResponse = await activatePlanMutation.mutateAsync({
-          url: `/meal-plans/me/${latestDraft.id}/activate`,
+          url: nutritionMealPlansPath(`${latestDraft.id}/activate`),
           attributes: buildMealPlanPayload(latestDraft),
         });
         return syncMealPlanCache(queryClient, activatedResponse);
       }
 
       const response = await activatePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${plan.id}/activate`,
+        url: nutritionMealPlansPath(`${plan.id}/activate`),
         attributes: buildMealPlanPayload(plan),
       });
       return syncMealPlanCache(queryClient, response);
@@ -591,7 +747,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await pausePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${targetPlanId}/pause`,
+        url: nutritionMealPlansPath(`${targetPlanId}/pause`),
         attributes: {},
       });
       return syncMealPlanCache(queryClient, response);
@@ -606,7 +762,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await renamePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${planId}/rename`,
+        url: nutritionMealPlansPath(`me/${planId}/rename`),
         attributes: { name },
       });
       return syncMealPlanCache(queryClient, response);
@@ -621,7 +777,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await duplicatePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${planId}/duplicate`,
+        url: nutritionMealPlansPath(`${planId}/duplicate`),
         attributes: {},
       });
       return syncMealPlanCache(queryClient, response);
@@ -636,7 +792,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await archivePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${planId}/archive`,
+        url: nutritionMealPlansPath(`${planId}/archive`),
         attributes: {},
       });
       return syncMealPlanCache(queryClient, response);
@@ -651,7 +807,7 @@ export const useMealPlan = (options = {}) => {
       }
 
       const response = await deletePlanMutation.mutateAsync({
-        url: `/meal-plans/me/${planId}`,
+        url: nutritionMealPlansPath(`me/${planId}`),
       });
       return syncMealPlanCache(queryClient, response);
     },
@@ -688,11 +844,20 @@ export const useMealPlan = (options = {}) => {
 export const useMealPlanTemplates = (options = {}) => {
   const enabled = options.enabled ?? true;
   const goal = options.goal || "all";
+  const params = {
+    ...(goal && goal !== "all" ? { goal } : {}),
+    ...(options.dietaryTag ? { dietaryTag: options.dietaryTag } : {}),
+    ...(options.budgetTier ? { budgetTier: options.budgetTier } : {}),
+    ...(options.durationDays ? { durationDays: options.durationDays } : {}),
+    ...(options.mealCount ? { mealCount: options.mealCount } : {}),
+    ...(options.cuisine ? { cuisine: options.cuisine } : {}),
+    ...(options.maxCalories ? { maxCalories: options.maxCalories } : {}),
+  };
   const { data, ...query } = useGetQuery({
-    url: "/meal-plans/templates",
-    params: goal && goal !== "all" ? { goal } : undefined,
+    url: nutritionMealPlanTemplatesPath(),
+    params: Object.keys(params).length ? params : undefined,
     queryProps: {
-      queryKey: [...MEAL_PLAN_TEMPLATES_QUERY_KEY, goal],
+      queryKey: [...MEAL_PLAN_TEMPLATES_QUERY_KEY, params],
       enabled,
     },
   });
@@ -720,7 +885,7 @@ export const useGenerateMealPlanShoppingList = () => {
       }
 
       const response = await mutation.mutateAsync({
-        url: `/meal-plans/me/${planId}/shopping-list`,
+        url: nutritionMealPlansPath(`${planId}/shopping-list`),
         attributes: input,
       });
 
@@ -740,7 +905,7 @@ export const useGenerateMealPlanShoppingList = () => {
 export const useMealPlanShoppingLists = (planId, options = {}) => {
   const enabled = Boolean(planId) && (options.enabled ?? true);
   const { data, ...query } = useGetQuery({
-    url: `/meal-plans/me/${planId}/shopping-lists`,
+    url: nutritionMealPlansPath(`${planId}/shopping-lists`),
     queryProps: {
       queryKey: getMealPlanShoppingListsQueryKey(planId),
       enabled,
@@ -770,7 +935,7 @@ export const useUpdateShoppingListItemCheck = (planId) => {
       }
 
       const response = await mutation.mutateAsync({
-        url: `/meal-plans/shopping-lists/${listId}/items/${itemId}`,
+        url: nutritionShoppingListsPath(`${listId}/items/${itemId}`),
         attributes: { isChecked },
       });
 
@@ -790,7 +955,7 @@ export const useUpdateShoppingListItemCheck = (planId) => {
 export const useMealPlanTemplateDetail = (templateId, options = {}) => {
   const enabled = Boolean(templateId) && (options.enabled ?? true);
   const { data, ...query } = useGetQuery({
-    url: `/meal-plans/templates/${templateId}`,
+    url: nutritionMealPlanTemplatesPath(templateId),
     queryProps: {
       queryKey: getMealPlanTemplateDetailQueryKey(templateId),
       enabled,
@@ -814,7 +979,7 @@ export const useMealPlanTemplateConflictPreview = (
   const enabled = Boolean(templateId) && (options.enabled ?? true);
   const { data, ...query } = useGetQuery({
     url: templateId
-      ? `/meal-plans/templates/${templateId}/conflicts/preview`
+      ? nutritionMealPlanTemplatesPath(`${templateId}/conflicts/preview`)
       : "",
     queryProps: {
       queryKey: getMealPlanTemplateConflictPreviewQueryKey(templateId),

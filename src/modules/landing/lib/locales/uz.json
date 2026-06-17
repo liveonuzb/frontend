@@ -12,27 +12,16 @@
       "language": "Til",
       "languageTitle": "Tilni tanlang",
       "languageDescription": "LiveOn interfeysi tilini o'zgartiring.",
+      "mode": "Mode",
       "menuOpen": "Menyuni ochish",
       "menuClose": "Menyuni yopish",
       "menuTitle": "LiveOn menyusi",
       "menuDescription": "Bo'limga o'ting yoki shaxsiy rejangizni boshlang.",
       "links": [
-        [
-          "testimonials",
-          "Dasturlar"
-        ],
-        [
-          "progress",
-          "Natijalar"
-        ],
-        [
-          "pricing",
-          "Narxlar"
-        ],
-        [
-          "faq",
-          "FAQ"
-        ]
+        ["testimonials", "Dasturlar"],
+        ["progress", "Natijalar"],
+        ["pricing", "Narxlar"],
+        ["faq", "FAQ"]
       ]
     },
     "hero": {
@@ -42,18 +31,9 @@
       "primaryCta": "Bepul boshlash",
       "secondaryCta": "Dasturlarni ko'rish",
       "metrics": [
-        [
-          "50K+",
-          "faol foydalanuvchilar"
-        ],
-        [
-          "-4.8 kg",
-          "o'rtacha vazn yo'qotish"
-        ],
-        [
-          "92%",
-          "rejaga rioya qilish"
-        ]
+        ["50K+", "faol foydalanuvchilar"],
+        ["-4.8 kg", "o'rtacha vazn yo'qotish"],
+        ["92%", "rejaga rioya qilish"]
       ],
       "dashboard": {
         "eyebrow": "Mening ko'rsatkichlarim",
@@ -67,21 +47,9 @@
         },
         "mealsLabel": "Ovqatlar",
         "meals": [
-          [
-            "Nonushta",
-            "420 kkal",
-            "Tayyor"
-          ],
-          [
-            "Tushlik",
-            "560 kkal",
-            "Rejada"
-          ],
-          [
-            "Kechki ovqat",
-            "440 kkal",
-            "Moslashadi"
-          ]
+          ["Nonushta", "420 kkal", "Tayyor"],
+          ["Tushlik", "560 kkal", "Rejada"],
+          ["Kechki ovqat", "440 kkal", "Moslashadi"]
         ],
         "workout": {
           "label": "Mashg'ulot",
@@ -103,6 +71,41 @@
           "value": "-1.4 kg",
           "delta": "ritm yaxshi"
         }
+      },
+      "preview": {
+        "ariaLabel": "LiveOn ilova preview slaydlari",
+        "calories": {
+          "title": "Bugungi kaloriya",
+          "eatenLabel": "Yeyilgan",
+          "value": "2,160",
+          "unit": "kkal",
+          "progress": 78,
+          "macros": [
+            ["Uglevod", "235", "260g", 86, "lime"],
+            ["Oqsil", "140", "150g", 82, "orange"],
+            ["Yog'", "64", "80g", 76, "violet"]
+          ]
+        },
+        "tracking": {
+          "eyebrow": "Kunlik tracking",
+          "title": "Suv va kayfiyat yonma-yon",
+          "body": "LiveOn faqat kaloriya sanamaydi, kunlik rejimni ham ushlab turadi.",
+          "water": {
+            "label": "Suv",
+            "value": "2100",
+            "target": "2500 ml",
+            "progress": 78
+          },
+          "mood": {
+            "label": "Kayfiyat",
+            "value": "Yaxshi"
+          },
+          "stats": [
+            ["Suv", "2.1 l", "DropletsIcon"],
+            ["Kun fokusi", "7-8 soat uyqu", "CheckCircle2Icon"],
+            ["LiveOn AI", "78%", "BotIcon"]
+          ]
+        }
       }
     },
     "productTour": {
@@ -116,11 +119,7 @@
           "title": "Reja tanlang",
           "body": "O'z maqsadingizga mos dastur va kaloriya rejasini tanlang.",
           "icon": "TargetIcon",
-          "highlights": [
-            "Maqsad vazni",
-            "Kaloriya chegarasi",
-            "Odatlar"
-          ]
+          "highlights": ["Maqsad vazni", "Kaloriya chegarasi", "Odatlar"]
         },
         {
           "id": "ai",
@@ -128,11 +127,7 @@
           "title": "Kaloriya kuzating",
           "body": "Kunlik ovqatlaringizni yozing va kaloriya me'yorida bo'ling.",
           "icon": "BotIcon",
-          "highlights": [
-            "Ovqat rejalari",
-            "Mashq tavsiyasi",
-            "Suv ritmi"
-          ]
+          "highlights": ["Ovqat rejalari", "Mashq tavsiyasi", "Suv ritmi"]
         },
         {
           "id": "daily",
@@ -140,11 +135,7 @@
           "title": "Mashq bajaring",
           "body": "Mashg'ulot rejasiga rioya qiling va intizomni saqlang.",
           "icon": "CalendarCheckIcon",
-          "highlights": [
-            "Ovqat logi",
-            "Mashq holati",
-            "Kayfiyat"
-          ]
+          "highlights": ["Ovqat logi", "Mashq holati", "Kayfiyat"]
         },
         {
           "id": "progress",
@@ -171,77 +162,49 @@
           "title": "Reja tanlash",
           "body": "Maqsad va odatlaringizga mos yo'nalishni tanlang.",
           "icon": "TargetIcon",
-          "bullets": [
-            "Maqsad",
-            "Profil",
-            "Cheklovlar"
-          ]
+          "bullets": ["Maqsad", "Profil", "Cheklovlar"]
         },
         {
           "id": "dashboard",
           "title": "Kaloriya hisobi",
           "body": "Kunlik me'yor va ovqatlar nazoratda turadi.",
           "icon": "BarChart3Icon",
-          "bullets": [
-            "Kunlik holat",
-            "Tezkor amallar",
-            "AI eslatma"
-          ]
+          "bullets": ["Kunlik holat", "Tezkor amallar", "AI eslatma"]
         },
         {
           "id": "nutrition",
           "title": "Ovqat nazorati",
           "body": "Ovqatlaringizni yozing va tahlil qiling.",
           "icon": "UtensilsIcon",
-          "bullets": [
-            "Meal plan",
-            "Retsept",
-            "Porsiya"
-          ]
+          "bullets": ["Meal plan", "Retsept", "Porsiya"]
         },
         {
           "id": "workouts",
           "title": "Mashg'ulot rejasi",
           "body": "Uyda yoki zalda bajariladigan reja.",
           "icon": "DumbbellIcon",
-          "bullets": [
-            "Reja",
-            "Sessiya",
-            "Hisobot"
-          ]
+          "bullets": ["Reja", "Sessiya", "Hisobot"]
         },
         {
           "id": "water-mood",
           "title": "Suv ichish",
           "body": "Kunlik suv me'yorini bajarib boring.",
           "icon": "DropletsIcon",
-          "bullets": [
-            "Suv",
-            "Eslatma",
-            "Kayfiyat"
-          ]
+          "bullets": ["Suv", "Eslatma", "Kayfiyat"]
         },
         {
           "id": "progress",
           "title": "Vazn kuzatuvi",
           "body": "Vazningizni yozing va grafikda ko'ring.",
           "icon": "LineChartIcon",
-          "bullets": [
-            "Trend",
-            "10 kun",
-            "Natija"
-          ]
+          "bullets": ["Trend", "10 kun", "Natija"]
         },
         {
           "id": "profile",
           "title": "Qadamlar",
           "body": "Faolligingizni kunlik qadamlar orqali kuzating.",
           "icon": "UserCheckIcon",
-          "bullets": [
-            "Til",
-            "Tema",
-            "Sog'liq"
-          ]
+          "bullets": ["Til", "Tema", "Sog'liq"]
         }
       ]
     },
@@ -309,11 +272,7 @@
           "Suv, uyqu, qadam va kundalik fokus.",
           "DropletsIcon"
         ],
-        [
-          "Hisobot",
-          "Vazn, kaloriya va bajarish dinamikasi.",
-          "BarChart3Icon"
-        ]
+        ["Hisobot", "Vazn, kaloriya va bajarish dinamikasi.", "BarChart3Icon"]
       ]
     },
     "showcase": {
@@ -363,42 +322,12 @@
       "title": "Natija bitta ekranda tushunarli",
       "body": "Vazn, kaloriya, suv, mashg'ulot va odatlarni bir joyda ko'ring.",
       "metrics": [
-        [
-          "7 kun",
-          "bajarish seriyasi",
-          "FlameIcon",
-          "orange"
-        ],
-        [
-          "-1.2 kg",
-          "haftalik dinamika",
-          "TrendingDownIcon",
-          "green"
-        ],
-        [
-          "2.1 l",
-          "suv normasi",
-          "DropletsIcon",
-          "teal"
-        ],
-        [
-          "10 842",
-          "qadam",
-          "ZapIcon",
-          "blue"
-        ],
-        [
-          "2160 kkal",
-          "ovqatlanish",
-          "BarChart3Icon",
-          "orange"
-        ],
-        [
-          "42 daq",
-          "mashg'ulot",
-          "ActivityIcon",
-          "blue"
-        ]
+        ["7 kun", "bajarish seriyasi", "FlameIcon", "orange"],
+        ["-1.2 kg", "haftalik dinamika", "TrendingDownIcon", "green"],
+        ["2.1 l", "suv normasi", "DropletsIcon", "teal"],
+        ["10 842", "qadam", "ZapIcon", "blue"],
+        ["2160 kkal", "ovqatlanish", "BarChart3Icon", "orange"],
+        ["42 daq", "mashg'ulot", "ActivityIcon", "blue"]
       ],
       "chartTitle": "Haftalik ritm",
       "weightTitle": "Vazn",
@@ -514,72 +443,33 @@
         ]
       ]
     },
-    "final": {
-      "title": "Disiplin bilan bugun boshlasangiz, ertaga yangi sizni ko'rasiz!",
-      "body": "LiveOn siz bilan birga - reja, intizom va natija.",
-      "cta": "Bepul boshlash",
-      "secondary": "Dasturlarni ko'rish"
-    },
     "footer": {
       "tagline": "Ozish va mashg'ulot rejangiz uchun eng yaxshi yordamchi.",
       "columns": [
         [
           "Mahsulot",
           [
-            [
-              "Imkoniyatlar",
-              "#features"
-            ],
-            [
-              "Ovqatlanish",
-              "#nutrition"
-            ],
-            [
-              "Mashg'ulot",
-              "#workouts"
-            ],
-            [
-              "Progress",
-              "#progress"
-            ],
-            [
-              "Tariflar",
-              "#pricing"
-            ]
+            ["Imkoniyatlar", "#features"],
+            ["Ovqatlanish", "#nutrition"],
+            ["Mashg'ulot", "#workouts"],
+            ["Progress", "#progress"],
+            ["Tariflar", "#pricing"]
           ]
         ],
         [
           "Kompaniya",
           [
-            [
-              "Biz haqimizda",
-              "#local-market"
-            ],
-            [
-              "Kontaktlar",
-              "mailto:support@liveon.uz"
-            ]
+            ["Biz haqimizda", "#local-market"],
+            ["Kontaktlar", "mailto:support@liveon.uz"]
           ]
         ],
         [
           "Yordam",
           [
-            [
-              "FAQ",
-              "#faq"
-            ],
-            [
-              "Yordam",
-              "mailto:support@liveon.uz"
-            ],
-            [
-              "Foydalanish shartlari",
-              "/terms"
-            ],
-            [
-              "Maxfiylik siyosati",
-              "/privacy"
-            ]
+            ["FAQ", "#faq"],
+            ["Yordam", "mailto:support@liveon.uz"],
+            ["Foydalanish shartlari", "/terms"],
+            ["Maxfiylik siyosati", "/privacy"]
           ]
         ]
       ],

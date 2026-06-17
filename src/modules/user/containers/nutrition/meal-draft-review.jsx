@@ -96,13 +96,13 @@ export const MealDraftSummaryCard = ({
 const getIngredientBadge = (ingredient = {}) => {
   // Camera-scan ingredients are always AI-estimated. The only other source
   // that survives into review is the manual-edit drawer (commitEditedIngredient
-  // sets matchStatus: "manual"), which we surface as a plain "Manual" tag.
+  // sets matchStatus: "manual"), which we surface as a localized manual tag.
   if (
     ingredient.matchStatus === "manual" ||
     ingredient.nutritionSource === "manual"
   ) {
     return {
-      label: "Manual",
+      label: "Qo'lda",
       className: "bg-muted text-muted-foreground",
     };
   }
@@ -169,7 +169,7 @@ const IngredientCompactRow = ({ ingredient, onEdit, onDelete }) => {
             onClick={onEdit}
           >
             <PencilIcon className="size-3.5" />
-            Edit
+            Tahrirlash
           </Button>
           <Button
             type="button"

@@ -13,7 +13,6 @@ import NutritionLayout from "../ui/nutrition-layout.jsx";
 import EmptyState from "./components/empty-state.jsx";
 import RecipeAddDrawer from "./components/recipe-add-drawer.jsx";
 import RecipeDetailView from "./components/recipe-detail-view.jsx";
-import { findMockRecipe } from "./recipe-mock-data.js";
 import { normalizeRecipeForUi } from "./recipe-ui-utils.js";
 
 const getRecipeRouteId = (recipe) =>
@@ -24,15 +23,16 @@ const NutritionRecipeDetailPage = () => {
   const { slugOrId } = useParams();
   const { setBreadcrumbs } = useBreadcrumbStore();
   const { recipe: apiRecipe, isLoading } = useNutritionRecipeDetail(slugOrId);
-  const { toggleFavorite, addToMealLog, addToMealPlan, isUpdating } =
-    useNutritionRecipeActions();
-  const fallbackRecipe = React.useMemo(() => findMockRecipe(slugOrId), [slugOrId]);
+  const {
+    toggleFavorite,
+    addToMealLog,
+    addToMealPlan,
+    createShoppingList,
+    isUpdating,
+  } = useNutritionRecipeActions();
   const recipe = React.useMemo(
-    () =>
-      apiRecipe || fallbackRecipe
-        ? normalizeRecipeForUi(apiRecipe || fallbackRecipe)
-        : null,
-    [apiRecipe, fallbackRecipe],
+    () => (apiRecipe ? normalizeRecipeForUi(apiRecipe) : null),
+    [apiRecipe],
   );
   const [servings, setServings] = React.useState(1);
   const [addOpen, setAddOpen] = React.useState(false);
@@ -87,6 +87,27 @@ const NutritionRecipeDetailPage = () => {
     setAddOpen(true);
   }, [servings]);
 
+  const handleCreateShoppingList = React.useCallback(async () => {
+    if (!recipe) {
+      return;
+    }
+
+    try {
+      const shoppingList = await createShoppingList(recipe, { servings });
+      const itemCount = Array.isArray(shoppingList?.items)
+        ? shoppingList.items.length
+        : 0;
+
+      toast.success(
+        itemCount > 0
+          ? `Xarid ro'yxati yaratildi: ${itemCount} mahsulot`
+          : "Xarid ro'yxati yaratildi",
+      );
+    } catch {
+      toast.error("Xarid ro'yxatini yaratib bo'lmadi");
+    }
+  }, [createShoppingList, recipe, servings]);
+
   const handleStartCooking = React.useCallback(() => {
     const routeId = getRecipeRouteId(recipe);
 
@@ -97,7 +118,7 @@ const NutritionRecipeDetailPage = () => {
     navigate(`/user/nutrition/recipes/${encodeURIComponent(routeId)}/cook`);
   }, [navigate, recipe]);
 
-  if (isLoading && !fallbackRecipe) {
+  if (isLoading) {
     return (
       <NutritionLayout>
         <Card>
@@ -141,6 +162,7 @@ const NutritionRecipeDetailPage = () => {
         onFavorite={handleFavorite}
         onSave={handleSave}
         onAddToMealPlan={handleAddToMealPlan}
+        onCreateShoppingList={handleCreateShoppingList}
         onEdit={() => navigate("/user/nutrition/recipes/create")}
         onStartCooking={handleStartCooking}
       />
