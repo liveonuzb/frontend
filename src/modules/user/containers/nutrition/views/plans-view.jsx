@@ -40,7 +40,6 @@ import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import FilterChips from "../ui/filter-chips.jsx";
 import PlanTemplateCard from "../ui/plan-template-card.jsx";
-import useAppModeTheme from "@/hooks/app/use-app-mode-theme";
 import { cn } from "@/lib/utils.js";
 import {
   getTemplateBlockingReasonLabels,
@@ -183,7 +182,6 @@ const MealPlanHero = ({
   onOpenPlanActions,
   onSelectPlanForShopping,
 }) => {
-  const modeTheme = useAppModeTheme();
   const planInsights = currentPlan?.id
     ? planInsightsMap[currentPlan.id] || {}
     : {};
@@ -195,10 +193,6 @@ const MealPlanHero = ({
     durationDays,
     Math.max(toNumber(planInsights.filledDays || 0), currentPlan ? 1 : 0),
   );
-  const progress = durationDays
-    ? Math.round((filledDays / durationDays) * 100)
-    : 0;
-  const progressDash = `${progress}, 100`;
   const statusLabel =
     currentPlan?.status === "active"
       ? "Faol reja"
@@ -209,26 +203,39 @@ const MealPlanHero = ({
   return (
     <NutritionCard
       tone="accent"
-      className="relative min-h-[340px] overflow-hidden p-6 sm:px-8 lg:min-h-[360px] lg:px-9"
+      className="relative overflow-hidden p-4 sm:p-5 lg:p-6"
     >
-      <div className="absolute inset-y-0 right-0 hidden w-[46%] bg-[radial-gradient(circle_at_70%_20%,rgb(var(--accent-rgb)/0.16),transparent_34%),linear-gradient(135deg,transparent,rgb(var(--accent-rgb)/0.10))] lg:block" />
-      <div className="absolute -right-16 bottom-0 hidden size-72 rounded-full bg-primary/10 blur-3xl lg:block" />
+      <div className="absolute inset-y-0 right-0 hidden w-[34%] bg-[radial-gradient(circle_at_70%_28%,rgb(var(--accent-rgb)/0.14),transparent_32%),linear-gradient(135deg,transparent,rgb(var(--accent-rgb)/0.08))] lg:block" />
 
-      <div className="relative z-10 grid h-full gap-8 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-center">
+      <div className="relative z-10 grid gap-5">
         <div className="min-w-0">
-          <span className="inline-flex items-center rounded-full border border-primary/15 bg-card/70 px-4 py-2 text-sm font-bold text-primary shadow-sm">
-            {statusLabel}
-          </span>
-          <h1 className="mt-6 max-w-[760px] text-3xl font-black tracking-normal text-foreground sm:text-4xl xl:text-5xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-primary/15 bg-card/75 px-3 py-1 text-xs font-bold text-primary shadow-sm">
+              {statusLabel}
+            </span>
+            {currentPlanDayStatus?.dayNumber ? (
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                {currentPlanDayStatus.dayNumber}-kun
+              </span>
+            ) : null}
+            {currentPlan ? (
+              <span className="inline-flex items-center rounded-full bg-card/75 px-3 py-1 text-xs font-bold text-muted-foreground">
+                {filledDays}/{durationDays} kun
+              </span>
+            ) : null}
+          </div>
+          <h1 className="mt-3 max-w-[620px] text-2xl font-black tracking-normal text-foreground sm:text-3xl xl:text-4xl">
             {currentPlan?.name || "Ovqatlanish rejangizni yarating"}
           </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             {currentPlan
               ? "Sizning hozirgi ovqatlanish rejangiz. Bugun uchun tayyor!"
               : "Shablondan tanlang yoki o'zingizga mos reja yarating."}
           </p>
 
-          <div className="mt-8 grid max-w-3xl gap-2 rounded-3xl border border-border/70 bg-background/70 p-4 shadow-sm backdrop-blur sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            className="mt-4 grid max-w-4xl grid-cols-3 gap-2 rounded-2xl border border-border/70 bg-background/75 p-3 shadow-sm backdrop-blur"
+          >
             <HeroMetric
               icon={UtensilsIcon}
               value={mealCount}
@@ -258,85 +265,40 @@ const MealPlanHero = ({
             />
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div
+            className="mt-4 grid grid-cols-3 gap-2"
+          >
             <Button
               type="button"
-              className="h-14 rounded-2xl px-7 text-base shadow-lg shadow-primary/15"
+              className="h-10 rounded-xl px-2 text-xs font-bold shadow-md shadow-primary/10 sm:px-3 sm:text-sm"
               disabled={!currentPlan}
               onClick={() => currentPlan && onActivatePlan(currentPlan)}
             >
-              <CalendarDaysIcon className="size-5" />
+              <CalendarDaysIcon className="size-4" />
               Bugungi reja
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-14 rounded-2xl bg-card/80 px-7 text-base"
+              className="h-10 rounded-xl bg-card/80 px-2 text-xs font-bold sm:px-3 sm:text-sm"
               disabled={!currentPlan}
               onClick={() => currentPlan && onOpenPlanActions(currentPlan)}
             >
-              <PencilIcon className="size-5" />
+              <PencilIcon className="size-4" />
               Tahrirlash
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-14 rounded-2xl bg-card/80 px-7 text-base"
+              className="h-10 rounded-xl bg-card/80 px-2 text-xs font-bold sm:px-3 sm:text-sm"
               disabled={!currentPlan}
               onClick={() =>
                 currentPlan && onSelectPlanForShopping(currentPlan.id)
               }
             >
-              <ShoppingCartIcon className="size-5" />
-              Xaridlar ro'yxati
+              <ShoppingCartIcon className="size-4" />
+              Xaridlar
             </Button>
-          </div>
-        </div>
-
-        <div className="relative mx-auto hidden min-h-[285px] w-full max-w-[330px] lg:block">
-          <img
-            src={modeTheme.assets.nutritionPlanHero || "/zen/meals/lunch.webp"}
-            alt=""
-            className="absolute right-0 top-0 h-44 w-64 object-contain drop-shadow-2xl"
-            loading="lazy"
-          />
-          <div className="absolute bottom-0 right-4 w-40 rounded-[26px] border border-border/70 bg-background/90 p-5 text-center shadow-xl backdrop-blur">
-            <div className="relative mx-auto size-28">
-              <svg viewBox="0 0 36 36" className="size-full -rotate-90">
-                <path
-                  d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 0 1 0-31"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="text-primary/10"
-                />
-                <path
-                  d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 0 1 0-31"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeDasharray={progressDash}
-                  strokeLinecap="round"
-                  strokeWidth="3"
-                  className="text-primary"
-                />
-              </svg>
-              <div className="absolute inset-0 grid place-items-center">
-                <div>
-                  <p className="text-2xl font-black">
-                    {filledDays}/{durationDays}
-                  </p>
-                  <p className="mt-1 text-[11px] font-bold text-muted-foreground">
-                    kun tayyor
-                  </p>
-                  <p className="text-sm font-black">{progress}%</p>
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-xs font-medium text-muted-foreground">
-              {currentPlanDayStatus?.dayNumber
-                ? `${currentPlanDayStatus.dayNumber}-kun`
-                : "Bugun"}
-            </p>
           </div>
         </div>
       </div>
@@ -345,12 +307,12 @@ const MealPlanHero = ({
 };
 
 const HeroMetric = ({ icon: Icon, value, label }) => (
-  <div className="flex min-w-0 items-center gap-2 border-border/70 py-1 sm:border-r sm:pr-2 last:border-r-0">
-    <div className="grid size-8 shrink-0 place-items-center rounded-2xl text-primary">
+  <div className="flex min-w-0 items-center gap-2 rounded-xl border-border/70 bg-card/45 px-2.5 py-2 sm:bg-transparent sm:px-0 lg:border-r lg:pr-2 last:border-r-0">
+    <div className="grid size-7 shrink-0 place-items-center rounded-xl text-primary">
       <Icon className="size-4" />
     </div>
     <div className="min-w-0">
-      <p className="text-lg font-black leading-none tabular-nums">{value}</p>
+      <p className="text-base font-black leading-none tabular-nums">{value}</p>
       <p className="mt-1 text-[11px] font-medium leading-tight text-muted-foreground">
         {label}
       </p>
@@ -547,7 +509,6 @@ const TemplateCompatibilityDrawer = ({
                   </div>
                 ) : (
                   <div
-                    data-testid="template-day-preview-grid"
                     className="grid grid-cols-5 gap-1.5 sm:grid-cols-6"
                     role="list"
                     aria-label="Shablon kunlari preview"
@@ -556,7 +517,6 @@ const TemplateCompatibilityDrawer = ({
                       <div
                         key={day.dayNumber}
                         role="listitem"
-                        data-testid={`template-day-preview-${day.dayNumber}`}
                         className={cn(
                           "min-h-16 rounded-2xl border px-2 py-2 text-center",
                           day.hasDetails && !day.isSparse

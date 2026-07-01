@@ -16,7 +16,7 @@ import PageTransition from "@/components/page-transition";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import CalorieGaugeWidget from "./calorie-gauge-widget.jsx";
-import MealsWidget from "./meals-widget.jsx";
+import ActivitySummaryCards from "./activity-summary-cards.jsx";
 import WaterWidget from "./water-widget.jsx";
 import MoodWidget from "./mood-widget.jsx";
 import BmiWidget from "./bmi-widget.jsx";
@@ -81,10 +81,9 @@ const DashboardWeekDatePicker = ({ selectedDate, onSelectDate }) => {
 
   return (
     <div
-      data-testid="dashboard-week-date-picker"
       className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
-      <div className="flex min-w-max items-center gap-0.5 px-1">
+      <div className="flex min-w-max items-center gap-1 px-1">
         {map(visibleDays, (date) => {
           const selected = isSameDay(date, selectedDay);
           const label = DASHBOARD_WEEKDAY_LABELS[date.getDay()];
@@ -97,17 +96,24 @@ const DashboardWeekDatePicker = ({ selectedDate, onSelectDate }) => {
               aria-label={`${label} ${date.getDate()}`}
               aria-pressed={selected}
               className={cn(
-                "flex h-[48px] w-10 shrink-0 flex-col items-center justify-center rounded-2xl text-center transition-colors",
+                "group flex min-h-12 min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-1.5 text-center shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                 selected
-                  ? "bg-primary text-primary-foreground shadow-[0_8px_18px_rgb(var(--accent-rgb)/0.18)]"
-                  : "text-muted-foreground hover:bg-card/70",
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card/80 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               )}
               onClick={() => onSelectDate(date)}
             >
               <span className="text-[10px] font-medium leading-none">
                 {label}
               </span>
-              <span className="mt-1 text-[16px] font-semibold leading-none">
+              <span
+                className={cn(
+                  "grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold leading-none tabular-nums transition-colors",
+                  selected
+                    ? "bg-card text-primary"
+                    : "bg-muted/60 text-muted-foreground group-hover:bg-muted",
+                )}
+              >
                 {date.getDate()}
               </span>
             </button>
@@ -122,7 +128,6 @@ const DashboardSkeleton = () => (
   <div className="grid grid-cols-1 gap-4">
     <Skeleton className="h-80" />
     <Skeleton className="h-80" />
-    <Skeleton className="h-40" />
     <Skeleton className="h-36" />
     <Skeleton className="h-44" />
     <Skeleton className="h-44" />
@@ -189,7 +194,6 @@ const DashboardContainer = () => {
     dayData,
     goalsState,
     measurementSnapshot,
-    activeMealPlan,
     activeWorkoutPlan,
     friends,
     challenges,
@@ -238,7 +242,6 @@ const DashboardContainer = () => {
             ) : null}
             {USER_CHALLENGES_ENABLED ? <ChallengeInvitationsSection /> : null}
             <div
-              data-testid="dashboard-card-list"
               className="grid grid-cols-1 items-stretch gap-4"
             >
               <div className="flex min-h-0">
@@ -250,15 +253,11 @@ const DashboardContainer = () => {
                   showCalorieModeToggle
                 />
               </div>
-              <div className="flex min-h-0">
-                <MealsWidget
-                  dateKey={dateKey}
-                  selectedDate={selectedDate}
-                  activeMealPlan={activeMealPlan}
-                  dayData={dayData}
-                  goalsState={goalsState}
-                />
-              </div>
+              <ActivitySummaryCards
+                dateKey={dateKey}
+                dayData={dayData}
+                goalsState={goalsState}
+              />
               <div>
                 <WaterWidget
                   dateKey={dateKey}

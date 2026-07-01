@@ -1806,7 +1806,6 @@ const WorkoutPlanSessionPage = () => {
   return (
     <PageTransition mode="slide-up">
       <div
-        data-testid="workout-session-shell"
         className="relative mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col bg-muted/30 pb-36 md:rounded-[2rem] md:pb-24 md:ring-1 md:ring-border"
       >
         <header className="sticky top-0 z-20 flex items-start gap-3 border-b bg-background/95 p-4 backdrop-blur md:rounded-t-[2rem]">
@@ -1853,7 +1852,6 @@ const WorkoutPlanSessionPage = () => {
         </header>
 
         <main
-          data-testid="workout-session-content"
           className="flex flex-1 flex-col gap-3 px-3 pb-8 pt-4"
         >
           {showRemoteDraftBanner ? (
@@ -1909,7 +1907,6 @@ const WorkoutPlanSessionPage = () => {
         </main>
 
         <div
-          data-testid="workout-session-rest-timer"
           className={cn(
             "pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-30 px-4 transition-all duration-300 md:absolute md:bottom-[5.75rem]",
             restTimer.running
@@ -1953,7 +1950,6 @@ const WorkoutPlanSessionPage = () => {
         </div>
 
         <div
-          data-testid="workout-session-bottom-actions"
           className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur md:absolute md:rounded-b-[2rem] md:pb-3"
         >
           <div className="mx-auto grid max-w-3xl grid-cols-[76px_1fr] gap-3">

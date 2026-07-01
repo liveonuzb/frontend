@@ -229,6 +229,84 @@ describe("NutritionPlansView", () => {
     expect(screen.getAllByText("1,850 kcal").length).toBeGreaterThan(0);
   });
 
+  it("renders the current plan hero as a compact action summary", () => {
+    const onActivatePlan = vi.fn();
+    const onOpenPlanActions = vi.fn();
+    const onSelectPlanForShopping = vi.fn();
+    const currentPlan = {
+      id: "plan-compact",
+      status: "active",
+      name: "Здоровый образ жизни",
+      durationDays: 30,
+      mealCount: 4,
+      appliedTargetCalories: 1524,
+      updatedAt: "2026-06-09T00:00:00.000Z",
+    };
+
+    render(
+      <NutritionPlansView
+        {...baseProps}
+        currentPlan={currentPlan}
+        currentPlanDayStatus={{
+          isDurationPlan: true,
+          dayNumber: 4,
+          durationDays: 30,
+        }}
+        planInsightsMap={{
+          "plan-compact": {
+            filledDays: 4,
+            totalItems: 120,
+          },
+        }}
+        onActivatePlan={onActivatePlan}
+        onOpenPlanActions={onOpenPlanActions}
+        onSelectPlanForShopping={onSelectPlanForShopping}
+      />,
+    );
+
+    const hero = screen.getByTestId("meal-plan-hero");
+
+    expect(hero).toHaveClass("p-4");
+    expect(hero).toHaveClass("lg:p-6");
+    expect(hero).not.toHaveClass("min-h-[340px]");
+    expect(hero).not.toHaveClass("lg:min-h-[360px]");
+
+    expect(within(hero).getByText("Здоровый образ жизни")).toHaveClass(
+      "text-2xl",
+    );
+
+    const metrics = within(hero).getByTestId("meal-plan-hero-metrics");
+    expect(metrics).toHaveClass("mt-4");
+    expect(metrics).toHaveClass("grid-cols-3");
+    expect(within(metrics).getByText("1,524")).toBeInTheDocument();
+
+    const actions = within(hero).getByTestId("meal-plan-hero-actions");
+    expect(actions).toHaveClass("mt-4");
+    expect(actions).toHaveClass("grid-cols-3");
+
+    const todayButton = within(actions).getByRole("button", {
+      name: /Bugungi reja/i,
+    });
+    const editButton = within(actions).getByRole("button", {
+      name: /Tahrirlash/i,
+    });
+    const shoppingButton = within(actions).getByRole("button", {
+      name: /Xaridlar/i,
+    });
+
+    expect(todayButton).toHaveClass("h-10");
+    expect(editButton).toHaveClass("h-10");
+    expect(shoppingButton).toHaveClass("h-10");
+
+    fireEvent.click(todayButton);
+    fireEvent.click(editButton);
+    fireEvent.click(shoppingButton);
+
+    expect(onActivatePlan).toHaveBeenCalledWith(currentPlan);
+    expect(onOpenPlanActions).toHaveBeenCalledWith(currentPlan);
+    expect(onSelectPlanForShopping).toHaveBeenCalledWith("plan-compact");
+  });
+
   it("separates paused plans in the status filter", () => {
     render(
       <NutritionPlansView

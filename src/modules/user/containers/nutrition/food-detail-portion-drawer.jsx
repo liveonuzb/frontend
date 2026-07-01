@@ -354,13 +354,10 @@ export default function FoodDetailPortionDrawer({
             step={step}
             gaugeMax={maxForGauge || macros?.cal || 1}
             onValueChange={handleSliderChange}
-            testIdPrefix="food-detail"
-            sliderTestId="portion-slider"
           />
 
           <Collapsible open={ingredientsOpen} onOpenChange={setIngredientsOpen}>
             <div
-              data-testid="food-detail-ingredients-card"
               className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
             >
               <div className="flex items-center gap-2">
@@ -449,7 +446,6 @@ export default function FoodDetailPortionDrawer({
                   })}
                   <button
                     type="button"
-                    data-testid="food-detail-add-ingredient-row"
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/20 p-3 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
                     onClick={() =>
                       setIngredientEditor({ mode: "add", ingredient: null })
@@ -469,7 +465,6 @@ export default function FoodDetailPortionDrawer({
               onOpenChange={setInstructionsOpen}
             >
               <div
-                data-testid="food-detail-instructions-card"
                 className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
               >
                 <div className="flex items-center gap-2">
@@ -559,7 +554,6 @@ export default function FoodDetailPortionDrawer({
           ) : null}
 
           <div
-            data-testid="food-detail-ai-assistant-card"
             className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
           >
             <div className="flex items-center justify-between gap-3">

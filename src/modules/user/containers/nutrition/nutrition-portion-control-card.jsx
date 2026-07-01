@@ -81,8 +81,6 @@ export default function NutritionPortionControlCard({
   step = 10,
   gaugeMax,
   onValueChange,
-  testIdPrefix = "food-detail",
-  sliderTestId = "portion-slider",
   label = "QO'SHILMOQDA",
   className,
 }) {
@@ -93,13 +91,12 @@ export default function NutritionPortionControlCard({
 
   return (
     <div
-      data-testid={`${testIdPrefix}-nutrition-control-card`}
       className={cn(
         "rounded-2xl border border-border/60 bg-card p-3 pb-4 shadow-sm",
         className,
       )}
     >
-      <div data-testid={`${testIdPrefix}-chart-card`} className="pb-4">
+      <div className="pb-4">
         <div className="-mt-4">
           <GaugeProgress
             value={macros?.cal ?? 0}
@@ -114,7 +111,6 @@ export default function NutritionPortionControlCard({
         {map(macroCards, (macro) => (
           <div
             key={macro.key}
-            data-testid={`${testIdPrefix}-macro-${macro.key}`}
             className="min-w-0 rounded-xl border border-border/50 bg-muted/25 px-2.5 py-2"
           >
             <div className="flex items-start justify-between gap-1.5">
@@ -142,7 +138,6 @@ export default function NutritionPortionControlCard({
       </div>
 
       <div
-        data-testid={`${testIdPrefix}-portion-slider-section`}
         className="mt-4 border-t border-border/60 pt-3"
       >
         <div className="flex items-start justify-between gap-4">
@@ -162,7 +157,6 @@ export default function NutritionPortionControlCard({
         </div>
 
         <Slider
-          data-testid={sliderTestId}
           data-vaul-no-drag=""
           value={[currentValue]}
           min={min}

@@ -189,7 +189,6 @@ const usePagedXpHistory = () => {
 export const XpHistoryContent = ({
   embedded = false,
   className,
-  testId = "xp-history-scroll",
 }) => {
   const {
     items,
@@ -219,7 +218,6 @@ export const XpHistoryContent = ({
 
   return (
     <div
-      data-testid={testId}
       onScroll={handleScroll}
       className={cn(
         "flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain",

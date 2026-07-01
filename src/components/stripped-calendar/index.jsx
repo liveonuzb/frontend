@@ -119,7 +119,7 @@ const StrippedCalendar = ({
     <div
       ref={containerRef}
       className={cn(
-        "flex items-stretch gap-1.5 overflow-x-auto py-1",
+        "flex items-stretch gap-1 overflow-x-auto py-1",
         "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
@@ -137,19 +137,19 @@ const StrippedCalendar = ({
             type="button"
             onClick={() => handleDayClick(day)}
             className={cn(
-              "group relative flex min-w-[48px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl px-2.5 py-2 text-center transition-all",
+              "group relative flex min-h-12 min-w-[42px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 py-1.5 text-center transition-colors",
               isSelected
-                ? "bg-primary text-primary-foreground shadow-md"
+                ? "bg-primary text-primary-foreground shadow-none"
                 : isToday
-                  ? "border border-primary/35 text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
             aria-pressed={isSelected}
             aria-current={isToday ? "date" : undefined}
           >
             <span
               className={cn(
-                "text-[10px] font-semibold uppercase tracking-wide",
+                "text-[9px] font-medium uppercase tracking-normal",
                 isSelected ? "opacity-90" : "opacity-70",
               )}
             >
@@ -157,7 +157,7 @@ const StrippedCalendar = ({
             </span>
             <span
               className={cn(
-                "text-base font-bold leading-none tabular-nums",
+                "text-sm font-semibold leading-none tabular-nums",
                 isToday && !isSelected && "text-primary",
               )}
             >
@@ -166,7 +166,7 @@ const StrippedCalendar = ({
             {isFirstOfMonth ? (
               <span
                 className={cn(
-                  "text-[9px] font-semibold uppercase tracking-wide",
+                  "text-[8px] font-medium uppercase tracking-normal",
                   isSelected ? "opacity-90" : "text-muted-foreground/70",
                 )}
               >

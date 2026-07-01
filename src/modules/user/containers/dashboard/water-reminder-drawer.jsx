@@ -235,7 +235,6 @@ export default function WaterReminderDrawer() {
 
           <div
             className="grid grid-cols-3 gap-3 water-cup"
-            data-testid="water-reminder-cup-options"
           >
             {map(cupOptions, (value) => {
               const active = selectedAmountMl === value;

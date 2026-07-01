@@ -14,6 +14,7 @@ export const PROFILE_SETTINGS_DEFAULTS = {
   theme: "light",
   fontSize: "medium",
   sidebarState: "expanded",
+  glassEffectEnabled: false,
   profilePublic: true,
   showActivity: false,
   allowMessages: true,

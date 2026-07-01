@@ -90,7 +90,6 @@ export const ProductTour = ({ copy }) => {
   return (
     <m.section
       id="how"
-      data-testid="product-tour"
       className="scroll-mt-24 bg-background py-16 md:py-24"
       initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}

@@ -32,7 +32,7 @@ export const TrackingPageHeader = ({
           <StrippedCalendar
             date={date}
             onChange={onDateChange}
-            className="rounded-[1.25rem] border px-1 py-1 sm:hidden"
+            className="rounded-[1.25rem] px-1 py-1 sm:hidden"
           />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {actions}
@@ -84,4 +84,3 @@ export const TrackingPageLayout = ({
     </div>
   );
 };
-

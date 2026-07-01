@@ -183,9 +183,8 @@ const Index = () => {
             {cupSize} ml qo'shish
           </Button>
 
-          <div data-testid="water-stats-row" className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Card
-              data-testid="water-stat-card"
               className={cn(userCardClassName, "bg-card/95")}
             >
               <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">
@@ -201,7 +200,6 @@ const Index = () => {
               </CardContent>
             </Card>
             <Card
-              data-testid="water-stat-card"
               className={cn(userCardClassName, "bg-card/95")}
             >
               <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">
@@ -217,7 +215,6 @@ const Index = () => {
               </CardContent>
             </Card>
             <Card
-              data-testid="water-stat-card"
               className={cn(userCardClassName, "bg-card/95")}
             >
               <CardContent className="flex min-h-[92px] flex-col items-center justify-center gap-1 p-2.5 text-center">

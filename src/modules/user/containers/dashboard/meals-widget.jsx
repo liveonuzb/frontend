@@ -64,7 +64,6 @@ function MealProgressIcon({ type, icon, label, progress }) {
   return (
     <span
       className="relative flex size-14 md:size-[60px] shrink-0 items-center justify-center"
-      data-testid={`dashboard-meal-progress-ring-${type}`}
     >
       <svg
         role="progressbar"
@@ -245,7 +244,6 @@ export default function MealsWidget({
       <section
         className="min-h-0 w-full flex-1 space-y-2 md:space-y-3 meals-widget"
         aria-labelledby="dashboard-meals-title"
-        data-testid="dashboard-meals-widget"
       >
         <div className="flex items-center justify-between px-1">
           <h2 id="dashboard-meals-title" className="text-base font-bold">
@@ -320,7 +318,6 @@ export default function MealsWidget({
                 className="overflow-hidden rounded-2xl bg-card text-card-foreground text-sm"
               >
                 <div
-                  data-testid={`dashboard-meal-card-content-${type}`}
                   className="flex items-center gap-2.5 px-3 py-2.5"
                 >
                   <button

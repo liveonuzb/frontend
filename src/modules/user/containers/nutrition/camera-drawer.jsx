@@ -348,7 +348,6 @@ const ScanCameraView = ({
   return (
     <div className="flex w-full flex-col gap-4">
       <div
-        data-testid="nutrition-scan-preview"
         className="relative w-full max-h-[58vh] overflow-hidden rounded-2xl bg-black"
         style={{ aspectRatio: "4 / 5" }}
       >
@@ -386,7 +385,6 @@ const ScanCameraView = ({
 
             {isScanning || isBarcodeLocked ? (
               <motion.div
-                data-testid="nutrition-scan-lock-line"
                 initial={{ top: 0, opacity: 0 }}
                 animate={{ top: "100%", opacity: [0, 1, 1, 0] }}
                 transition={{

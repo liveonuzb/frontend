@@ -153,6 +153,13 @@ describe("User layout shell", () => {
   beforeEach(() => {
     mocks.calendarBottomDrawer.mockClear();
     mocks.openProfile.mockClear();
+    mocks.authState.user = {
+      firstName: "Fazliddin",
+      lastName: "Liveon",
+      avatar: "",
+      currentStreak: 7,
+      settings: { sidebarState: "expanded" },
+    };
   });
 
   it("renders dashboard inside a centered phone shell without desktop chrome", () => {
@@ -319,5 +326,40 @@ describe("User layout shell", () => {
     expect(indexCss).toContain(".user-card-scope .user-card");
     expect(indexCss).toContain(".user-card-scope .user-surface");
     expect(indexCss).toContain('.user-card-scope [class*="shadow-"]');
+  });
+
+  it("applies the glass effect root class only when the profile setting is enabled", () => {
+    const disabledView = renderLayout("/user/dashboard");
+
+    expect(
+      disabledView.container.querySelector('[data-glass-effect="on"]'),
+    ).not.toBeInTheDocument();
+
+    disabledView.unmount();
+
+    mocks.authState.user.settings = {
+      ...mocks.authState.user.settings,
+      glassEffectEnabled: true,
+    };
+
+    const enabledView = renderLayout("/user/dashboard");
+
+    expect(
+      enabledView.container.querySelector('[data-glass-effect="on"]'),
+    ).toHaveClass("user-glass-effect");
+  });
+
+  it("defines the balanced liquid glass surface layer", () => {
+    expect(indexCss).toContain(".user-glass-effect");
+    expect(indexCss).toContain(
+      "--user-glass-bg: color-mix(in srgb, var(--color-card) 64%, transparent);",
+    );
+    expect(indexCss).toContain(
+      "--user-glass-bg: color-mix(in srgb, var(--color-card) 58%, transparent);",
+    );
+    expect(indexCss).toContain("--user-glass-layered-bg");
+    expect(indexCss).toContain("backdrop-filter: blur(30px) saturate(1.65)");
+    expect(indexCss).toContain(".user-glass-effect .user-glass-shell");
+    expect(indexCss).toContain("@supports not ((backdrop-filter: blur(1px))");
   });
 });

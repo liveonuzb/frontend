@@ -81,6 +81,25 @@ describe("profile-route-state", () => {
     ).toBe("/user/dashboard/profile/overview/xp-history");
   });
 
+  it("supports target weight as a routed overview drawer", () => {
+    expect(
+      getProfileRouteState("/user/dashboard/profile/overview/target-weight"),
+    ).toMatchObject({
+      isProfileOpen: true,
+      basePath: "/user/dashboard",
+      activeProfileTab: "overview",
+      activeProfileDrawer: "target-weight",
+      shouldSanitize: false,
+    });
+    expect(
+      buildProfileRoutePath({
+        pathname: "/user/dashboard/profile",
+        tab: "overview",
+        drawer: "target-weight",
+      }),
+    ).toBe("/user/dashboard/profile/overview/target-weight");
+  });
+
   it("supports friends as a routed profile section drawer", () => {
     expect(getProfileRouteState("/user/dashboard/profile/friends")).toMatchObject({
       isProfileOpen: true,

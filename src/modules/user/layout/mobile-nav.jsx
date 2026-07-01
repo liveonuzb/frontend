@@ -67,7 +67,7 @@ const MobileNav = ({ hidden = false }) => {
         hidden ? "translate-y-[calc(100%+1rem)]" : "translate-y-0",
       )}
     >
-      <div className="flex justify-between items-center bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
+      <div className="user-glass-shell flex justify-between items-center bg-secondary/70 backdrop-blur-md border border-border/40 shadow-2xl rounded-full px-2 py-1.5 gap-0.5">
         {map(items, (item = {}) => {
           const isProfileAction = get(item, "action") === "profile";
           const isActive = isProfileAction

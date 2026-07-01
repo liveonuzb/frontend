@@ -10,6 +10,7 @@ export const PROFILE_DRAWER_IDS_BY_TAB = {
   [PROFILE_OVERVIEW_TAB]: [
     "mode",
     "theme",
+    "glass-effect",
     "language",
     "notifications",
     "xp",
@@ -17,6 +18,7 @@ export const PROFILE_DRAWER_IDS_BY_TAB = {
     "gender",
     "age",
     "weight",
+    "target-weight",
     "height",
     "goals",
     "macros",

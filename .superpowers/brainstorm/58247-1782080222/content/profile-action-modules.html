@@ -1,0 +1,72 @@
+<h2>Profile action hub: qaysi modullar qo'shiladi?</h2>
+<p class="subtitle">2-3 ta eng muhim modulni tanlang. Existing profile allaqachon XP, achievement, fitness metrics, language/theme, privacy/security, friends/referral va account actions ko'rsatadi.</p>
+
+<div class="cards" data-multiselect>
+  <div class="card" data-choice="quick-actions" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Quick Actions</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+            <button class="mock-button">Meal</button>
+            <button class="mock-button">Water</button>
+            <button class="mock-button">Workout</button>
+            <button class="mock-button">Weight</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Today quick actions</h3>
+      <p>Add meal, water, workout, weight, mood kabi eng ko'p ishlatiladigan amallar profil yuqorisida.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="today-plan" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Next Best Action</div>
+        <div class="mockup-body">
+          <div class="placeholder">Bugun: 1 meal qoldi</div>
+          <button class="mock-button">Kechki ovqat qo'shish</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Today's plan snapshot</h3>
+      <p>Bugungi plan holati va bitta aniq keyingi amal: meal, suv, workout yoki report.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="billing" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Plan & Billing</div>
+        <div class="mockup-body">
+          <div class="placeholder">Free plan</div>
+          <button class="mock-button">Proga o'tish</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Premium / billing row</h3>
+      <p>Plan status, upgrade, invoices va to'lov tarixiga tez kirish. Komponent bor, overviewda ko'rinmayapti.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="completion" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Profile Tasks</div>
+        <div class="mockup-body">
+          <div class="placeholder">Profil 60%</div>
+          <button class="mock-button">Telefonni tasdiqlash</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>D. Completion checklist</h3>
+      <p>Profilni to'ldirish uchun 1-3 ta aniq vazifa: avatar, username, phone, bio, health target.</p>
+    </div>
+  </div>
+</div>

@@ -183,7 +183,6 @@ function MealDetailImageCard({
 
   return (
     <div
-      data-testid="dashboard-meal-detail-image-card"
       className="relative overflow-hidden rounded-2xl bg-card"
     >
       <MealFoodImage food={food} className="h-48 w-full rounded-none" />
@@ -404,7 +403,6 @@ function DashboardMealFoodDetailDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom" nested>
       <DrawerContent
-        data-testid="dashboard-meal-food-detail-drawer"
         className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         <DrawerHeader>
@@ -423,7 +421,6 @@ function DashboardMealFoodDetailDrawer({
             />
 
             <div
-              data-testid="dashboard-meal-detail-summary-grid"
               className="grid grid-cols-2 gap-2"
             >
               <MealMetric
@@ -438,7 +435,6 @@ function DashboardMealFoodDetailDrawer({
             </div>
 
             <div
-              data-testid="dashboard-meal-detail-macro-row"
               className="grid grid-cols-3 gap-2"
             >
               <MealMacroProgressCard
@@ -465,7 +461,6 @@ function DashboardMealFoodDetailDrawer({
                   Ingredientlar
                 </div>
                 <div
-                  data-testid="dashboard-meal-detail-ingredients-list"
                   className="space-y-2"
                 >
                   {map(ingredients, (ingredient, index) => {
@@ -613,7 +608,6 @@ function DashboardMealEditDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="bottom" nested>
       <DrawerContent
-        data-testid="dashboard-meal-edit-drawer"
         className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
       >
         {item ? (
@@ -756,7 +750,6 @@ export default function DashboardMealDetailsDrawer({
     <>
       <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
         <DrawerContent
-          data-testid="dashboard-meal-details-drawer"
           className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
         >
           <DrawerHeader>

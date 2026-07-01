@@ -407,8 +407,6 @@ export default function IngredientEditDrawer({
                 step={5}
                 gaugeMax={editGaugeMax}
                 onValueChange={handleEditGramsChange}
-                testIdPrefix="ingredient-edit"
-                sliderTestId="ingredient-grams-slider"
               />
 
               <IngredientServingFields

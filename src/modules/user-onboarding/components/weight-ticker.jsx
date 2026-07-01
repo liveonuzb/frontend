@@ -271,7 +271,6 @@ export const WeightTicker = ({
           {/* Center pointer sits on the same 12px row as the active tick. */}
           <div
             aria-hidden
-            data-testid="ticker-center-pointer"
             className="pointer-events-none absolute z-10 flex items-center"
             style={{
               top: `calc(50% - ${NOTCH_SIZE / 2}px)`,

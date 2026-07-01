@@ -50,7 +50,6 @@ const UserTopBar = ({
 
   return (
     <div
-      data-testid="user-layout-top-bar"
       className="flex items-center justify-between gap-3 pt-[max(0.25rem,env(safe-area-inset-top))]"
     >
       <button
@@ -67,7 +66,6 @@ const UserTopBar = ({
         </Avatar>
         <span className="min-w-0 space-y-0.5">
           <span
-            data-testid="user-layout-greeting-line"
             className="flex min-w-0 items-baseline gap-1.5 leading-tight"
           >
             <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
@@ -78,7 +76,6 @@ const UserTopBar = ({
             </span>
           </span>
           <span
-            data-testid="user-layout-streak"
             className="flex items-center gap-1 text-[11px] font-medium leading-tight text-muted-foreground"
           >
             <FlameIcon className="size-3.5 text-orange-500" />
@@ -93,13 +90,13 @@ const UserTopBar = ({
       </button>
 
       <div className="flex shrink-0 items-center gap-2">
-        <NotificationCenter className="size-11 rounded-full border-0 bg-card/80 shadow-none hover:bg-card/80 dark:hover:bg-card/80" />
+        <NotificationCenter className="user-glass-shell size-11 rounded-full border-0 bg-card/80 shadow-none hover:bg-card/80 dark:hover:bg-card/80" />
         {showCalendarButton ? (
           <Button
             type="button"
             variant="outline"
             size="icon-lg"
-            className="size-11 rounded-full border-0 bg-card/80 shadow-none hover:bg-card/80 hover:shadow-none dark:hover:bg-card/80"
+            className="user-glass-shell size-11 rounded-full border-0 bg-card/80 shadow-none hover:bg-card/80 hover:shadow-none dark:hover:bg-card/80"
             onClick={onOpenCalendar}
             aria-label={`Sana tanlash: ${selectedDateLabel}`}
           >

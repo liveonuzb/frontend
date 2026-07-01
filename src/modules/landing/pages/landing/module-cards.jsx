@@ -45,7 +45,7 @@ const SectionHeader = ({ copy = EMPTY_MODULE_COPY }) => (
   </div>
 );
 
-const ModuleCard = ({ item, className, size, testId }) => {
+const ModuleCard = ({ item, className, size }) => {
   const Icon = item?.icon;
 
   return (
@@ -55,7 +55,6 @@ const ModuleCard = ({ item, className, size, testId }) => {
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
     >
       <Card
-        data-testid={testId}
         size={size}
         className={cn(
           "group h-full border-border/80 bg-card text-center shadow-[0_16px_46px_rgba(15,23,42,0.04)] transition-colors",
@@ -162,7 +161,6 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
   return (
     <m.section
       id="nutrition"
-      data-testid="product-modules"
       className="scroll-mt-24 bg-background py-16 md:py-24"
       initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={shouldReduceMotion ? void 0 : { opacity: 1, y: 0 }}
@@ -186,7 +184,6 @@ export const ProductModulesSection = ({ copy = EMPTY_MODULE_COPY }) => {
                 key={item?.id || item?.title}
                 item={item}
                 size="sm"
-                testId={item?.id ? `product-module-${item.id}` : undefined}
               />
             ))}
           </div>

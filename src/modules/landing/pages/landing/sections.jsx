@@ -321,7 +321,6 @@ export const HeroSection = ({
   return (
     <section className="relative isolate overflow-hidden bg-background pt-16 text-foreground">
       <img
-        data-testid="landing-hero-mode-art"
         src={modeTheme.assets.curious}
         alt=""
         className="pointer-events-none absolute right-[-5rem] top-28 z-0 hidden w-[19rem] opacity-[0.08] saturate-110 dark:opacity-[0.06] lg:block"

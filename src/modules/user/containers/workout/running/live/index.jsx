@@ -1175,7 +1175,6 @@ const RunningLivePage = () => {
   return (
     <PageTransition mode="slide-up">
       <div
-        data-testid="running-live-page"
         className="min-h-[calc(100dvh-7rem)] w-full bg-transparent px-4 pb-28 pt-3 text-[#11121f] sm:px-5 md:min-h-[calc(100dvh-5rem)] md:pb-6 md:pt-0"
       >
         <div className="mx-auto flex w-full max-w-[860px] flex-col">

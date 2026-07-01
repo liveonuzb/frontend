@@ -20,6 +20,7 @@ import {
   ChevronRightIcon,
   MoonIcon,
   PaletteIcon,
+  SparklesIcon,
   SunIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,7 @@ import {
   DrawerTitle,
   DrawerDescription,
   DrawerBody,
+  DrawerFooter,
 } from "@/components/ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,6 +115,11 @@ const getLanguageLabel = (languageCode) => {
 
   return "O'zbek";
 };
+
+const getGlassEffectLabel = (enabled, t) =>
+  enabled
+    ? t("profile.appearance.glass.enabled", "Yoqilgan")
+    : t("profile.appearance.glass.disabled", "O'chiq");
 
 const getNotificationSettingsCount = (settings) => {
   const source = settings ?? {};
@@ -234,14 +241,190 @@ const SettingsDivider = () => (
   <div className="mx-6 border-t border-border/50 sm:mx-7" />
 );
 
+const GLASS_EFFECT_OPTIONS = [
+  {
+    value: false,
+    labelKey: "profile.appearance.glass.disabled",
+    label: "O'chiq",
+    descriptionKey: "profile.appearance.glass.disabledDesc",
+    description: "Odatiy aniq kartalar va drawerlar.",
+  },
+  {
+    value: true,
+    labelKey: "profile.appearance.glass.enabled",
+    label: "Yoqilgan",
+    descriptionKey: "profile.appearance.glass.enabledDesc",
+    description: "iOS uslubidagi yumshoq shaffof surface.",
+  },
+];
+
+const GlassEffectDrawer = ({ open, onOpenChange, enabled }) => {
+  const { t } = useTranslation();
+  const { saveGeneralSettings, isSavingGeneral } = useProfileSettings();
+  const [selected, setSelected] = React.useState(Boolean(enabled));
+
+  const handleApply = React.useCallback(async () => {
+    try {
+      await saveGeneralSettings({ glassEffectEnabled: selected });
+      toast.success(t("profile.appearance.saveSuccess"));
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(
+        getRequestErrorMessage(error, t("profile.appearance.saveError")),
+      );
+    }
+  }, [onOpenChange, saveGeneralSettings, selected, t]);
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange} direction="bottom">
+      <DrawerContent
+        data-glass-effect-drawer="true"
+        className={cn(
+          "data-[vaul-drawer-direction=bottom]:md:max-w-sm",
+          userCardScopeClassName,
+        )}
+      >
+        <DrawerHeader className="px-5 pb-3 text-left">
+          <DrawerTitle>
+            {t("profile.appearance.glass.drawerTitle", "Glass Effect")}
+          </DrawerTitle>
+          <DrawerDescription>
+            {t(
+              "profile.appearance.glass.drawerDescription",
+              "Kartalar va drawerlar uchun iOS uslubidagi shaffof effekt.",
+            )}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerBody className="space-y-4 px-4 pb-4">
+          <div
+            data-glass-preview-shell="true"
+            className="glass-effect-preview overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/70 p-3"
+          >
+            <div className="relative min-h-[168px] overflow-hidden rounded-[1.4rem] border border-border/50 bg-gradient-to-br from-primary/12 via-card/65 to-muted/60 p-3">
+              <div className="absolute -top-10 left-6 h-28 w-28 rounded-full bg-[rgb(var(--accent-rgb)/0.16)] blur-2xl" />
+              <div className="absolute right-3 top-0 h-24 w-24 rounded-full bg-card/70 blur-2xl" />
+              <div className="relative flex min-h-[142px] flex-col justify-between gap-3">
+                <div
+                  data-liquid-glass-preview-surface="true"
+                  className="flex items-center justify-between rounded-2xl border border-border/45 bg-card/55 px-3 py-2 shadow-sm backdrop-blur-xl"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+                      <SparklesIcon className="size-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-semibold leading-tight">
+                        Balanced Liquid Glass
+                      </p>
+                      <p className="truncate text-[10px] leading-tight text-muted-foreground">
+                        {t("profile.appearance.glass.previewEyebrow", "Preview")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="size-7 rounded-full border border-border/50 bg-card/70" />
+                </div>
+
+                <div
+                  data-liquid-glass-preview-surface="true"
+                  className="rounded-2xl border border-border/45 bg-card/55 p-3 shadow-sm backdrop-blur-xl"
+                >
+                  <div className="mb-2 h-2 w-16 rounded-full bg-primary/30" />
+                  <p className="text-sm font-semibold leading-5">
+                    {t(
+                      "profile.appearance.glass.previewTitle",
+                      "Bugungi ko'rinish",
+                    )}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                    {t(
+                      "profile.appearance.glass.previewDescription",
+                      "Yumshoq blur, shaffof surface va yaxshi o'qiladigan matn.",
+                    )}
+                  </p>
+                </div>
+
+                <div
+                  data-liquid-glass-preview-surface="true"
+                  className="mx-auto flex w-[78%] items-center justify-between rounded-full border border-border/45 bg-card/55 px-3 py-2 shadow-sm backdrop-blur-xl"
+                >
+                  <div className="size-3 rounded-full bg-primary" />
+                  <div className="size-3 rounded-full bg-muted-foreground/35" />
+                  <div className="size-3 rounded-full bg-muted-foreground/35" />
+                  <div className="size-3 rounded-full bg-muted-foreground/35" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            {map(GLASS_EFFECT_OPTIONS, (option) => {
+              const isSelected = selected === option.value;
+
+              return (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  aria-pressed={isSelected}
+                  className={cn(
+                    getUserInteractiveCardClassName(
+                      "flex items-center justify-between gap-3 p-4 text-left",
+                    ),
+                    isSelected && "border border-primary bg-primary/5",
+                  )}
+                  onClick={() => setSelected(option.value)}
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">
+                      {t(option.labelKey, option.label)}
+                    </span>
+                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                      {t(option.descriptionKey, option.description)}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "flex size-6 shrink-0 items-center justify-center rounded-full border",
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-transparent",
+                    )}
+                  >
+                    <CheckIcon className="size-3.5" strokeWidth={3} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </DrawerBody>
+        <DrawerFooter className="px-4 pb-4 pt-0">
+          <button
+            type="button"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-60"
+            disabled={isSavingGeneral}
+            onClick={() => void handleApply()}
+          >
+            {t("profile.general.save", "Saqlash")}
+          </button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+};
+
 const InlineModeItem = ({ wrap = true }) => {
   const { activeProfileDrawer, openProfileDrawer, closeProfileDrawer } =
     useProfileOverlay();
   const modeOpen = activeProfileDrawer === "mode";
   const themeOpen = activeProfileDrawer === "theme";
+  const glassOpen = activeProfileDrawer === "glass-effect";
   const mode = useAppModeStore((state) => state.mode);
+  const settings = useAuthStore(
+    (state) => state.user?.settings ?? EMPTY_PROFILE_SETTINGS,
+  );
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const Icon = theme === "dark" ? MoonIcon : SunIcon;
+  const glassEffectEnabled = get(settings, "glassEffectEnabled", false) === true;
   const handleDrawerOpenChange = React.useCallback(
     (drawerId) => (nextOpen) => {
       if (nextOpen) {
@@ -268,6 +451,13 @@ const InlineModeItem = ({ wrap = true }) => {
         value={theme === "dark" ? "Qorong'u" : "Yorug'"}
         onClick={() => openProfileDrawer("theme", PROFILE_OVERVIEW_TAB)}
       />
+      <SettingsDivider />
+      <SettingsItem
+        icon={SparklesIcon}
+        label="Glass Effect"
+        value={getGlassEffectLabel(glassEffectEnabled, t)}
+        onClick={() => openProfileDrawer("glass-effect", PROFILE_OVERVIEW_TAB)}
+      />
     </>
   );
 
@@ -288,6 +478,13 @@ const InlineModeItem = ({ wrap = true }) => {
         open={themeOpen}
         onOpenChange={handleDrawerOpenChange("theme")}
       />
+      {glassOpen ? (
+        <GlassEffectDrawer
+          open={glassOpen}
+          enabled={glassEffectEnabled}
+          onOpenChange={handleDrawerOpenChange("glass-effect")}
+        />
+      ) : null}
     </>
   );
 };
@@ -505,7 +702,6 @@ const ProfilePrivacyBillingCard = ({ completion, onTabChange, user }) => {
 
   return (
     <Card
-      data-testid="profile-privacy-billing-card"
       className={getUserCardClassName("gap-0 overflow-hidden py-0")}
     >
       <CardContent className="p-0">

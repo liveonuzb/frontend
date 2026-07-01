@@ -1,18 +1,22 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import {
+  AwardIcon,
+  BadgeCheckIcon,
+  CakeIcon,
+  CalendarIcon,
   CreditCardIcon,
   CheckCircle2Icon,
   ChevronRightIcon,
-  CrownIcon,
+  DumbbellIcon,
   FlameIcon,
-  HeartPulseIcon,
   HistoryIcon,
+  LockIcon,
   PencilIcon,
   RulerIcon,
   ScaleIcon,
   TargetIcon,
-  TrophyIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   UserIcon,
@@ -46,6 +50,7 @@ import {
 } from "@/components/ui/drawer";
 import { useGetQuery, usePutQuery } from "@/hooks/api";
 import { ME_QUERY_KEY } from "@/hooks/app/use-me";
+import useNutritionDashboard from "@/hooks/app/use-nutrition-dashboard";
 import useHealthGoals, {
   HEALTH_GOALS_QUERY_KEY,
 } from "@/hooks/app/use-health-goals";
@@ -82,21 +87,21 @@ const GOAL_OPTIONS = [
     label: "Ozish",
     description: "Kaloriya defitsiti va faolroq kunlik ritm.",
     icon: TrendingDownIcon,
-    iconClass: "bg-orange-500/10 text-orange-500",
+    iconClass: "bg-warning/10 text-warning",
   },
   {
     value: "maintain",
     label: "Saqlash",
     description: "Kaloriya, oqsil va tiklanish balansini ushlash.",
     icon: ScaleIcon,
-    iconClass: "bg-sky-500/10 text-sky-500",
+    iconClass: "bg-info/10 text-info",
   },
   {
     value: "gain",
     label: "Massa",
     description: "Kaloriya va oqsil targetlarini ko'tarish.",
     icon: TrendingUpIcon,
-    iconClass: "bg-emerald-500/10 text-emerald-500",
+    iconClass: "bg-success/10 text-success",
   },
 ];
 
@@ -113,6 +118,7 @@ const PROFILE_VITAL_DRAWER_IDS = [
   "gender",
   "age",
   "weight",
+  "target-weight",
   "height",
   "goals",
   "macros",
@@ -125,11 +131,6 @@ const PROFILE_ACHIEVEMENTS_QUERY_KEY = [
   "achievements",
   "all",
 ];
-const PROFILE_STAT_NUMBER_FORMATTER = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
 const formatNumber = (value, fallback = "-") => {
   const numeric = toNumber(value);
 
@@ -145,11 +146,6 @@ const formatNumber = (value, fallback = "-") => {
 const formatCompactNumber = (value) => {
   const numeric = toNumber(value);
   return Number.isFinite(numeric) ? numeric.toLocaleString("en-US") : "0";
-};
-
-const formatProfileStatNumber = (value) => {
-  const numeric = Math.max(0, toNumber(value) || 0);
-  return PROFILE_STAT_NUMBER_FORMATTER.format(numeric);
 };
 
 const getProfileXp = (user, fallbackXp) => {
@@ -207,6 +203,75 @@ const getProfileAchievementCount = (
 
 const getUnlockedAchievementCount = (achievements) =>
   isArray(achievements) ? size(filter(achievements, { unlocked: true })) : null;
+
+const getProfileContactLabel = (user) => {
+  const email = get(user, "email");
+  const phone = get(user, "phone");
+  const username = get(user, "username");
+
+  if (email) return email;
+  if (phone) return phone;
+  return username ? `@${username}` : "";
+};
+
+const getProfilePlanLabel = (user) => {
+  const status = get(user, "premium.status");
+  const planName =
+    get(user, "premium.planName") || get(user, "premium.plan.name");
+
+  if (status === "active" || planName) {
+    if (planName && /pro/i.test(planName)) {
+      return planName;
+    }
+
+    return `${planName || "Liveon"} Pro`;
+  }
+
+  return "Free plan";
+};
+
+const getProfileTotalLogs = (user, dashboard) => {
+  const total =
+    get(user, "totalMealsLogged") ??
+    get(user, "stats.totalMealsLogged") ??
+    get(user, "stats.totalLogs") ??
+    get(user, "gamification.totalLogs") ??
+    get(dashboard, "meals.completed");
+
+  return Math.max(0, toNumber(total) || 0);
+};
+
+const getAchievementImage = (item) =>
+  get(item, "imageMadagascarUrl") ||
+  get(item, "imageUrl") ||
+  get(item, "imageZenUrl") ||
+  get(item, "imageFocusUrl") ||
+  "";
+
+const normalizeAchievementPreviewItem = (item, index) => ({
+  id: get(item, "id") ?? `achievement-${index}`,
+  imageUrl: getAchievementImage(item),
+  name: get(item, "name") || get(item, "title") || "Achievement",
+  unlocked: Boolean(get(item, "unlocked")),
+});
+
+const getAchievementPreviewItems = (achievements, fallbackCount = 0) => {
+  const source = isArray(achievements) ? achievements : [];
+
+  if (source.length) {
+    const unlocked = filter(source, (item) => Boolean(get(item, "unlocked")));
+    const locked = filter(source, (item) => !get(item, "unlocked"));
+    return [...unlocked, ...locked].slice(0, 3).map(normalizeAchievementPreviewItem);
+  }
+
+  const count = Math.max(0, toNumber(fallbackCount) || 0);
+
+  return [
+    { id: "fallback-started", name: "Getting started", unlocked: count > 0 },
+    { id: "fallback-first-step", name: "First step", unlocked: count > 1 },
+    { id: "fallback-locked", name: "Locked", unlocked: false },
+  ];
+};
 
 const getGenderLabel = (value) =>
   find(GENDER_OPTIONS, (item) => item.value === value)?.label ?? "Tanlanmagan";
@@ -774,6 +839,7 @@ export const ProfileVitalsCard = ({
   onEditProfile,
 }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const initializeUser = useAuthStore((state) => state.initializeUser);
   const storeXp = useGamificationStore((state) => state.xp);
   const storeStreak = useGamificationStore((state) => state.streak);
@@ -786,6 +852,9 @@ export const ProfileVitalsCard = ({
       queryKey: PROFILE_ACHIEVEMENTS_QUERY_KEY,
       enabled: Boolean(user),
     },
+  });
+  const { dashboard } = useNutritionDashboard(undefined, {
+    enabled: Boolean(user),
   });
   const {
     goals: healthGoals,
@@ -832,6 +901,10 @@ export const ProfileVitalsCard = ({
   const gender = get(onboarding, "gender");
   const age = toNumber(get(onboarding, "age")) || 0;
   const currentWeight = toNumber(get(onboarding, "currentWeight.value")) || 0;
+  const targetWeight =
+    toNumber(get(onboarding, "targetWeight.value")) ||
+    toNumber(get(user, "targetWeightValue")) ||
+    0;
   const height = toNumber(get(onboarding, "height.value")) || 0;
   const onboardingGoal = get(onboarding, "goal") ?? get(user, "healthGoals.goal");
   const goal =
@@ -848,32 +921,50 @@ export const ProfileVitalsCard = ({
   const serverAchievementCount = getUnlockedAchievementCount(
     achievementsPayload,
   );
+  const achievementCount = getProfileAchievementCount(
+    user,
+    earnedBadges,
+    serverAchievementCount,
+  );
+  const achievementPreviewItems = React.useMemo(
+    () => getAchievementPreviewItems(achievementsPayload, achievementCount),
+    [achievementCount, achievementsPayload],
+  );
+  const profileStreak = getProfileStreak(
+    user,
+    get(dashboard, "streak.currentDays") || storeStreak,
+  );
+  const averageCalories =
+    toNumber(get(dashboard, "calories.target")) ||
+    toNumber(get(dashboard, "goals.calories")) ||
+    toNumber(get(healthGoals, "calories")) ||
+    0;
+  const totalLogs = getProfileTotalLogs(user, dashboard);
   const profileStats = [
+    {
+      key: "avg-cal",
+      label: "Avg. cal",
+      value: formatNumber(averageCalories, "0"),
+      icon: FlameIcon,
+      iconClass: "text-success",
+    },
     {
       key: "streak",
       label: "Streak",
-      value: formatProfileStatNumber(getProfileStreak(user, storeStreak)),
+      value: formatNumber(profileStreak, "0"),
       icon: FlameIcon,
-      iconClass: "text-amber-500",
+      iconClass: "text-warning",
     },
     {
-      key: "xp",
-      label: "XP",
-      value: formatProfileStatNumber(profileXp),
-      icon: CrownIcon,
-      iconClass: "text-sky-500",
-      onClick: () => setActiveDrawer("xp"),
-    },
-    {
-      key: "achievement",
-      label: "Achievement",
-      value: formatProfileStatNumber(
-        getProfileAchievementCount(user, earnedBadges, serverAchievementCount),
-      ),
-      icon: TrophyIcon,
-      iconClass: "text-emerald-500",
+      key: "logs",
+      label: "Total logs",
+      value: formatNumber(totalLogs, "0"),
+      icon: CalendarIcon,
+      iconClass: "text-info",
     },
   ];
+  const profileContact = getProfileContactLabel(user);
+  const profilePlanLabel = getProfilePlanLabel(user);
   const completionPercent = Math.max(
     0,
     Math.min(100, Math.round(toNumber(completion) || 0)),
@@ -1005,163 +1096,221 @@ export const ProfileVitalsCard = ({
     [goal, healthGoals, macroTargets, saveGoals, syncLocalOnboarding],
   );
 
-  const rows = [
-    {
-      key: "profile",
-      label: "Profilni tahrirlash",
-      value: "Ism, avatar va kontaktlar",
-      icon: PencilIcon,
-      onClick: onEditProfile,
-    },
-    {
-      key: "goals",
-      label: "Maqsad",
-      value: getGoalLabel(goal),
-      icon: HeartPulseIcon,
-    },
-    {
-      key: "gender",
-      label: "Jinsi",
-      value: getGenderLabel(gender),
-      icon: UserIcon,
-    },
-    {
-      key: "age",
-      label: "Yoshi",
-      value: age ? `${formatNumber(age)} yosh` : "Kiritilmagan",
-      icon: UserIcon,
-    },
+  const metricCards = [
     {
       key: "weight",
-      label: "Vazn",
-      value: currentWeight
-        ? `${formatNumber(currentWeight)} kg`
-        : "Kiritilmagan",
+      label: "Current weight",
+      value: currentWeight ? `${formatNumber(currentWeight)} kg` : "-",
       icon: ScaleIcon,
+      toneClass: "bg-success/10 text-success",
+    },
+    {
+      key: "target-weight",
+      label: "Target weight",
+      value: targetWeight ? `${formatNumber(targetWeight)} kg` : "-",
+      icon: TargetIcon,
+      toneClass: "bg-info/10 text-info",
     },
     {
       key: "height",
-      label: "Bo'y",
-      value: height ? `${formatNumber(height)} cm` : "Kiritilmagan",
+      label: "Height",
+      value: height ? `${formatNumber(height)} cm` : "-",
       icon: RulerIcon,
+      toneClass: "bg-destructive/10 text-destructive",
+    },
+    {
+      key: "age",
+      label: "Age",
+      value: age ? `${formatNumber(age)} yosh` : "-",
+      icon: CakeIcon,
+      toneClass: "bg-primary/10 text-primary",
+    },
+    {
+      key: "gender",
+      label: "Gender",
+      value: getGenderLabel(gender),
+      icon: UserIcon,
+      toneClass: "bg-secondary text-secondary-foreground",
+    },
+    {
+      key: "goals",
+      label: "Goal",
+      value: getGoalLabel(goal),
+      icon: DumbbellIcon,
+      toneClass: "bg-warning/10 text-warning",
     },
   ];
 
+  const handleViewAchievements = React.useCallback(() => {
+    navigate("/user/achievements");
+  }, [navigate]);
+
   return (
     <>
-      <section className="px-5 pb-0 pt-0 text-center">
-        <div
-          className="relative mx-auto mb-3 grid size-28 place-items-center rounded-full p-1.5"
-          style={{
-            background: `conic-gradient(var(--primary) ${completionPercent}%, color-mix(in oklab, var(--primary) 14%, transparent) 0)`,
-          }}
-          aria-label={`Profil to'liqligi ${completionPercent}%`}
-        >
-          <div className="grid size-full place-items-center rounded-full bg-background p-1 shadow-[inset_0_0_0_1px_var(--border)]">
-            <Avatar className="size-24 border-2 border-background shadow-sm">
-              <AvatarImage src={user?.avatar} alt={displayName} />
-              <AvatarFallback className="text-3xl font-black">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+      <section className="space-y-7 px-5 pb-0 pt-0">
+        <div className="text-center">
+          <button
+            type="button"
+            aria-label="Profilni tahrirlash Ism, avatar va kontaktlar"
+            onClick={onEditProfile}
+            className="group relative mx-auto mb-4 grid size-28 place-items-center rounded-full p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            style={{
+              background: `conic-gradient(var(--primary) ${completionPercent}%, color-mix(in oklab, var(--primary) 14%, transparent) 0)`,
+            }}
+          >
+            <span
+              className="grid size-full place-items-center rounded-full bg-background p-1 shadow-[inset_0_0_0_1px_var(--border)]"
+              aria-label={`Profil to'liqligi ${completionPercent}%`}
+            >
+              <Avatar className="size-24 border-2 border-background shadow-sm">
+                <AvatarImage src={user?.avatar} alt={displayName} />
+                <AvatarFallback className="text-3xl font-black">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </span>
+            <span className="absolute bottom-1 right-1 grid size-8 place-items-center rounded-full border border-border bg-card text-card-foreground shadow-sm transition-colors group-hover:bg-muted">
+              <PencilIcon className="size-3.5" />
+            </span>
+          </button>
+
+          <p className="truncate text-2xl font-black tracking-tight">
+            {displayName}
+          </p>
+          {profileContact ? (
+            <p className="mt-1 truncate text-sm font-semibold text-muted-foreground">
+              {profileContact}
+            </p>
+          ) : null}
+          <div className="mt-3 flex justify-center">
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-black text-primary">
+              <BadgeCheckIcon className="size-4 shrink-0" />
+              <span className="truncate">{profilePlanLabel}</span>
+            </span>
           </div>
         </div>
-        <p className="truncate text-lg font-black tracking-tight">
-          {displayName}
-        </p>
-        {user?.username ? (
-          <p className="mt-1 truncate text-sm font-semibold text-muted-foreground">
-            @{user.username}
-          </p>
-        ) : user?.email || user?.phone ? (
-          <p className="mt-1 truncate text-sm font-semibold text-muted-foreground">
-            {user.email || user.phone}
-          </p>
-        ) : null}
-        <div
-          data-testid="profile-stat-grid"
-          className="-mx-5 mt-3 grid grid-cols-3 gap-2"
+
+        <Card
+          className={getUserCardClassName("gap-0 overflow-hidden py-0")}
         >
-          {map(profileStats, (stat) => {
-            const Icon = stat.icon;
-            const ariaLabel = `${stat.label} ${stat.value}`;
-            const handleStatKeyDown = (event) => {
-              if (event.key !== "Enter" && event.key !== " ") {
-                return;
-              }
+          <CardContent className="grid grid-cols-3 divide-x divide-border/50 px-0 py-4">
+            {map(profileStats, (stat) => {
+              const Icon = stat.icon;
 
-              event.preventDefault();
-              stat.onClick?.();
-            };
+              return (
+                <div
+                  key={stat.key}
+                  aria-label={`${stat.label} ${stat.value}`}
+                  className="flex min-w-0 flex-col items-center justify-center px-2 text-center"
+                >
+                  <span className="text-xs font-bold leading-tight text-muted-foreground">
+                    {stat.label}
+                  </span>
+                  <span className="mt-2 flex max-w-full items-center justify-center gap-1.5">
+                    <Icon className={cn("size-5 shrink-0", stat.iconClass)} />
+                    <span className="truncate text-2xl font-black leading-none tracking-normal text-foreground tabular-nums">
+                      {stat.value}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
 
-            return (
-              <Card
-                key={stat.key}
-                size="sm"
-                aria-label={ariaLabel}
-                role={stat.onClick ? "button" : undefined}
-                tabIndex={stat.onClick ? 0 : undefined}
-                onClick={stat.onClick}
-                onKeyDown={stat.onClick ? handleStatKeyDown : undefined}
-                className={cn(
-                  getUserCardClassName(
-                    "w-full min-w-0 gap-0 !py-0 text-center data-[size=sm]:!gap-0 data-[size=sm]:!pb-0 data-[size=sm]:!pt-0",
-                  ),
-                  stat.onClick
-                    ? "cursor-pointer transition-colors hover:bg-primary/10 focus-visible:outline-none"
-                    : "cursor-default",
-                )}
-              >
-                <CardContent className="flex min-h-16 min-w-0 flex-col items-center justify-center !px-1.5 py-2">
-                  <span className="flex min-w-0 items-center justify-center gap-1 text-[10px] font-black text-muted-foreground">
-                    <Icon
-                      className={cn("size-3.5 shrink-0", stat.iconClass)}
-                    />
-                    <span className="truncate">{stat.label}</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-black tracking-tight">
+              Achievements
+            </h2>
+            <button
+              type="button"
+              onClick={handleViewAchievements}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-1 py-1 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              View all
+              <ChevronRightIcon className="size-4" />
+            </button>
+          </div>
+          <Card className={getUserCardClassName("gap-0 overflow-hidden py-0")}>
+            <CardContent className="grid grid-cols-3 gap-2 px-3 py-4">
+              {map(achievementPreviewItems, (item) => (
+                <div
+                  key={item.id}
+                  className="flex min-w-0 flex-col items-center text-center"
+                >
+                  <div
+                    className={cn(
+                      "grid size-16 place-items-center overflow-hidden rounded-2xl border bg-background",
+                      item.unlocked
+                        ? "border-primary/20 text-primary"
+                        : "border-border/70 bg-muted/40 text-muted-foreground",
+                    )}
+                  >
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className={cn(
+                          "size-full object-cover",
+                          item.unlocked ? "" : "opacity-50 grayscale",
+                        )}
+                      />
+                    ) : item.unlocked ? (
+                      <AwardIcon className="size-8" />
+                    ) : (
+                      <LockIcon className="size-7" />
+                    )}
+                  </div>
+                  <span className="mt-2 max-w-full truncate text-xs font-bold text-muted-foreground">
+                    {item.unlocked ? item.name : "Locked"}
                   </span>
-                  <span className="mt-1 block max-w-full truncate text-xl font-black leading-none tracking-normal text-foreground tabular-nums">
-                    {stat.value}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-base font-black tracking-tight">
+            Fitness metrics
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {map(metricCards, (metric) => {
+              const Icon = metric.icon;
+
+              return (
+                <button
+                  key={metric.key}
+                  type="button"
+                  aria-label={`${metric.label} ${metric.value}`}
+                  onClick={() => setActiveDrawer(metric.key)}
+                  className={cn(
+                    getUserInteractiveCardClassName(
+                      "flex min-h-[9.5rem] min-w-0 flex-col items-center justify-center px-2 py-4 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                    ),
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "mb-3 grid size-8 place-items-center rounded-xl",
+                      metric.toneClass,
+                    )}
+                  >
+                    <Icon className="size-4.5" />
                   </span>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <span className="line-clamp-2 min-h-8 text-xs font-bold leading-4 text-muted-foreground">
+                    {metric.label}
+                  </span>
+                  <span className="mt-2 max-w-full truncate text-xl font-black leading-none tracking-normal text-foreground tabular-nums">
+                    {metric.value}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
-
-      <div className={getUserSurfaceClassName("overflow-hidden")}>
-        {map(rows, (row, index) => {
-          const Icon = row.icon;
-          return (
-            <React.Fragment key={row.key}>
-              {index > 0 ? (
-                <div className="mx-6 border-t border-border/50 sm:mx-7" />
-              ) : null}
-              <button
-                type="button"
-                aria-label={`${row.label} ${row.value}`}
-                onClick={() =>
-                  row.onClick ? row.onClick() : setActiveDrawer(row.key)
-                }
-                className="flex w-full items-center gap-3.5 px-6 py-4 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-7"
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground">
-                  <Icon className="size-4.5" />
-                </span>
-                <span className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="truncate text-sm font-medium sm:text-[15px]">
-                    {row.label}
-                  </span>
-                  <span className="ml-auto max-w-[48%] truncate text-right text-xs text-muted-foreground sm:text-sm">
-                    {row.value}
-                  </span>
-                </span>
-                <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-              </button>
-            </React.Fragment>
-          );
-        })}
-      </div>
 
       <GoalSelectionDrawer
         open={activeDrawer === "goals"}
@@ -1233,6 +1382,30 @@ export const ProfileVitalsCard = ({
             { currentWeight: { value: nextWeight, unit: "kg" } },
             { currentWeight: { value: nextWeight, unit: "kg" } },
             "Vazn yangilandi",
+          )
+        }
+      />
+      <NumericVitalDrawer
+        open={activeDrawer === "target-weight"}
+        onOpenChange={(open) =>
+          setActiveDrawer(open ? "target-weight" : null)
+        }
+        title="Maqsad vazn"
+        description="Maqsad vazningizni tanlang."
+        value={targetWeight}
+        fallbackValue={currentWeight || 70}
+        unit="kg"
+        min={30}
+        max={250}
+        step={0.5}
+        majorStep={5}
+        labelStep={10}
+        isSaving={onboardingMutation.isPending}
+        onSave={(nextTargetWeight) =>
+          saveOnboardingPatch(
+            { targetWeight: { value: nextTargetWeight, unit: "kg" } },
+            { targetWeight: { value: nextTargetWeight, unit: "kg" } },
+            "Maqsad vazn yangilandi",
           )
         }
       />

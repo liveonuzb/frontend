@@ -80,6 +80,18 @@
         "darkDesc": "Kecha va past yorug'lik uchun qulay",
         "hint": "Tema darhol preview qilinadi, saqlansa backendga ham yoziladi."
       },
+      "glass": {
+        "title": "Glass Effect",
+        "enabled": "Yoqilgan",
+        "disabled": "O'chiq",
+        "enabledDesc": "iOS uslubidagi yumshoq shaffof surface.",
+        "disabledDesc": "Odatiy aniq kartalar va drawerlar.",
+        "drawerTitle": "Glass Effect",
+        "drawerDescription": "Kartalar va drawerlar uchun iOS uslubidagi shaffof effekt.",
+        "previewEyebrow": "Preview",
+        "previewTitle": "Bugungi ko'rinish",
+        "previewDescription": "Yumshoq blur, shaffof surface va yaxshi o'qiladigan matn."
+      },
       "fontSize": {
         "title": "Matn o'lchami",
         "small": "Kichik",

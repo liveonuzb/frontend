@@ -370,7 +370,6 @@ const RouteSvgFallback = ({
       )}
       role={live ? "status" : undefined}
       aria-live={live ? "polite" : undefined}
-      data-testid="route-map-fallback"
     >
       <div
         className="absolute inset-0 opacity-[0.16] dark:opacity-[0.22]"
@@ -392,7 +391,6 @@ const RouteSvgFallback = ({
           viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
           role="img"
           aria-label={labels.routePreviewLabel}
-          data-testid="route-fallback-svg"
           data-coordinate-count={coordinates.length}
         >
           <defs>
@@ -961,7 +959,6 @@ const MapLibreRouteMap = ({
       <div
         ref={containerRef}
         className="h-full w-full"
-        data-testid="maplibre-map"
         data-coordinate-count={coordinateCount}
         data-route-feature-count={routeFeatureCount}
       />

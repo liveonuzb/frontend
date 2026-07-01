@@ -80,6 +80,18 @@
         "darkDesc": "Comfortable for night and low light",
         "hint": "Theme is previewed instantly, and saved to the backend."
       },
+      "glass": {
+        "title": "Glass Effect",
+        "enabled": "On",
+        "disabled": "Off",
+        "enabledDesc": "A soft iOS-style translucent surface.",
+        "disabledDesc": "Default solid cards and drawers.",
+        "drawerTitle": "Glass Effect",
+        "drawerDescription": "An iOS-style translucent effect for cards and drawers.",
+        "previewEyebrow": "Preview",
+        "previewTitle": "Today's view",
+        "previewDescription": "Soft blur, translucent surfaces, and readable text."
+      },
       "fontSize": {
         "title": "Font Size",
         "small": "Small",

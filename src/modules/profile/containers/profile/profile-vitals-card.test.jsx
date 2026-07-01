@@ -23,6 +23,7 @@ const baseOnboarding = {
   age: 30,
   height: { value: 180, unit: "cm" },
   currentWeight: { value: 90, unit: "kg" },
+  targetWeight: { value: 75, unit: "kg" },
   activityLevel: "moderately-active",
   weeklyPace: 0.5,
 };
@@ -87,6 +88,17 @@ vi.mock("@/hooks/app/use-health-goals", () => ({
   HEALTH_GOALS_QUERY_KEY: ["health-goals"],
 }));
 
+vi.mock("@/hooks/app/use-nutrition-dashboard", () => ({
+  default: () => ({
+    dashboard: {
+      calories: { target: 2000 },
+      goals: { calories: 2000 },
+      meals: { completed: 14 },
+      streak: { currentDays: 6 },
+    },
+  }),
+}));
+
 vi.mock("@/hooks/app/use-premium", () => ({
   default: () => ({
     plans: [],
@@ -140,7 +152,7 @@ const renderCard = (props = {}) =>
   );
 
 const openGoalDrawer = () => {
-  fireEvent.click(screen.getByRole("button", { name: /Maqsad Saqlash/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Goal Saqlash/i }));
 };
 
 describe("ProfileVitalsCard goal drawers", () => {
@@ -158,7 +170,24 @@ describe("ProfileVitalsCard goal drawers", () => {
     achievementsQueryData = undefined;
   });
 
-  it("opens the goal selection drawer from the profile goal row", () => {
+  it("renders the mobile profile summary and metric grid", () => {
+    renderCard();
+
+    expect(screen.getByLabelText("Avg. cal 2000")).toBeInTheDocument();
+    expect(screen.getByLabelText("Streak 6")).toBeInTheDocument();
+    expect(screen.getByLabelText("Total logs 14")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Current weight 90 kg/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Target weight 75 kg/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Height 180 cm/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the goal selection drawer from the fitness metric grid", () => {
     renderCard();
 
     openGoalDrawer();
@@ -167,18 +196,39 @@ describe("ProfileVitalsCard goal drawers", () => {
     expect(screen.getByRole("button", { name: /Massa/i })).toBeInTheDocument();
   });
 
-  it("renders achievement count from unlocked gamification achievements", async () => {
+  it("renders achievement preview from gamification achievements", async () => {
     achievementsQueryData = {
       data: [
-        { id: "meal", unlocked: true },
-        { id: "water", unlocked: true },
-        { id: "locked", unlocked: false },
+        { id: "meal", name: "Meal master", unlocked: true },
+        { id: "water", name: "Water starter", unlocked: true },
+        { id: "locked", name: "Future badge", unlocked: false },
       ],
     };
 
     renderCard();
 
-    expect(await screen.findByLabelText("Achievement 2")).toBeInTheDocument();
+    expect(await screen.findByText("Meal master")).toBeInTheDocument();
+    expect(screen.getByText("Water starter")).toBeInTheDocument();
+    expect(screen.getByText("Locked")).toBeInTheDocument();
+  });
+
+  it("saves target weight from the fitness metric drawer", async () => {
+    mockFns.putMutateAsync.mockResolvedValueOnce({});
+
+    renderCard();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Target weight 75 kg/i }),
+    );
+
+    expect(await screen.findByText("Maqsad vazn")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => {
+      expect(mockFns.putMutateAsync).toHaveBeenCalledWith({
+        url: "/user/onboarding/user",
+        attributes: { targetWeight: { value: 75, unit: "kg" } },
+      });
+    });
   });
 
   it("saves the selected goal immediately and opens macro targets", async () => {

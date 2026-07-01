@@ -5,8 +5,48 @@ i18n.changeLanguage("uz");
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { map } from "lodash";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import NutritionHomeView from "./home-view.jsx";
+import { useGetQuery } from "@/hooks/api";
+
+const mocks = vi.hoisted(() => ({
+  addMeal: vi.fn(),
+  openActionDrawer: vi.fn(),
+}));
+
+vi.mock("@/hooks/api", () => ({
+  useGetQuery: vi.fn(),
+}));
+
+vi.mock("@/hooks/app/use-daily-tracking", () => ({
+  useDailyTrackingActions: () => ({
+    addMeal: mocks.addMeal,
+    patchMeal: vi.fn(),
+    removeMeal: vi.fn(),
+  }),
+}));
+
+vi.mock("@/hooks/app/use-saved-meals", () => ({
+  useSavedMeals: () => ({
+    items: [],
+  }),
+}));
+
+vi.mock("@/hooks/app/use-saved-meal-templates", () => ({
+  buildLoggedMealFromSavedMealTemplate: vi.fn(),
+  getWeekdayNameFromDate: () => "Payshanba",
+  useSavedMealTemplates: () => ({
+    templates: [],
+    recurringPatterns: [],
+  }),
+}));
+
+vi.mock("@/store", () => ({
+  useAddMealOverlayStore: (selector) =>
+    selector({
+      openActionDrawer: mocks.openActionDrawer,
+    }),
+}));
 
 vi.mock("@/components/calorie-gauge-widget", () => ({
   default: ({ burnedCalories, consumed, goal, macros, showCalorieModeToggle }) => (
@@ -160,6 +200,11 @@ const expectBefore = (first, second) => {
 };
 
 describe("NutritionHomeView", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useGetQuery).mockReturnValue({ data: null });
+  });
+
   it("renders the overview calorie gauge before dashboard blocks without the external target strip", () => {
     renderHome();
 
@@ -167,17 +212,21 @@ describe("NutritionHomeView", () => {
 
     expectBefore(calorieGauge, screen.getByText("Kunlik health score"));
     expectBefore(calorieGauge, screen.getByText("Suv progress"));
-    expectBefore(calorieGauge, screen.getByText("Bugungi ovqatlar"));
+    expectBefore(
+      calorieGauge,
+      screen.getByTestId("dashboard-meals-widget"),
+    );
+    expect(screen.queryByText("Bugungi ovqatlar")).not.toBeInTheDocument();
     expect(
-      screen.getByText("14-may uchun vaqt bo'yicha yozuvlar"),
-    ).toBeInTheDocument();
+      screen.queryByText("14-may uchun vaqt bo'yicha yozuvlar"),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByTestId("nutrition-meal-timeline-summary"),
-    ).toHaveTextContent("1/4");
+      screen.queryByTestId("nutrition-meal-timeline-summary"),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Umumiy ko'rinish")).not.toBeInTheDocument();
     expect(screen.queryByText("Обзор")).not.toBeInTheDocument();
     expect(screen.queryByText("Overview")).not.toBeInTheDocument();
-    expect(screen.getAllByText(/14-may/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/14-may/)).not.toBeInTheDocument();
     expect(screen.queryByText("Kaloriya holati")).not.toBeInTheDocument();
     expect(screen.queryByText(/Target:/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qolgan" })).toBeInTheDocument();
@@ -382,7 +431,7 @@ describe("NutritionHomeView", () => {
       screen.queryByRole("button", { name: /^Maqsad$/i }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getAllByRole("button", { name: /uchun ovqat qo'shish/i }).length,
+      screen.getAllByRole("button", { name: /qo'shish/i }).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /Suv qo'shish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Og'irlik yozish/i })).not.toBeInTheDocument();
@@ -390,48 +439,39 @@ describe("NutritionHomeView", () => {
     expect(screen.queryByRole("button", { name: /Hisobotlar/i })).not.toBeInTheDocument();
   });
 
-  it("opens add flow with the selected meal type from the compact timeline", () => {
+  it("renders the original dashboard meals widget without restyling it", () => {
+    renderHome();
+
+    expect(screen.getByTestId("dashboard-meals-widget"))
+      .toHaveClass("meals-widget", "w-full");
+    expect(
+      screen.getByRole("button", { name: "Ovqatlanish sahifasini ochish" }),
+    ).toHaveTextContent("Barchasi");
+    expect(screen.queryByTestId("nutrition-meal-card-breakfast"))
+      .not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-meal-card-content-breakfast"))
+      .toHaveClass("px-3", "py-2.5");
+    expect(screen.getByTestId("dashboard-meal-progress-ring-breakfast"))
+      .toBeInTheDocument();
+    expect(screen.getByText("Tavsiya etiladi | 561 - 759 kcal"))
+      .toBeInTheDocument();
+  });
+
+  it("opens add flow with the selected meal type from the copied dashboard widget", () => {
     const setSelectedMealTypeForAdd = vi.fn();
     const setIsActionDrawerOpen = vi.fn();
 
     renderHome({ setSelectedMealTypeForAdd, setIsActionDrawerOpen });
 
-    expect(
-      screen.getByTestId("nutrition-meal-timeline-row-breakfast"),
-    ).toHaveTextContent("Nonushta");
-    expect(screen.getByTestId("nutrition-meal-dashboard-list"))
-      .toHaveClass("gap-2.5");
-    expect(screen.getByTestId("nutrition-meal-timeline-row-breakfast"))
-      .toHaveClass("rounded-2xl", "bg-card");
-    expect(screen.getByTestId("nutrition-meal-dashboard-row-content-breakfast"))
-      .toHaveClass("px-3", "py-2.5");
-
     fireEvent.click(
-      screen.getByRole("button", { name: /Tushlik uchun ovqat qo'shish/i }),
+      within(screen.getByTestId("dashboard-meals-widget")).getByRole(
+        "button",
+        { name: "Tushlik qo'shish" },
+      ),
     );
 
     expect(setSelectedMealTypeForAdd).toHaveBeenCalledWith("lunch");
     expect(setIsActionDrawerOpen).toHaveBeenCalledWith(true);
-  });
-
-  it("uses dashboard-style meal icons with calorie progress rings", () => {
-    renderHome();
-
-    const breakfastRow = screen.getByTestId(
-      "nutrition-meal-timeline-row-breakfast",
-    );
-    const progressRing = within(breakfastRow).getByTestId(
-      "nutrition-meal-progress-ring-breakfast",
-    );
-    const progressBar = within(progressRing).getByRole("progressbar", {
-      name: /Nonushta kaloriya progress/i,
-    });
-
-    expect(progressBar).toHaveAttribute("aria-valuenow", "45");
-    expect(progressRing).toHaveClass("relative", "size-14");
-    expect(
-      within(progressRing).getByTestId("nutrition-meal-icon-image-breakfast"),
-    ).toHaveClass("breakfast", "bg-contain", "bg-center", "bg-no-repeat");
   });
 
   it("opens logged meal details in a bottom drawer", () => {
@@ -463,15 +503,14 @@ describe("NutritionHomeView", () => {
     });
 
     const breakfastRow = screen.getByTestId(
-      "nutrition-meal-timeline-row-breakfast",
+      "dashboard-meal-card-content-breakfast",
     );
 
     expect(breakfastRow).toHaveTextContent("Tavsiya etiladi | 561 - 759 kcal");
-    expect(breakfastRow).toHaveTextContent("Oxirgi 08:20");
     expect(screen.queryByText("Tuxum")).not.toBeInTheDocument();
 
     fireEvent.click(
-      within(breakfastRow).getByRole("button", { name: /Nonushta tafsilotlari/i }),
+      within(breakfastRow).getByRole("button", { name: /^Nonushta 300 kcal$/i }),
     );
 
     expect(screen.getByTestId("nutrition-meal-details-drawer"))
@@ -493,7 +532,7 @@ describe("NutritionHomeView", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /Tushlik tafsilotlari/i }),
+      screen.getByRole("button", { name: /^Tushlik 0 kcal$/i }),
     );
     fireEvent.click(
       within(screen.getByTestId("nutrition-meal-details-drawer")).getByRole(
@@ -510,10 +549,10 @@ describe("NutritionHomeView", () => {
     renderHome();
 
     const breakfastToggle = screen.getByRole("button", {
-      name: /Nonushta tafsilotlari/i,
+      name: /^Nonushta 300 kcal$/i,
     });
     const lunchToggle = screen.getByRole("button", {
-      name: /Tushlik tafsilotlari/i,
+      name: /^Tushlik 0 kcal$/i,
     });
 
     expect(breakfastToggle).not.toHaveAttribute("aria-expanded");
@@ -538,6 +577,31 @@ describe("NutritionHomeView", () => {
   it("passes planned meal items into the bottom drawer", () => {
     renderHome({
       activeMealType: "lunch",
+      currentPlan: {
+        status: "active",
+        startDate: "2026-05-14T00:00:00.000Z",
+        durationDays: 7,
+        days: [
+          {
+            dayNumber: 1,
+            meals: [
+              {
+                type: "Tushlik",
+                items: [
+                  {
+                    id: "planned-soup",
+                    name: "Rejadagi sho'rva",
+                    cal: 420,
+                    protein: 26,
+                    carbs: 48,
+                    fat: 12,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
       filteredMealSections: [
         ["breakfast", { time: "06:00 - 10:00", foods: [] }],
         [
@@ -560,12 +624,13 @@ describe("NutritionHomeView", () => {
       ],
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Tushlik tafsilotlari/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Tushlik 0 kcal$/i }));
 
     expect(screen.getByTestId("nutrition-meal-details-planned-items"))
       .toHaveTextContent("Rejadagi sho'rva");
-    expect(screen.getByTestId("nutrition-meal-timeline-summary"))
-      .toHaveTextContent("0/2");
+    expect(screen.queryByTestId("nutrition-meal-timeline-summary"))
+      .not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-meals-widget")).toBeInTheDocument();
   });
 
   it("shows active plan details and opens plan actions", () => {
@@ -628,8 +693,9 @@ describe("NutritionHomeView", () => {
       within(planCard).getByRole("button", { name: "Bugungi reja" }),
     );
 
-    expect(screen.getByTestId("nutrition-meal-timeline-row-lunch"))
-      .toHaveTextContent("Hozir");
+    expect(screen.getByTestId("dashboard-meal-card-content-lunch"))
+      .toHaveTextContent("Tushlik qo'shish");
+    expect(screen.queryByText("Hozir")).not.toBeInTheDocument();
 
     fireEvent.click(
       within(planCard).getByRole("button", { name: /Rejani ko'rish/i }),
@@ -674,27 +740,30 @@ describe("NutritionHomeView", () => {
     expect(onOpenSavedMeals).not.toHaveBeenCalled();
   });
 
-  it("keeps past date meal rows viewable but disables add actions", () => {
-    renderHome({ isPastDate: true });
+  it("keeps past date meal rows viewable but blocks add actions", () => {
+    const setSelectedMealTypeForAdd = vi.fn();
+    const setIsActionDrawerOpen = vi.fn();
 
-    expect(screen.getByText("Tanlangan kun ovqatlari")).toBeInTheDocument();
+    renderHome({ isPastDate: true, setSelectedMealTypeForAdd, setIsActionDrawerOpen });
+
+    expect(screen.queryByText("Tanlangan kun ovqatlari")).not.toBeInTheDocument();
     expect(screen.queryByText("Bugungi ovqatlar")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Nonushta tafsilotlari/i }),
+      screen.getByRole("button", { name: /^Nonushta 300 kcal$/i }),
     ).not.toHaveAttribute("aria-expanded");
-    expect(
-      screen.getByRole("button", { name: /Tushlik uchun ovqat qo'shish/i }),
-    ).toBeDisabled();
+    fireEvent.click(
+      within(screen.getByTestId("dashboard-meals-widget")).getByRole(
+        "button",
+        { name: "Tushlik qo'shish" },
+      ),
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: /Nonushta tafsilotlari/i }));
+    expect(setSelectedMealTypeForAdd).not.toHaveBeenCalled();
+    expect(setIsActionDrawerOpen).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Nonushta 300 kcal$/i }));
 
     expect(screen.getByTestId("nutrition-meal-details-drawer"))
       .toHaveTextContent("Tuxum");
-    expect(
-      within(screen.getByTestId("nutrition-meal-details-drawer")).getByRole(
-        "button",
-        { name: /Nonushta uchun ovqat qo'shish/i },
-      ),
-    ).toBeDisabled();
   });
 });

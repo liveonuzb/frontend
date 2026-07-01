@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store";
 
 const apiMocks = vi.hoisted(() => ({
   getResponse: vi.fn(),
+  patchMutateAsync: vi.fn(),
   putMutateAsync: vi.fn(),
 }));
 
@@ -28,7 +29,7 @@ vi.mock("@/hooks/api", async () => {
   const actual = await vi.importActual("@/hooks/api");
   const mutation = {
     mutate: vi.fn(),
-    mutateAsync: vi.fn(),
+    mutateAsync: apiMocks.patchMutateAsync,
     isPending: false,
   };
 
@@ -85,7 +86,22 @@ const renderProfileDrawer = (
 describe("ProfileDrawer", () => {
   beforeEach(() => {
     apiMocks.getResponse.mockReset();
-    apiMocks.getResponse.mockReturnValue(undefined);
+    apiMocks.getResponse.mockImplementation(({ url }) => {
+      if (url === "/user/nutrition/overview") {
+        return {
+          data: {
+            calories: { target: 2000 },
+            goals: { calories: 2000 },
+            meals: { completed: 14 },
+            streak: { currentDays: 6 },
+          },
+        };
+      }
+
+      return undefined;
+    });
+    apiMocks.patchMutateAsync.mockReset();
+    apiMocks.patchMutateAsync.mockResolvedValue({ data: {} });
     apiMocks.putMutateAsync.mockReset();
     apiMocks.putMutateAsync.mockResolvedValue({ data: {} });
 
@@ -132,7 +148,7 @@ describe("ProfileDrawer", () => {
           currentWeight: { value: 78, unit: "kg" },
           height: { value: 180, unit: "cm" },
         },
-        settings: { language: "uz" },
+        settings: { language: "uz", glassEffectEnabled: false },
       },
     });
   });
@@ -170,7 +186,7 @@ describe("ProfileDrawer", () => {
     );
 
     const statCard = (
-      await screen.findByLabelText("XP 2.5K")
+      await screen.findByLabelText("Avg. cal 2000")
     ).closest("[data-slot='card']");
     expect(statCard).toHaveClass(
       "user-card",
@@ -182,10 +198,10 @@ describe("ProfileDrawer", () => {
     );
 
     const vitalsCard = screen
-      .getByRole("button", { name: /Maqsad.*Saqlash/i })
-      .closest(".user-surface");
+      .getByRole("button", { name: /Goal.*Saqlash/i })
+      .closest("button");
     expect(vitalsCard).toHaveClass(
-      "user-surface",
+      "user-card",
       "rounded-2xl",
       "border-0",
       "bg-card",
@@ -220,34 +236,34 @@ describe("ProfileDrawer", () => {
     );
   });
 
-  it("renders editable vitals rows in the centered profile hero", async () => {
+  it("renders editable fitness metric tiles in the centered profile hero", async () => {
     renderProfileDrawer();
 
-    expect(await screen.findByLabelText("Streak 149")).toBeInTheDocument();
-    expect(screen.getByLabelText("XP 2.5K")).toBeInTheDocument();
-    expect(screen.getByLabelText("Achievement 271")).toBeInTheDocument();
-    expect(screen.getByTestId("profile-stat-grid")).toHaveClass(
-      "-mx-5",
-      "grid-cols-3",
-    );
-    expect(
-      screen.getByTestId("profile-stat-grid").closest("section"),
-    ).toHaveClass("pb-0");
-    forEach(["Streak 149", "XP 2.5K", "Achievement 271"], (label) => {
-      const statCard = screen
-        .getByLabelText(label)
-        .closest("[data-slot='card']");
+    expect(await screen.findByLabelText("Avg. cal 2000")).toBeInTheDocument();
+    expect(screen.getByLabelText("Streak 149")).toBeInTheDocument();
+    expect(screen.getByLabelText("Total logs 14")).toBeInTheDocument();
 
-      expect(statCard).toBeInTheDocument();
-      expect(statCard).toHaveClass("w-full");
-      expect(statCard).toHaveAttribute("data-size", "sm");
-      expect(statCard).toHaveClass("!py-0");
-      expect(
-        statCard.querySelector("[data-slot='card-content']"),
-      ).toHaveClass("min-h-16", "!px-1.5", "py-2");
+    const statGrid = screen.getByTestId("profile-stat-grid");
+    expect(statGrid).toHaveClass(
+      "user-card",
+      "rounded-2xl",
+      "bg-card",
+      "shadow-none",
+      "ring-0",
+      "py-0",
+    );
+    expect(statGrid.querySelector("[data-slot='card-content']")).toHaveClass(
+      "grid-cols-3",
+      "divide-x",
+    );
+    expect(statGrid.closest("section")).toHaveClass("pb-0");
+
+    const editProfileButton = screen.getByRole("button", {
+      name: /Profilni tahrirlash/i,
     });
+    expect(editProfileButton).toHaveClass("size-28", "p-1.5");
     const avatarRing = screen.getByLabelText(/Profil to'liqligi/i);
-    expect(avatarRing).toHaveClass("size-28", "p-1.5");
+    expect(avatarRing).toHaveClass("size-full", "bg-background");
     expect(
       avatarRing.querySelector("[data-slot='avatar']"),
     ).toHaveClass("size-24", "border-2");
@@ -261,9 +277,6 @@ describe("ProfileDrawer", () => {
       screen.queryByTestId("profile-premium-status-card"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Profilni tahrirlash/i }),
-    ).toBeInTheDocument();
-    expect(
       screen.queryByRole("button", { name: /Avatarni tahrirlash/i }),
     ).not.toBeInTheDocument();
     expect(
@@ -273,19 +286,22 @@ describe("ProfileDrawer", () => {
       screen.queryByRole("button", { name: /Premium sotib olish/i }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Maqsad.*Saqlash/i }),
+      screen.getByRole("button", { name: /Current weight.*78 kg/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Jinsi.*Erkak/i }),
+      screen.getByRole("button", { name: /Target weight.*-/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Yoshi.*28 yosh/i }),
+      screen.getByRole("button", { name: /Height.*180 cm/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Vazn.*78 kg/i }),
+      screen.getByRole("button", { name: /Age.*28 yosh/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Bo'y.*180 cm/i }),
+      screen.getByRole("button", { name: /Gender.*Erkak/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Goal.*Saqlash/i }),
     ).toBeInTheDocument();
   });
 
@@ -342,7 +358,9 @@ describe("ProfileDrawer", () => {
     expect(
       screen.queryByRole("button", { name: /Obunalar tarixi/i }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByTestId("profile-billing-shortcuts")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("profile-billing-shortcuts"),
+    ).not.toBeInTheDocument();
     const privacyShortcut = screen.getByRole("button", {
       name: /profile\.tabs\.privacy/i,
     });
@@ -379,7 +397,7 @@ describe("ProfileDrawer", () => {
     renderProfileDrawer();
 
     fireEvent.click(
-      await screen.findByRole("button", { name: /Maqsad.*Saqlash/i }),
+      await screen.findByRole("button", { name: /Goal.*Saqlash/i }),
     );
 
     await waitFor(() => {
@@ -402,6 +420,11 @@ describe("ProfileDrawer", () => {
     ).toBe(modeCard);
     expect(
       screen
+        .getByRole("button", { name: /Glass Effect/i })
+        .closest("[data-slot='card']"),
+    ).toBe(modeCard);
+    expect(
+      screen
         .getByRole("button", { name: /profile\.tabs\.general/i })
         .closest("[data-slot='card']"),
     ).toBe(modeCard);
@@ -415,10 +438,37 @@ describe("ProfileDrawer", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens XP history as a routed profile drawer", async () => {
+  it("opens the glass effect drawer and saves the selected preference", async () => {
     renderProfileDrawer();
 
-    fireEvent.click(await screen.findByRole("button", { name: /XP 2\.5K/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Glass Effect/i }));
+
+    await waitFor(() => {
+      expect(
+        document.querySelector("[data-glass-effect-drawer='true']"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText("Balanced Liquid Glass")).toBeInTheDocument();
+    expect(
+      document.querySelector("[data-glass-preview-shell='true']"),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector("[data-liquid-glass-preview-surface='true']"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Yoqilgan/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => {
+      expect(apiMocks.patchMutateAsync).toHaveBeenCalledWith({
+        url: "/users/me/settings/general",
+        attributes: { glassEffectEnabled: true },
+      });
+    });
+  });
+
+  it("opens XP history as a routed profile drawer", async () => {
+    renderProfileDrawer("/user/dashboard/profile/overview/xp");
 
     expect(await screen.findByText("XP balans")).toBeInTheDocument();
     expect(screen.getByText("2,450")).toBeInTheDocument();
@@ -467,7 +517,7 @@ describe("ProfileDrawer", () => {
     renderProfileDrawer();
 
     fireEvent.click(
-      await screen.findByRole("button", { name: /Jinsi.*Erkak/i }),
+      await screen.findByRole("button", { name: /Gender.*Erkak/i }),
     );
     expect(
       await screen.findByText("Profil jinsini tanlang."),
@@ -581,6 +631,21 @@ describe("ProfileDrawer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Mode/i }));
 
+    expect(await screen.findByText("Pick your mood")).toBeInTheDocument();
+  });
+
+  it("opens mode from the profile overview header button", async () => {
+    renderProfileDrawer();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Open app vibe/i }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("profile-drawer-location")).toHaveTextContent(
+        "/user/dashboard/profile/overview/mode",
+      );
+    });
     expect(await screen.findByText("Pick your mood")).toBeInTheDocument();
   });
 

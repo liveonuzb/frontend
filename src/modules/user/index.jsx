@@ -22,6 +22,8 @@ const NutritionPage = lazy(
   () => import("@/modules/user/pages/nutrition/index.jsx"),
 );
 const WaterPage = lazy(() => import("@/modules/user/pages/water/index.jsx"));
+const StepsPage = lazy(() => import("@/modules/user/pages/steps/index.jsx"));
+const SleepPage = lazy(() => import("@/modules/user/pages/sleep/index.jsx"));
 const HealthPage = lazy(() => import("@/modules/user/pages/health/index.jsx"));
 const ReportPage = lazy(() => import("@/modules/user/pages/report/index.jsx"));
 const DailyReportPage = lazy(
@@ -134,6 +136,26 @@ const Index = () => {
             <Suspense fallback={<PageLoader />}>
               <ErrorBoundary>
                 <WaterPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="steps"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <StepsPage />
+              </ErrorBoundary>
+            </Suspense>
+          }
+        />
+        <Route
+          path="sleep"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ErrorBoundary>
+                <SleepPage />
               </ErrorBoundary>
             </Suspense>
           }

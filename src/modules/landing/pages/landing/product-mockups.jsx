@@ -257,7 +257,6 @@ const CaloriesPreviewSlide = ({ copy }) => {
 
   return (
     <div
-      data-testid="hero-calorie-slide"
       className="h-full rounded-[2rem] border border-border/70 bg-muted/35 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] dark:border-white/10 dark:bg-white/[0.05] sm:p-4"
     >
       <CalorieGaugeWidget
@@ -280,7 +279,6 @@ const WaterMoodPreviewSlide = ({ copy }) => {
 
   return (
     <div
-      data-testid="hero-tracking-slide"
       className="grid h-full grid-rows-[minmax(0,1fr)_minmax(0,0.82fr)] gap-3 rounded-[2rem] border border-border/70 bg-muted/35 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] dark:border-white/10 dark:bg-white/[0.05] sm:p-4"
     >
       <AnimatedWaterWidget
@@ -325,7 +323,6 @@ const MealPreviewProgressIcon = ({ type, label, progress }) => {
   return (
     <span
       className="relative flex size-14 shrink-0 items-center justify-center"
-      data-testid={`dashboard-meal-progress-ring-${type}`}
     >
       <svg
         role="progressbar"
@@ -371,7 +368,6 @@ const MealPreviewProgressIcon = ({ type, label, progress }) => {
 
 const MealsPreviewSlide = ({ copy }) => (
   <div
-    data-testid="hero-meals-slide"
     className="meals-widget h-full rounded-[2rem] border border-border/70 bg-muted/35 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] dark:border-white/10 dark:bg-white/[0.05] sm:p-4"
   >
     <div className="flex h-full min-h-0 flex-col gap-3 rounded-[1.5rem] bg-card p-4 text-card-foreground ring-1 ring-border/80 dark:ring-white/10">
@@ -476,13 +472,11 @@ export const HeroProductSwiper = ({
 
   return (
     <div
-      data-testid="hero-product-swiper"
       aria-label={previewCopy.ariaLabel}
       aria-roledescription="carousel"
       className={cn("relative min-w-0 w-full max-w-full", className)}
     >
       <div
-        data-testid="hero-preview-frame"
         className="grid h-[34rem] min-h-[34rem] w-full max-w-full overflow-hidden rounded-[2rem] sm:h-[36rem] lg:h-[38rem]"
       >
         <div
@@ -658,7 +652,6 @@ export const DashboardResultMockup = ({ copy, className, compact = false }) => {
 
   return (
     <Card
-      data-testid="product-dashboard-preview"
       size={compact ? "sm" : "default"}
       className={cn("border-border/80 bg-card shadow-sm", className)}
     >
@@ -829,7 +822,7 @@ export const GoalSetupMockup = ({ step }) => {
   const { highlights } = stepCopy;
 
   return (
-    <Card data-testid="goal-setup-preview" className="border-border bg-card">
+    <Card className="border-border bg-card">
       <StepHeader step={stepCopy} icon={TargetIcon} />
       <CardContent className="flex flex-col gap-4">
         <div className="rounded-lg border border-border bg-background p-4">
@@ -868,7 +861,7 @@ export const AiPlanMockup = ({ step }) => {
   const stepCopy = resolveStepCopy(step, defaultStepCopy.ai);
 
   return (
-    <Card data-testid="ai-plan-preview" className="border-border bg-card">
+    <Card className="border-border bg-card">
       <StepHeader step={stepCopy} icon={BotIcon} />
       <CardContent className="flex flex-col gap-3">
         {map(stepCopy.highlights, (highlight, index) => {
@@ -901,7 +894,6 @@ export const DailyExecutionMockup = ({ step }) => {
 
   return (
     <Card
-      data-testid="daily-execution-preview"
       className="border-border bg-card"
     >
       <StepHeader step={stepCopy} icon={CalendarCheckIcon} />
@@ -931,7 +923,6 @@ export const ProgressResultMockup = ({ step }) => {
 
   return (
     <Card
-      data-testid="progress-result-preview"
       className="border-border bg-card"
     >
       <StepHeader step={stepCopy} icon={LineChartIcon} />

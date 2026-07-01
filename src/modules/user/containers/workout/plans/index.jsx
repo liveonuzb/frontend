@@ -222,7 +222,6 @@ const PlanRow = ({
 
   return (
     <div
-      data-testid="plans-compact-row"
       className="workout-glass-card group grid gap-3 overflow-hidden rounded-[1.15rem] border p-3 transition hover:-translate-y-0.5 hover:border-primary/35 sm:grid-cols-[190px_minmax(0,1fr)]"
     >
       <button
@@ -506,7 +505,6 @@ const PlansStateHero = ({
 
     return (
       <section
-        data-testid="plans-state-hero-live-run"
         className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-blue-500/20 bg-[linear-gradient(110deg,rgba(239,246,255,0.96),rgba(219,234,254,0.82))] p-4 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(15,23,42,0.94),rgba(30,58,138,0.44))]"
       >
         <HeroImage
@@ -597,7 +595,6 @@ const PlansStateHero = ({
 
     return (
       <section
-        data-testid="plans-state-hero-active-workout"
         className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-emerald-500/20 bg-[linear-gradient(110deg,rgba(236,253,245,0.96),rgba(220,252,231,0.78))] p-5 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.94),rgba(20,83,45,0.34))]"
       >
         <HeroImage src={getPlanHeroImage(activePlan, 3)} alt={title} />
@@ -677,7 +674,6 @@ const PlansStateHero = ({
 
     return (
       <section
-        data-testid="plans-state-hero-active-plan"
         className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-emerald-500/20 bg-[linear-gradient(110deg,rgba(236,253,245,0.98),rgba(220,252,231,0.8))] p-5 sm:p-6 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.96),rgba(20,83,45,0.34))]"
       >
         <HeroImage src={getPlanHeroImage(activePlan, 3)} alt={workoutTitle} />
@@ -748,7 +744,6 @@ const PlansStateHero = ({
 
   return (
     <section
-      data-testid="plans-state-hero-no-active"
       className="workout-glass-card relative overflow-hidden rounded-[1.35rem] border border-primary/20 bg-[linear-gradient(110deg,rgba(255,247,237,0.98),rgba(255,237,213,0.72))] p-5 sm:p-7 dark:bg-[linear-gradient(110deg,rgba(7,17,29,0.96),rgba(67,34,10,0.38))]"
     >
       <HeroImage

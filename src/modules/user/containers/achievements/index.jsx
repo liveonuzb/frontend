@@ -760,7 +760,6 @@ const AchievementsPage = () => {
               <CardContent className="px-4 pb-4">
                 <XpHistoryContent
                   embedded
-                  testId="achievements-xp-history-scroll"
                   className="max-h-[min(70vh,42rem)]"
                 />
               </CardContent>
@@ -921,7 +920,6 @@ const AchievementsPage = () => {
           <DrawerBody className="pb-6">
             <XpHistoryContent
               embedded
-              testId="achievements-xp-history-mobile-scroll"
             />
           </DrawerBody>
         </DrawerContent>

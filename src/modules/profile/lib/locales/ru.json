@@ -80,6 +80,18 @@
         "darkDesc": "Комфортно ночью и при слабом освещении",
         "hint": "Тема предварительно просматривается мгновенно и сохраняется в базе."
       },
+      "glass": {
+        "title": "Glass Effect",
+        "enabled": "Включено",
+        "disabled": "Выключено",
+        "enabledDesc": "Мягкая полупрозрачная поверхность в стиле iOS.",
+        "disabledDesc": "Обычные плотные карточки и drawer.",
+        "drawerTitle": "Glass Effect",
+        "drawerDescription": "Полупрозрачный эффект в стиле iOS для карточек и drawer.",
+        "previewEyebrow": "Preview",
+        "previewTitle": "Сегодняшний вид",
+        "previewDescription": "Мягкое размытие, прозрачные поверхности и читаемый текст."
+      },
       "fontSize": {
         "title": "Размер шрифта",
         "small": "Маленький",

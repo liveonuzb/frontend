@@ -524,7 +524,6 @@ function TodayWorkoutHero({
   return (
     <Card className="workout-glass-card overflow-hidden p-0">
       <div
-        data-testid="today-workout-hero"
         className="group relative min-h-[260px] w-full overflow-hidden p-4 text-left sm:min-h-[300px] sm:p-6"
       >
         <img
@@ -534,7 +533,6 @@ function TodayWorkoutHero({
           loading="lazy"
         />
         <div
-          data-testid="today-workout-hero-media-scrim"
           className="workout-media-contrast-scrim absolute inset-0 bg-[radial-gradient(circle_at_70%_36%,rgb(var(--accent-rgb)/0.24),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_94%,transparent)_46%,color-mix(in_srgb,var(--color-background)_42%,transparent)_100%)] dark:bg-[radial-gradient(circle_at_72%_34%,rgb(var(--accent-rgb)/0.28),transparent_28%),linear-gradient(90deg,color-mix(in_srgb,var(--color-background)_99%,transparent)_0%,color-mix(in_srgb,var(--color-background)_92%,transparent)_48%,color-mix(in_srgb,var(--color-background)_36%,transparent)_100%)]"
         />
         <div className="relative z-10 flex h-full max-w-3xl flex-col gap-4 sm:gap-5">
@@ -770,12 +768,10 @@ function RecommendedPlansStrip({
         </div>
       </div>
       <div
-        data-testid="recommended-plans-scroll-row"
         className="mt-4 flex gap-3 overflow-x-auto px-5 pb-1 [scrollbar-width:thin]"
       >
         {visiblePlans.length === 0 ? (
           <div
-            data-testid="recommended-plans-empty"
             className="min-w-full rounded-2xl border border-dashed bg-background/55 px-5 py-6 text-sm text-muted-foreground"
           >
             <p className="font-semibold text-foreground">
@@ -848,7 +844,6 @@ function TodayWorkoutStickyCta({
 
   return (
     <div
-      data-testid="today-workout-sticky-cta"
       className="fixed inset-x-3 bottom-3 z-40 rounded-3xl border bg-background/95 p-3 shadow-2xl backdrop-blur xl:hidden"
     >
       <div className="flex items-center gap-3">

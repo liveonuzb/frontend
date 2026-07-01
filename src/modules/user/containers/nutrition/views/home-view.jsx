@@ -5,163 +5,24 @@ import {
   CalendarDaysIcon,
   CheckCircle2Icon,
   ClipboardListIcon,
-  Clock3Icon,
   DropletsIcon,
-  FlameIcon,
-  PlusIcon,
   ShoppingCartIcon,
   TrophyIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import NutritionPlansSection from "../nutrition-plans-section.jsx";
 import NutritionLayout from "../ui/nutrition-layout.jsx";
 import NutritionCard from "../ui/nutrition-card.jsx";
 import StatCard from "../ui/stat-card.jsx";
-import DashboardMealDetailsDrawer from "@/modules/user/containers/dashboard/meal-details-drawer.jsx";
+import MealsWidget from "@/modules/user/containers/dashboard/meals-widget.jsx";
 import { getProgressPercent } from "../ui/progress-bar-utils.js";
 import { buildNutritionDashboardMetrics } from "../data/nutrition-data-mappers.js";
 
 import {
   isArray,
   isFinite as isFiniteNumber,
-  map,
   reduce,
   toNumber,
 } from "lodash";
-
-const mealPctGoal = {
-  breakfast: 0.3,
-  lunch: 0.35,
-  dinner: 0.25,
-  snack: 0.1,
-};
-
-const mealProgressRingRadius = 21;
-const mealProgressRingCircumference = 2 * Math.PI * mealProgressRingRadius;
-
-function MealProgressIcon({ type, icon, label, progress }) {
-  const safeProgress = Math.max(0, Math.min(100, progress || 0));
-  const strokeDashoffset =
-    mealProgressRingCircumference -
-    (safeProgress / 100) * mealProgressRingCircumference;
-
-  return (
-    <span
-      className="relative flex size-14 shrink-0 items-center justify-center"
-      data-testid={`nutrition-meal-progress-ring-${type}`}
-    >
-      <svg
-        role="progressbar"
-        aria-label={`${label} kaloriya progress`}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={safeProgress}
-        className="absolute inset-0 size-full -rotate-90"
-        viewBox="0 0 48 48"
-        focusable="false"
-      >
-        <circle
-          cx="24"
-          cy="24"
-          r={mealProgressRingRadius}
-          className="stroke-current text-primary/10"
-          fill="none"
-          strokeWidth="4"
-        />
-        <circle
-          cx="24"
-          cy="24"
-          r={mealProgressRingRadius}
-          className="stroke-current text-primary transition-all duration-300"
-          fill="none"
-          strokeLinecap="round"
-          strokeWidth="4"
-          strokeDasharray={mealProgressRingCircumference}
-          strokeDashoffset={strokeDashoffset}
-        />
-      </svg>
-      <span className="relative flex size-11 items-center justify-center overflow-hidden rounded-full bg-background/50 shadow-sm ring-1 ring-border/60">
-        <span
-          data-testid={`nutrition-meal-icon-image-${type}`}
-          className={cn(
-            icon,
-            "size-8 bg-contain bg-center bg-no-repeat",
-          )}
-        />
-      </span>
-    </span>
-  );
-}
-
-const getMealNutritionTotals = (items = []) =>
-  reduce(
-    items,
-    (totals, food) => {
-      const qty = toNumber(food.qty || 1) || 1;
-      return {
-        calories: totals.calories + toNumber(food.cal || 0) * qty,
-        protein: totals.protein + toNumber(food.protein || 0) * qty,
-        carbs: totals.carbs + toNumber(food.carbs || 0) * qty,
-        fat: totals.fat + toNumber(food.fat || 0) * qty,
-      };
-    },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
-  );
-
-const getRecommendedRange = (mealType, caloriesGoal) => {
-  const mealGoal = Math.round(
-    toNumber(caloriesGoal || 0) * (mealPctGoal[mealType] || 0.25),
-  );
-
-  if (mealGoal <= 0) {
-    return "Tavsiya etiladi";
-  }
-
-  const min = Math.max(0, Math.round(mealGoal * 0.85));
-  const max = Math.max(min, Math.round(mealGoal * 1.15));
-  return `Tavsiya etiladi | ${min} - ${max} kcal`;
-};
-
-const getMealStatusMeta = ({
-  isActive,
-  foodCount,
-  plannedCount = 0,
-  readOnly,
-}) => {
-  if (readOnly) {
-    return {
-      label:
-        foodCount > 0 ? "Yozilgan" : plannedCount > 0 ? "Rejada" : "Bo'sh",
-      className: "bg-muted text-muted-foreground",
-    };
-  }
-
-  if (isActive) {
-    return {
-      label: "Hozir",
-      className: "bg-primary/10 text-primary",
-    };
-  }
-
-  if (foodCount > 0) {
-    return {
-      label: "Yozildi",
-      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-    };
-  }
-
-  if (plannedCount > 0) {
-    return {
-      label: "Rejada",
-      className: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-    };
-  }
-
-  return {
-    label: "Kutilmoqda",
-    className: "bg-muted text-muted-foreground",
-  };
-};
 
 const getHealthScoreBadge = (score) => {
   const value = toNumber(score) || 0;
@@ -179,36 +40,6 @@ const getHealthScoreBadge = (score) => {
   }
 
   return "Yaxshi";
-};
-
-const getMealAddedAtValue = (food) =>
-  food?.addedAt || food?.loggedAt || food?.createdAt || food?.updatedAt || null;
-
-const getMealTimeLabel = (value) => {
-  if (!value) return null;
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-
-  return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes(),
-  ).padStart(2, "0")}`;
-};
-
-const getLastAddedTimeLabel = (foods = []) => {
-  const latestTimestamp = reduce(
-    foods,
-    (latest, food) => {
-      const value = getMealAddedAtValue(food);
-      const date = value instanceof Date ? value : new Date(value);
-
-      if (Number.isNaN(date.getTime())) return latest;
-      return Math.max(latest, date.getTime());
-    },
-    0,
-  );
-
-  return latestTimestamp > 0 ? getMealTimeLabel(new Date(latestTimestamp)) : null;
 };
 
 const toFiniteNumber = (value, fallback = 0) => {
@@ -394,7 +225,7 @@ const PlanStatusCard = ({
   const shoppingStateLabel = getShoppingStateLabel(currentPlan);
 
   return (
-    <NutritionCard className="p-4" data-testid="nutrition-active-plan-card">
+    <NutritionCard className="p-4">
       <div className="flex items-start gap-3">
         <div className="grid size-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           <ClipboardListIcon className="size-4" />
@@ -475,204 +306,12 @@ const PlanStatusCard = ({
   );
 };
 
-const CollapsibleMealList = ({
-  filteredMealSections,
-  mealConfig,
-  activeMealType,
-  goals,
-  dateKey,
-  disabled,
-  onAdd,
-  selectedDateLabel = "Bugun",
-  isPastDate = false,
-}) => {
-  const [selectedMealType, setSelectedMealType] = React.useState(null);
-  const completedMeals = React.useMemo(
-    () =>
-      reduce(
-        filteredMealSections,
-        (count, [, section]) =>
-          count + ((section?.foods || []).length > 0 ? 1 : 0),
-        0,
-      ),
-    [filteredMealSections],
-  );
-  const selectedMealSection = React.useMemo(
-    () =>
-      reduce(
-        filteredMealSections,
-        (match, [type, section]) =>
-          match || (type === selectedMealType ? section : null),
-        null,
-      ) || {},
-    [filteredMealSections, selectedMealType],
-  );
-  const selectedMealConfig = selectedMealType
-    ? mealConfig[selectedMealType] || {}
-    : {};
-
-  React.useEffect(() => {
-    if (!selectedMealType) return;
-
-    const isSelectedMealVisible = reduce(
-      filteredMealSections,
-      (isVisible, [type]) => isVisible || type === selectedMealType,
-      false,
-    );
-
-    if (!isSelectedMealVisible) {
-      setSelectedMealType(null);
-    }
-  }, [filteredMealSections, selectedMealType]);
-
-  return (
-    <>
-      <section className="space-y-2.5" aria-labelledby="nutrition-meals-title">
-        <div className="flex items-center justify-between gap-3 px-1">
-          <div className="min-w-0">
-            <h2 id="nutrition-meals-title" className="text-base font-bold">
-              {isPastDate ? "Tanlangan kun ovqatlari" : "Bugungi ovqatlar"}
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {selectedDateLabel} uchun vaqt bo'yicha yozuvlar
-            </p>
-          </div>
-          <span
-            data-testid="nutrition-meal-timeline-summary"
-            className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-black text-muted-foreground"
-          >
-            {completedMeals}/{filteredMealSections.length || 4}
-          </span>
-        </div>
-        <div
-          data-testid="nutrition-meal-dashboard-list"
-          className="flex flex-col gap-2.5 md:gap-3"
-        >
-          {map(filteredMealSections, ([type, section]) => {
-            const config = mealConfig[type] || {};
-            const foods = section.foods || [];
-            const plannedItems = section.plannedItems || [];
-            const visibleItems = foods.length > 0 ? foods : plannedItems;
-            const totals = getMealNutritionTotals(visibleItems);
-            const calories = Math.round(totals.calories);
-            const mealGoal = Math.round(
-              toNumber(goals?.calories || 0) * (mealPctGoal[type] || 0.25),
-            );
-            const mealProgress =
-              mealGoal > 0
-                ? Math.min(100, Math.round((calories / mealGoal) * 100))
-                : 0;
-            const detailsId = `nutrition-meal-${type}-details`;
-            const lastAddedTimeLabel = getLastAddedTimeLabel(foods);
-            const statusMeta = getMealStatusMeta({
-              isActive: type === activeMealType,
-              foodCount: foods.length,
-              plannedCount: plannedItems.length,
-              readOnly: disabled,
-            });
-
-            return (
-              <div
-                key={type}
-                data-testid={`nutrition-meal-timeline-row-${type}`}
-                className="overflow-hidden rounded-2xl bg-card text-card-foreground text-sm"
-              >
-                <div
-                  data-testid={`nutrition-meal-dashboard-row-content-${type}`}
-                  className="flex items-center gap-2.5 px-3 py-2.5"
-                >
-                  <button
-                    type="button"
-                    aria-label={`${config.label || type} tafsilotlari`}
-                    aria-controls={detailsId}
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => setSelectedMealType(type)}
-                  >
-                    <MealProgressIcon
-                      type={type}
-                      icon={config.icon || type}
-                      label={config.label || type}
-                      progress={mealProgress}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="block min-w-0 flex-1 truncate text-sm font-bold">
-                          {config.label} qo'shish
-                        </span>
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${statusMeta.className}`}
-                        >
-                          {statusMeta.label}
-                        </span>
-                      </span>
-                      <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                        {calories > 0 ? (
-                          <>
-                            <FlameIcon className="size-3 text-primary" />
-                            <span className="shrink-0">{calories} kcal</span>
-                            <span aria-hidden="true">|</span>
-                          </>
-                        ) : null}
-                        <span className="truncate">
-                          {getRecommendedRange(type, goals?.calories)}
-                        </span>
-                        {lastAddedTimeLabel ? (
-                          <>
-                            <span aria-hidden="true">|</span>
-                            <Clock3Icon className="size-3" />
-                            <span className="shrink-0">
-                              Oxirgi {lastAddedTimeLabel}
-                            </span>
-                          </>
-                        ) : null}
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-primary outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                    disabled={disabled}
-                    aria-label={`${config.label || type} uchun ovqat qo'shish`}
-                    onClick={() => onAdd(type)}
-                  >
-                    <PlusIcon className="size-5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-      {selectedMealType ? (
-        <DashboardMealDetailsDrawer
-          open={Boolean(selectedMealType)}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setSelectedMealType(null);
-            }
-          }}
-          dateKey={dateKey}
-          mealType={selectedMealType}
-          mealLabel={selectedMealConfig.label || "Ovqat"}
-          loggedItems={selectedMealSection.foods || []}
-          plannedItems={selectedMealSection.plannedItems || []}
-          addDisabled={disabled}
-          onAddMeal={(type) => {
-            onAdd(type);
-            setSelectedMealType(null);
-          }}
-        />
-      ) : null}
-    </>
-  );
-};
-
 export default function NutritionHomeView(props) {
   const {
+    date,
     plans = [],
     currentPlan,
     currentPlanDayStatus,
-    selectedDateLabel,
     dateKey,
     goals,
     roundedTotals,
@@ -717,17 +356,41 @@ export default function NutritionHomeView(props) {
     metrics.water.target,
   );
   const addDisabled = !isOnline || isPastDate;
-  const [focusedPlanMealType, setFocusedPlanMealType] = React.useState(null);
-  const timelineActiveMealType = focusedPlanMealType || activeMealType;
-  const openAddMeal = (mealType = activeMealType) => {
-    setSelectedMealTypeForAdd(mealType);
-    setIsActionDrawerOpen(true);
-  };
-  const handleOpenTodayPlan = React.useCallback((mealType) => {
-    if (mealType) {
-      setFocusedPlanMealType(mealType);
-    }
-  }, []);
+  const openAddMeal = React.useCallback(
+    (mealType = activeMealType) => {
+      if (addDisabled) return;
+
+      setSelectedMealTypeForAdd(mealType);
+      setIsActionDrawerOpen(true);
+    },
+    [
+      activeMealType,
+      addDisabled,
+      setIsActionDrawerOpen,
+      setSelectedMealTypeForAdd,
+    ],
+  );
+  const handleOpenTodayPlan = React.useCallback(
+    (mealType) => {
+      if (mealType) {
+        openAddMeal(mealType);
+      }
+    },
+    [openAddMeal],
+  );
+  const dashboardDayData = React.useMemo(
+    () => ({
+      date: dateKey,
+      meals: dayMeals,
+    }),
+    [dateKey, dayMeals],
+  );
+  const dashboardGoalsState = React.useMemo(
+    () => ({
+      goals,
+    }),
+    [goals],
+  );
   const sidebar = (
     <>
       <StatCard
@@ -802,16 +465,13 @@ export default function NutritionHomeView(props) {
         className="h-fit w-full"
       />
 
-      <CollapsibleMealList
-        filteredMealSections={filteredMealSections}
-        mealConfig={mealConfig}
-        activeMealType={timelineActiveMealType}
-        goals={goals}
+      <MealsWidget
         dateKey={dateKey}
-        disabled={addDisabled}
-        onAdd={openAddMeal}
-        selectedDateLabel={selectedDateLabel}
-        isPastDate={isPastDate}
+        selectedDate={date}
+        activeMealPlan={currentPlan}
+        dayData={dashboardDayData}
+        goalsState={dashboardGoalsState}
+        onAddMeal={openAddMeal}
       />
 
       <NutritionCard>

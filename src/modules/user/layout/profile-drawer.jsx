@@ -1,6 +1,6 @@
 import find from "lodash/find";
 import React from "react";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, LeafIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Drawer,
@@ -23,8 +23,13 @@ import { userCardScopeClassName } from "@/modules/user/lib/card-styles";
 import { cn } from "@/lib/utils";
 
 const ProfileDrawer = () => {
-  const { isProfileOpen, activeProfileTab, closeProfile, setProfileTab } =
-    useProfileOverlay();
+  const {
+    isProfileOpen,
+    activeProfileTab,
+    closeProfile,
+    openProfileDrawer,
+    setProfileTab,
+  } = useProfileOverlay();
 
   const { t } = useTranslation();
   const visibleProfileTab = isProfileNestedDrawerTab(activeProfileTab)
@@ -86,6 +91,19 @@ const ProfileDrawer = () => {
             >
               <ArrowLeftIcon className="size-5" />
             </Button>
+
+            {isOverview ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Open app vibe"
+                className="absolute right-0 shrink-0 rounded-full"
+                onClick={() => openProfileDrawer("mode", PROFILE_OVERVIEW_TAB)}
+              >
+                <LeafIcon className="size-5" />
+              </Button>
+            ) : null}
 
             {!isOverview ? (
               <div className="flex min-w-0 flex-col px-12 text-center">

@@ -908,6 +908,135 @@ html {
   border-radius: 1rem !important;
 }
 
+.user-glass-effect,
+html[data-user-glass-effect="on"] {
+  --user-glass-bg: color-mix(in srgb, var(--color-card) 64%, transparent);
+  --user-glass-bg-strong: color-mix(
+    in srgb,
+    var(--color-card) 74%,
+    transparent
+  );
+  --user-glass-border: color-mix(
+    in srgb,
+    white 54%,
+    var(--color-border)
+  );
+  --user-glass-layered-bg:
+    radial-gradient(
+      circle at 18% 0%,
+      rgb(var(--accent-rgb) / 0.16),
+      transparent 42%
+    ),
+    linear-gradient(145deg, rgb(255 255 255 / 0.42), transparent 36%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.24), transparent 48%),
+    var(--user-glass-bg);
+  --user-glass-layered-bg-strong:
+    radial-gradient(
+      circle at 18% 0%,
+      rgb(var(--accent-rgb) / 0.2),
+      transparent 42%
+    ),
+    linear-gradient(145deg, rgb(255 255 255 / 0.5), transparent 36%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.3), transparent 48%),
+    var(--user-glass-bg-strong);
+  --user-glass-highlight:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    inset 0 -1px 0 rgb(255 255 255 / 0.14),
+    inset 1px 0 0 rgb(255 255 255 / 0.12),
+    inset -1px 0 0 rgb(0 0 0 / 0.03);
+  --user-glass-shadow:
+    0 20px 52px rgb(0 0 0 / 0.12),
+    0 2px 6px rgb(0 0 0 / 0.04);
+}
+
+.dark .user-glass-effect,
+html.dark[data-user-glass-effect="on"] {
+  --user-glass-bg: color-mix(in srgb, var(--color-card) 58%, transparent);
+  --user-glass-bg-strong: color-mix(
+    in srgb,
+    var(--color-card) 68%,
+    transparent
+  );
+  --user-glass-border: color-mix(
+    in srgb,
+    white 18%,
+    var(--color-border)
+  );
+  --user-glass-layered-bg:
+    radial-gradient(
+      circle at 18% 0%,
+      rgb(var(--accent-rgb) / 0.16),
+      transparent 44%
+    ),
+    linear-gradient(145deg, rgb(255 255 255 / 0.12), transparent 38%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 52%),
+    var(--user-glass-bg);
+  --user-glass-layered-bg-strong:
+    radial-gradient(
+      circle at 18% 0%,
+      rgb(var(--accent-rgb) / 0.2),
+      transparent 44%
+    ),
+    linear-gradient(145deg, rgb(255 255 255 / 0.16), transparent 38%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent 52%),
+    var(--user-glass-bg-strong);
+  --user-glass-highlight:
+    inset 0 1px 0 rgb(255 255 255 / 0.24),
+    inset 0 -1px 0 rgb(255 255 255 / 0.07),
+    inset 1px 0 0 rgb(255 255 255 / 0.08),
+    inset -1px 0 0 rgb(0 0 0 / 0.22);
+  --user-glass-shadow:
+    0 24px 60px rgb(0 0 0 / 0.36),
+    0 2px 8px rgb(0 0 0 / 0.22);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .user-glass-effect [data-slot="card"],
+  .user-glass-effect .user-card,
+  .user-glass-effect .user-surface,
+  .user-glass-effect .user-glass-shell,
+  .user-glass-effect .glass-effect-preview,
+  html[data-user-glass-effect="on"] [data-slot="drawer-content"]::before {
+    border-width: 1px !important;
+    border-color: var(--user-glass-border) !important;
+    background: var(--user-glass-layered-bg) !important;
+    box-shadow: var(--user-glass-highlight), var(--user-glass-shadow) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(1.65);
+    backdrop-filter: blur(30px) saturate(1.65);
+  }
+
+  .user-glass-effect [data-slot="card"],
+  .user-glass-effect .user-card,
+  .user-glass-effect .user-surface,
+  .user-glass-effect .user-glass-shell:not(.rounded-full),
+  .user-glass-effect .glass-effect-preview {
+    border-radius: 1.25rem !important;
+  }
+
+  .user-glass-effect [data-slot="card"]:hover,
+  .user-glass-effect .user-card:hover,
+  .user-glass-effect .user-surface:hover,
+  .user-glass-effect .user-glass-shell:hover,
+  .user-glass-effect .glass-effect-preview:hover {
+    background: var(--user-glass-layered-bg-strong) !important;
+  }
+
+  html[data-user-glass-effect="on"] [data-slot="drawer-content"] {
+    isolation: isolate;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .user-glass-effect [data-slot="card"],
+  .user-glass-effect .user-card,
+  .user-glass-effect .user-surface,
+  .user-glass-effect .user-glass-shell,
+  .user-glass-effect .glass-effect-preview,
+  html[data-user-glass-effect="on"] [data-slot="drawer-content"]::before {
+    background: var(--color-card) !important;
+  }
+}
+
 /* ═══════════════════════════════════════════
    DARK MODE ENHANCEMENTS
    ═══════════════════════════════════════════ */

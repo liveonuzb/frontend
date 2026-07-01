@@ -177,7 +177,6 @@ export const AccountDangerZone = () => {
         onOpenChange={handleOpenChange}
       >
         <DrawerContent
-          data-testid="delete-account-drawer"
           className="data-[vaul-drawer-direction=bottom]:md:max-w-sm"
         >
           <DrawerHeader>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router";
+import get from "lodash/get";
 import {
   SidebarInset,
   SidebarProvider,
@@ -40,6 +41,8 @@ const Index = () => {
   );
   const mobileChromeHidden = useMobileChromeHidden();
   const user = useAuthStore((state) => state.user);
+  const glassEffectEnabled =
+    get(user, "settings.glassEffectEnabled", false) === true;
   const [selectedDate, setSelectedDate] = React.useState(() => new Date());
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   const [maxSelectableDate] = React.useState(() => new Date());
@@ -75,11 +78,29 @@ const Index = () => {
 
   useRealtimeNotifications();
 
+  React.useEffect(() => {
+    if (typeof document === "undefined") {
+      return undefined;
+    }
+
+    if (glassEffectEnabled) {
+      document.documentElement.dataset.userGlassEffect = "on";
+    } else {
+      delete document.documentElement.dataset.userGlassEffect;
+    }
+
+    return () => {
+      delete document.documentElement.dataset.userGlassEffect;
+    };
+  }, [glassEffectEnabled]);
+
   return (
     <KeyboardShortcutsProvider>
       <SidebarProvider
+        data-glass-effect={glassEffectEnabled ? "on" : undefined}
         className={cn(
           userCardScopeClassName,
+          glassEffectEnabled && "user-glass-effect",
           isWorkoutRoute && !isRunningImmersiveRoute && "workout-layout-theme",
           isRunningLiveRoute && "bg-white [--background:#fff]",
         )}
@@ -99,7 +120,6 @@ const Index = () => {
             )}
           >
             <div
-              data-testid="user-layout-content"
               className={cn(
                 userCardScopeClassName,
                 "relative mx-auto min-w-0 w-full max-w-md flex-1",

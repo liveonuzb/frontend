@@ -936,7 +936,6 @@ const WorkoutExercisesPage = () => {
         </div>
 
         <div
-          data-testid="exercise-results"
           data-view-mode={viewMode}
           className={cn(
             "grid gap-3",

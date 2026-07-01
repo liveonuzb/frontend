@@ -171,7 +171,6 @@ const Index = () => {
         </div>
 
         <motion.div
-          data-testid="weekly-pace-slider-card"
           className={cn(
             "z-10 mt-auto flex h-[140px] w-full flex-col justify-between rounded-2xl border bg-background/90 px-4 py-4 shadow-sm backdrop-blur md:mx-auto md:max-w-2xl md:px-5",
             selectedPace.border,
@@ -188,13 +187,11 @@ const Index = () => {
           }}
         >
           <p
-            data-testid="weekly-pace-slider-description"
             className="line-clamp-2 w-full text-center text-xs font-medium leading-5 text-muted-foreground"
           >
             {selectedPace.description}
           </p>
           <div
-            data-testid="weekly-pace-slider-controls"
             className="w-full"
           >
             <Slider

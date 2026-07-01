@@ -172,7 +172,6 @@ export default function SmartAddSheet({
       <NutritionDrawerBody className="flex flex-col pb-6 pt-0">
         <section>
           <div
-            data-testid="method-action-list"
             className="grid grid-cols-2 gap-2.5"
           >
             {map(METHOD_ACTIONS, (action) => (
@@ -187,7 +186,6 @@ export default function SmartAddSheet({
             ))}
           </div>
           <div
-            data-testid="saved-meals-action-list"
             className="mt-4 overflow-hidden rounded-[1.5rem] bg-muted/45"
           >
             <SavedMealsButton
